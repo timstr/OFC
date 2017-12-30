@@ -16,7 +16,7 @@ namespace ui {
 				size = {0, 5};
 				float y = 5;
 				for (auto it = model.properties.begin(); it != model.properties.end(); it++){
-					Text* caption = new Text(it->first, fui::getFont());
+					Text* caption = new Text(it->first, fui::getFont()); // TODO: get font from somewhere else
 					Control* control = it->second->makeControl();
 					controls.push_back(control);
 					addChildWindow(caption, insideLeft(this, 5), y);
@@ -66,7 +66,7 @@ namespace ui {
 
 		struct StringControl : Control {
 			StringControl(StringProperty& _strprop) : strprop(_strprop) {
-				text = new TextEntry(strprop.value, fui::getFont());
+				text = new TextEntry(strprop.value, fui::getFont()); // TODO: get font from elsewhere
 				addChildWindow(text);
 				size = text->size;
 			}
