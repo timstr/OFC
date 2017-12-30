@@ -28,12 +28,12 @@ namespace ui {
 
 			template<typename T>
 			void operator=(const T& t){
-				get() = t;
+				get<T>() = t;
 			}
 
 			template<typename T>
 			operator const T&(){
-				return get();
+				return get<T>();
 			}
 
 			virtual Control* makeControl() = 0;

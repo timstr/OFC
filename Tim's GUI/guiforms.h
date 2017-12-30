@@ -25,7 +25,7 @@ namespace ui {
 					size.y += control->size.y + 5;
 					y += control->size.y + 5;
 				}
-				auto submitbtn = new ui::helpers::CallbackButton("Submit", [this](){
+				auto submitbtn = new ui::helpers::CallbackButton("Submit", font, [this](){
 					this->submit();
 					this->close();
 				});
