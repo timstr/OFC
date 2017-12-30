@@ -12,11 +12,11 @@ namespace ui {
 		// tab navigation, space/enter toggling, automatic alignment and sizing
 
 		struct Form : Window {
-			Form(const Model& _model) : model(_model) {
+			Form(const Model& _model, const sf::Font& font) : model(_model) {
 				size = {0, 5};
 				float y = 5;
 				for (auto it = model.properties.begin(); it != model.properties.end(); it++){
-					Text* caption = new Text(it->first, fui::getFont()); // TODO: get font from somewhere else
+					Text* caption = new Text(it->first, font);
 					Control* control = it->second->makeControl();
 					controls.push_back(control);
 					addChildWindow(caption, insideLeft(this, 5), y);
@@ -65,8 +65,8 @@ namespace ui {
 		};
 
 		struct StringControl : Control {
-			StringControl(StringProperty& _strprop) : strprop(_strprop) {
-				text = new TextEntry(strprop.value, fui::getFont()); // TODO: get font from elsewhere
+			StringControl(StringProperty& _strprop, const sf::Font& font) : strprop(_strprop) {
+				text = new TextEntry(strprop.value, font);
 				addChildWindow(text);
 				size = text->size;
 			}

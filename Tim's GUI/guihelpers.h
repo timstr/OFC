@@ -9,8 +9,8 @@ namespace ui {
 		// slider
 
 		struct CallbackButton : Window {
-			CallbackButton(const std::string& label, const std::function<void()>& _onClick) : onClick(_onClick) {
-				auto text = new Text(label, fui::getFont());
+			CallbackButton(const std::string& label, const sf::Font& font, const std::function<void()>& _onClick) : onClick(_onClick) {
+				auto text = new Text(label, font);
 				addChildWindow(text, vec2(0, 0));
 				size = text->size;
 			}

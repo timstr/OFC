@@ -2,7 +2,6 @@
 
 #include "gui.h"
 #include "guihelpers.h"
-#include "Font.h"
 
 namespace ui {
 	namespace forms {
