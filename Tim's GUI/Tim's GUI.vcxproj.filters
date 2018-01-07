@@ -15,30 +15,30 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Tim%27s GUI\gui.cpp">
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Tim%27s GUI\stringhelpers.cpp">
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\stringhelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Tim%27s GUI\gui.h">
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\guiforms.h">
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiforms.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\guiformscontrol.h">
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiformscontrol.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\guiformsmodel.h">
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiformsmodel.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\guihelpers.h">
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guihelpers.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\stringhelpers.h">
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\stringhelpers.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

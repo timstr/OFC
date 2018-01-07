@@ -8,6 +8,8 @@ extern const double PI;
 
 typedef sf::Vector2f vec2;
 
+// TODO: move Window, Text, TextEntry and Transition into separate files
+
 namespace ui {
 
 	struct Window;
@@ -34,74 +36,97 @@ namespace ui {
 		};
 
 		struct Context {
-			static void init(unsigned width, unsigned height, std::string title, double _render_delay);
+			Context();
 
-			static void addTransition(const Transition& transition);
-			static void applyTransitions();
-			static void clearTransitions(Window* target);
+			void init(unsigned width, unsigned height, std::string title, double _render_delay);
 
-			static void addKeyboardCommand(sf::Keyboard::Key, void (*)());
-			static void addKeyboardCommand(sf::Keyboard::Key, std::vector<sf::Keyboard::Key>, void (*)());
-			static void setQuitHandler(bool (*handler)());
+			void addTransition(const Transition& transition);
+			void applyTransitions();
+			void clearTransitions(Window* target);
 
-			static void handleKeyPress(sf::Keyboard::Key key);
-			static void handleMouseDown(sf::Mouse::Button button, vec2 pos);
-			static void handleMouseUp(sf::Mouse::Button button, vec2 pos);
-			static void handleDrag();
-			static void handleHover();
-			static void handleQuit(bool force);
+			void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::function<void()>& handler);
+			void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::vector<sf::Keyboard::Key>& required_keys, const std::function<void()>& handler);
+			void setQuitHandler(const std::function<bool()>& handler);
 
-			static bool hasQuit();
-			static long double getProgramTime();
-			static vec2 getMousePosition();
-			static sf::RenderWindow& getRenderWindow();
-			static double getRenderDelay();
-			static void translateView(vec2 offset);
-			static vec2 getViewOffset();
-			static void resetView();
-			static void updateView();
-			static const sf::FloatRect& getClipRect();
-			static void setClipRect(const sf::FloatRect& rect);
-			static void intersectClipRect(const sf::FloatRect& rect);
-			static void resize(int w, int h);
+			void handleKeyPress(sf::Keyboard::Key key);
+			void handleMouseDown(sf::Mouse::Button button, vec2 pos);
+			void handleMouseUp(sf::Mouse::Button button, vec2 pos);
+			void handleDrag();
+			void handleHover();
+			void handleQuit(bool force);
 
-			static Window* getDraggingWindow();
-			static void setDraggingWindow(Window* window, vec2 offset = vec2(0, 0));
-			static void focusTo(Window* window);
-			static Window* getCurrentWindow();
-			static TextEntry* getTextEntry();
-			static void setTextEntry(TextEntry* textentry);
+			bool hasQuit();
+			long double getProgramTime();
+			vec2 getMousePosition();
+			sf::RenderWindow& getRenderWindow();
+			double getRenderDelay();
+			void translateView(vec2 offset);
+			vec2 getViewOffset();
+			void resetView();
+			void updateView();
+			const sf::FloatRect& getClipRect();
+			void setClipRect(const sf::FloatRect& rect);
+			void intersectClipRect(const sf::FloatRect& rect);
+			void resize(int w, int h);
+
+			Window* getDraggingWindow();
+			void setDraggingWindow(Window* window, vec2 offset = vec2(0, 0));
+			void focusTo(Window* window);
+			Window* getCurrentWindow();
+			TextEntry* getTextEntry();
+			void setTextEntry(TextEntry* textentry);
 
 			private:
 
+			// run() returns when quit is true
+			bool quit;
+			// desired time between frames, in seconds
+			double render_delay;
 
-			static bool quit;
-			static double render_delay;
+			// the renderwindow to which all ui elements are drawn
+			sf::RenderWindow renderwindow;
 
-			static vec2 drag_offset;
+			// the window currently being dragged
+			Window* dragging_window;
+			// the mouse's relative position while dragging
+			vec2 drag_offset;
 
-			static sf::RenderWindow renderwindow;
+			// the window currently in focus
+			Window* current_window;
 
-			static Window* dragging_window;
-			static Window* current_window;
-			static TextEntry* text_entry;
+			// the text entry currently being typed into
+			TextEntry* text_entry;
 
-			static std::vector<Transition> transitions;
+			// the window that was last clicked
+			Window* click_window;
+			// maximum time between clicks of a double-click, in seconds
+			const double doubleclicktime;
+			// time of last click
+			sf::Time click_timestamp;
+			// the mouse button that was last clicked
+			sf::Mouse::Button click_button;
 
-			static sf::Clock clock;
+			// active transitions
+			std::vector<Transition> transitions;
 
-			static std::map<std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>, void (*)()> commands;
-			static bool (*quit_handler)(); // TODO: use std::function
+			sf::Clock clock;
 
-			static const int doubleclicktime;
+			// set of callback functions to be called during keystroke patterns
+			std::map<std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>, std::function<void()>> commands;
 
-			static int32_t click_timestamp;
-			static sf::Mouse::Button click_button;
-			static Window* click_window;
-			static sf::FloatRect clip_rect;
-			static vec2 view_offset;
-			static int width;
-			static int height;
+			// callback function to be called when program is being closed, program continues if false is returned
+			std::function<bool()> quit_handler;
+
+			// portion of the screen currently being rendered to
+			sf::FloatRect clip_rect;
+
+			// translation of things being rendered
+			vec2 view_offset;
+
+			// width of the program's window
+			int width;
+			// height of the program's window
+			int height;
 		};
 	}
 
@@ -241,37 +266,36 @@ namespace ui {
 
 		void setText(const std::string& _text);
 		std::string getText();
+		void clearText();
+
+		void setCharacterSize(unsigned int size);
+		unsigned int getCharacterSize() const;
+
+		void setTextColor(sf::Color color);
+		const sf::Color& getTextColor() const;
+
+		void setBackGroundColor(sf::Color color);
+		const sf::Color& getBackGroundColor() const;
 
 		void render(sf::RenderWindow& renderwin) override;
 
-		private:
+		protected:
 
 		void updateSize();
 
+		sf::Color background_color;
 		sf::Text text;
 	};
 
 	// TODO: this should derive from Text
 	// TODO: pressing escape shouldn't type a blank character
-	struct TextEntry : Window {
+	struct TextEntry : Text {
 		TextEntry(const sf::Font& font, int charsize = 15);
 		TextEntry(const std::string& str, const sf::Font& font, int charsize = 15, sf::Color _text_color = sf::Color(0xFF), sf::Color _bg_color = sf::Color(0xFFFFFFFF));
 
 		void beginTyping();
+		void endTyping();
 		void moveTo(vec2 pos);
-
-		void setText(const std::string& str);
-		std::string getText() const;
-		void clearText();
-
-		void setTextColor(sf::Color color);
-		sf::Color getTextColor() const;
-
-		void setBackGroundColor(sf::Color color);
-		sf::Color getBackGroundColor() const;
-
-		void setCharacterSize(unsigned int size);
-		unsigned int getCharacterSize() const;
 
 		//to be overridden and used to deal with submission of newly typed text
 		virtual void onReturn(const std::string& entered_text);
@@ -290,11 +314,8 @@ namespace ui {
 		void onRight();
 		void onHome();
 		void onEnd();
+		void positionCursor();
 
-		void updateSize();
-
-		sf::Color background_color;
-		sf::Text text;
 		unsigned cursor_index = 0;
 		float cursor_pos;
 		float cursor_width;
@@ -304,15 +325,17 @@ namespace ui {
 
 	Window* root();
 
-	void addKeyboardCommand(sf::Keyboard::Key trigger_key, void (*handler)());
-	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, void (*handler)());
-	void setQuitHandler(bool (*handler)());
+	void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::function<void()>& handler);
+	void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::vector<sf::Keyboard::Key>& required_keys, const std::function<void()>& handler);
+	void setQuitHandler(const std::function<bool()>& handler);
 
 	long double getProgramTime();
 
 	vec2 getScreenSize();
 
 	vec2 getMousePos();
+
+	Context& getContext();
 
 	void init(unsigned width = 500, unsigned height = 400, std::string title = "Behold", int target_fps = 30);
 

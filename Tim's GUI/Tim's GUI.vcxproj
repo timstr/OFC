@@ -19,16 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Tim%27s GUI\gui.cpp" />
-    <ClCompile Include="..\..\Tim%27s GUI\stringhelpers.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\stringhelpers.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Tim%27s GUI\gui.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\guiforms.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\guiformscontrol.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\guiformsmodel.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\guihelpers.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\stringhelpers.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiforms.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiformscontrol.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiformsmodel.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guihelpers.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\stringhelpers.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5F4916FE-9139-454A-995F-93202E93B90D}</ProjectGuid>
@@ -52,13 +52,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -82,10 +82,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\SFML-2.4.1\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\SFML-2.4.1\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LibraryPath>C:\SFML-2.4.1\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
     <IncludePath>C:\SFML-2.4.1\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -101,13 +101,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\SFML-2.4.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SFML_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)timsgui$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>C:\SFML-2.4.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>sfml-main.lib;sfml-graphics-d.lib;sfml-window-d.lib;sfml-system-d.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -133,7 +134,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\SFML-2.4.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SFML_STATIC;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -142,8 +143,9 @@
     </Link>
     <Lib>
       <OutputFile>$(OutDir)timsgui$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>C:\SFML-2.4.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>sfml-main.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>

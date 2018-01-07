@@ -6,7 +6,6 @@
 #include <set>
 #include <functional>
 
-
 const double PI = 3.14159265358979323846264338327950288;
 
 namespace ui {
@@ -36,14 +35,20 @@ namespace ui {
 	}
 
 	// Context
+	Context::Context() : doubleclicktime(0.25) {
+		quit = false;
+		dragging_window = nullptr;
+		current_window = nullptr;
+		text_entry = nullptr;
+	}
 	void Context::init(unsigned width, unsigned height, std::string title, double _render_delay){
 		render_delay = _render_delay;
 		sf::ContextSettings settings;
 		settings.antialiasingLevel = 8;
-		Context::getRenderWindow().create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
+		getRenderWindow().create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
 		resetView();
-		Context::current_window = root();
-		Context::clock.restart();
+		current_window = root();
+		clock.restart();
 	}
 	void Context::addTransition(const Transition& transition){
 		transitions.push_back(transition);
@@ -68,22 +73,22 @@ namespace ui {
 		}
 	}
 	void Context::focusTo(Window* window){
-		if (Context::current_window == window){
+		if (current_window == window){
 			return;
 		}
 
-		if (Context::dragging_window){
-			Context::dragging_window = nullptr;
+		if (dragging_window){
+			dragging_window = nullptr;
 		}
-		if (Context::getTextEntry()){
-			Context::setTextEntry(nullptr);
+		if (getTextEntry()){
+			setTextEntry(nullptr);
 		}
 
 		std::vector<Window*> current_path;
 		std::vector<Window*> new_path;
 
-		Window* twindow = Context::current_window;
-		Context::current_window = window;
+		Window* twindow = current_window;
+		current_window = window;
 
 		while (twindow != nullptr){
 			current_path.push_back(twindow);
@@ -124,7 +129,7 @@ namespace ui {
 			return;
 		}
 
-		if (clock.getElapsedTime().asMilliseconds() - click_timestamp <= doubleclicktime){
+		if ((clock.getElapsedTime() - click_timestamp).asSeconds() <= doubleclicktime){
 			// if the mouse has been clicked recently:
 			if (click_button == button){
 				// if the mouse was clicked with the same button:
@@ -140,23 +145,23 @@ namespace ui {
 
 					// don't let it be double clicked again until after it gets single clicked again
 					// achieved by faking an old timestamp
-					click_timestamp = clock.getElapsedTime().asMilliseconds() - doubleclicktime;
+					click_timestamp = clock.getElapsedTime() - sf::seconds(doubleclicktime);
 				} else {
 					// if the click hit a different window:
 
-					Context::focusTo(hitwin);
+					focusTo(hitwin);
 					// single-click the first window, then this one
 					if (button == sf::Mouse::Left){
 						hitwin->onLeftClick(1);
 					} else if (button == sf::Mouse::Right){
 						hitwin->onRightClick(1);
 					}
-					click_timestamp = clock.getElapsedTime().asMilliseconds();
+					click_timestamp = clock.getElapsedTime();
 				}
 			} else {
 				// if the mouse was clicked with a different button:
 
-				Context::focusTo(hitwin);
+				focusTo(hitwin);
 
 				// single-click the current window
 				if (button == sf::Mouse::Left){
@@ -165,25 +170,25 @@ namespace ui {
 					hitwin->onRightClick(1);
 				}
 
-				click_timestamp = clock.getElapsedTime().asMilliseconds();
+				click_timestamp = clock.getElapsedTime();
 			}
 		} else {
 			// if the mouse hasn't been clicked recently:
 
-			Context::focusTo(hitwin);
+			focusTo(hitwin);
 			if (button == sf::Mouse::Left){
 				hitwin->onLeftClick(1);
 			} else if (button == sf::Mouse::Right){
 				hitwin->onRightClick(1);
 			}
 
-			click_timestamp = clock.getElapsedTime().asMilliseconds();
+			click_timestamp = clock.getElapsedTime();
 		}
 
 		click_button = button;
 		click_window = hitwin;
 	}
-	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, void (*handler)()){
+	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::function<void()>& handler){
 		auto pair = std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>(trigger_key, {});
 		auto it = commands.find(pair);
 		if (it == commands.end()){
@@ -192,7 +197,7 @@ namespace ui {
 			throw;
 		}
 	}
-	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, void (*handler)()){
+	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::vector<sf::Keyboard::Key>& required_keys, const std::function<void()>& handler){
 		auto pair = std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>(trigger_key, required_keys);
 		auto it = commands.find(pair);
 		if (it == commands.end()){
@@ -201,7 +206,7 @@ namespace ui {
 			throw;
 		}
 	}
-	void Context::setQuitHandler(bool (*handler)()){
+	void Context::setQuitHandler(const std::function<bool()>& handler){
 		quit_handler = handler;
 	}
 	void Context::handleKeyPress(sf::Keyboard::Key key){
@@ -229,34 +234,34 @@ namespace ui {
 		}
 	}
 	void Context::handleMouseUp(sf::Mouse::Button button, vec2 pos){
-		if (Context::dragging_window){
+		if (dragging_window){
 			if (button == sf::Mouse::Left){
-				Context::dragging_window->onLeftRelease();
+				dragging_window->onLeftRelease();
 			} else if (button == sf::Mouse::Right){
-				Context::dragging_window->onRightRelease();
+				dragging_window->onRightRelease();
 			}
 
 			Window* hover_window = root()->findWindowAt(pos);
-			while (hover_window && !(hover_window->onDropWindow(Context::dragging_window))){
+			while (hover_window && !(hover_window->onDropWindow(dragging_window))){
 				hover_window = hover_window->parent;
 			}
-			Context::dragging_window = nullptr;
-		} else if (Context::current_window){
+			dragging_window = nullptr;
+		} else if (current_window){
 			if (button == sf::Mouse::Left){
-				Context::current_window->onLeftRelease();
+				current_window->onLeftRelease();
 			} else if (button == sf::Mouse::Right){
-				Context::current_window->onRightRelease();
+				current_window->onRightRelease();
 			}
 		}
 	}
 	void Context::handleDrag(){
 		if (dragging_window){
-			dragging_window->pos = (vec2)sf::Mouse::getPosition(Context::getRenderWindow()) - drag_offset;
+			dragging_window->pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
 			dragging_window->onDrag();
 		}
 	}
 	void Context::handleHover(){
-		Window* hover_window = root()->findWindowAt((vec2)sf::Mouse::getPosition(Context::getRenderWindow()));
+		Window* hover_window = root()->findWindowAt((vec2)sf::Mouse::getPosition(getRenderWindow()));
 		if (hover_window){
 			if (dragging_window){
 				hover_window->onHoverWithWindow(dragging_window);
@@ -267,9 +272,7 @@ namespace ui {
 	}
 	void Context::handleQuit(bool force){
 		if (quit_handler && !force){
-			if (quit_handler()){
-				quit = true;
-			}
+			quit = quit_handler();
 		} else {
 			quit = true;
 		}
@@ -287,7 +290,7 @@ namespace ui {
 		return render_delay;
 	}
 	void Context::translateView(vec2 offset){
-		view_offset.x-= offset.x;
+		view_offset.x -= offset.x;
 		view_offset.y -= offset.y;
 	}
 	vec2 Context::getViewOffset(){
@@ -349,37 +352,18 @@ namespace ui {
 		renderwindow.setView(view);
 	}
 
-	bool Context::quit = false;
-	double Context::render_delay = 0.025;
-	vec2 Context::drag_offset = vec2();
-	sf::RenderWindow Context::renderwindow;
-	Window* Context::dragging_window = nullptr;
-	Window* Context::current_window = nullptr;
-	TextEntry* Context::text_entry = nullptr;
-	std::vector<Transition> Context::transitions;
-	sf::Clock Context::clock;
-	std::map<std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>, void (*)()> Context::commands;
-	bool (*Context::quit_handler)() = nullptr;
-	const int Context::doubleclicktime = 250;
-	int32_t Context::click_timestamp;
-	sf::Mouse::Button Context::click_button;
-	Window* Context::click_window;
-	sf::FloatRect Context::clip_rect;
-	vec2 Context::view_offset;
-	int Context::width;
-	int Context::height;
 
 	// Window
 	Window::~Window(){
 		if (parent){
 			parent->releaseChildWindow(this);
-			if (Context::getCurrentWindow() == this){
-				Context::focusTo(parent);
+			if (getContext().getCurrentWindow() == this){
+				getContext().focusTo(parent);
 			}
 		}
-		Context::clearTransitions(this);
-		if (Context::getDraggingWindow() == this){
-			Context::setDraggingWindow(nullptr);
+		getContext().clearTransitions(this);
+		if (getContext().getDraggingWindow() == this){
+			getContext().setDraggingWindow(nullptr);
 		}
 		clear();
 	}
@@ -390,7 +374,7 @@ namespace ui {
 		return ((testpos.x >= 0.0f) && (testpos.x < size.x) && (testpos.y >= 0.0f) && (testpos.y < size.y));
 	}
 	vec2 Window::localMousePos(){
-		vec2 pos = (vec2)sf::Mouse::getPosition(Context::getRenderWindow());
+		vec2 pos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
 		Window *window = this;
 		while (window){
 			pos -= window->pos;
@@ -424,9 +408,9 @@ namespace ui {
 	}
 	void Window::startDrag(){
 		if (sf::Mouse::isButtonPressed(sf::Mouse::Left) || sf::Mouse::isButtonPressed(sf::Mouse::Right)){
-			if (Context::getDraggingWindow() != this){
-				Context::focusTo(this);
-				Context::setDraggingWindow(this, (vec2)sf::Mouse::getPosition(Context::getRenderWindow()) - pos);
+			if (getContext().getDraggingWindow() != this){
+				getContext().focusTo(this);
+				getContext().setDraggingWindow(this, (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
 			}
 		}
 	}
@@ -446,7 +430,7 @@ namespace ui {
 
 	}
 	bool Window::isFocused(){
-		return Context::getCurrentWindow() == this;
+		return getContext().getCurrentWindow() == this;
 	}
 	void Window::onLoseFocus(){
 
@@ -479,7 +463,7 @@ namespace ui {
 					}
 				}
 			}
-			Context::focusTo(next);
+			getContext().focusTo(next);
 		}
 	}
 	void Window::focusToPreviousWindow(){
@@ -510,11 +494,11 @@ namespace ui {
 					}
 				}
 			}
-			Context::focusTo(prev);
+			getContext().focusTo(prev);
 		}
 	}
 	void Window::grabFocus(){
-		Context::focusTo(this);
+		getContext().focusTo(this);
 	}
 	void Window::onKeyDown(sf::Keyboard::Key key){
 
@@ -523,7 +507,7 @@ namespace ui {
 
 	}
 	bool Window::keyDown(sf::Keyboard::Key key){
-		if (Context::getCurrentWindow() == this){
+		if (getContext().getCurrentWindow() == this){
 			return(sf::Keyboard::isKeyPressed(key));
 		} else {
 			return(false);
@@ -734,7 +718,7 @@ namespace ui {
 		Window* window = nullptr;
 		for (int i = 0; i < childwindows.size() && window == nullptr; i++){
 			window = childwindows[i]->findWindowAt(_pos - childwindows[i]->pos);
-			if (window && (window == Context::getDraggingWindow())){
+			if (window && (window == getContext().getDraggingWindow())){
 				window = nullptr;
 			}
 		}
@@ -765,28 +749,28 @@ namespace ui {
 		for (int i = (int)childwindows.size() - 1; i >= 0; i -= 1){
 			if (childwindows[i]->visible){
 				if (childwindows[i]->clipping){
-					Context::translateView(childwindows[i]->pos);
+					getContext().translateView(childwindows[i]->pos);
 
-					sf::FloatRect rect = Context::getClipRect();
-					vec2 pos = Context::getViewOffset();
-					Context::intersectClipRect(sf::FloatRect(-pos, childwindows[i]->size));
-					Context::updateView();
+					sf::FloatRect rect = getContext().getClipRect();
+					vec2 pos = getContext().getViewOffset();
+					getContext().intersectClipRect(sf::FloatRect(-pos, childwindows[i]->size));
+					getContext().updateView();
 					childwindows[i]->render(renderwindow);
-					Context::setClipRect(rect);
-					Context::translateView(-childwindows[i]->pos);
-					Context::updateView();
+					getContext().setClipRect(rect);
+					getContext().translateView(-childwindows[i]->pos);
+					getContext().updateView();
 				} else {
-					Context::translateView(childwindows[i]->pos);
-					Context::updateView();
+					getContext().translateView(childwindows[i]->pos);
+					getContext().updateView();
 					childwindows[i]->render(renderwindow);
-					Context::translateView(-childwindows[i]->pos);
-					Context::updateView();
+					getContext().translateView(-childwindows[i]->pos);
+					getContext().updateView();
 				}
 			}
 		}
 	}
 	void Window::startTransition(double duration, const std::function<void(double)> transitionFn, const std::function<void()>& onComplete){
-		Context::addTransition(Transition(this, duration, transitionFn, onComplete));
+		getContext().addTransition(Transition(this, duration, transitionFn, onComplete));
 	}
 	const std::vector<Window*>& Window::getChildWindows() const {
 		return childwindows;
@@ -802,16 +786,43 @@ namespace ui {
 		text.setFillColor(color);
 		setText(_text);
 		disabled = true;
+		background_color = sf::Color(0x0);
 	}
 	void Text::setText(const std::string& _text){
 		text.setString(_text);
 		updateSize();
 	}
 	std::string Text::getText(){
-		return text.getString();
+		return text.getString().toAnsiString();
 	}
-	void Text::render(sf::RenderWindow& renderwin){
-		renderwin.draw(text);
+	void Text::clearText(){
+		text.setString("");
+		updateSize();
+	}
+	void Text::setCharacterSize(unsigned int size){
+		text.setCharacterSize(size);
+		updateSize();
+	}
+	unsigned int Text::getCharacterSize() const {
+		return text.getCharacterSize();
+	}
+	void Text::setTextColor(sf::Color color){
+		text.setFillColor(color);
+	}
+	const sf::Color& Text::getTextColor() const {
+		return text.getFillColor();
+	}
+	void Text::setBackGroundColor(sf::Color color){
+		background_color = color;
+	}
+	const sf::Color& Text::getBackGroundColor() const {
+		return background_color;
+	}
+	void Text::render(sf::RenderWindow& rw){
+		sf::RectangleShape rect(size);
+		rect.setFillColor(background_color);
+		rw.draw(rect);
+		rw.draw(text);
 	}
 	void Text::updateSize(){
 		sf::FloatRect bounds = text.getGlobalBounds();
@@ -826,11 +837,12 @@ namespace ui {
 
 
 	// TextEntry
-	TextEntry::TextEntry(const sf::Font& font, int charsize){
+	TextEntry::TextEntry(const sf::Font& font, int charsize) : Text("", font, sf::Color(0xFF), charsize) {
 		text = sf::Text("", font, charsize);
 		updateSize();
 	}
-	TextEntry::TextEntry(const std::string& str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color){
+	TextEntry::TextEntry(const std::string& str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color)
+		: Text(str, font, _text_color, charsize) {
 		text = sf::Text(str, font, charsize);
 		updateSize();
 		setTextColor(_text_color);
@@ -838,7 +850,12 @@ namespace ui {
 	}
 	void TextEntry::beginTyping(){
 		grabFocus();
-		Context::setTextEntry(this);
+		getContext().setTextEntry(this);
+	}
+	void TextEntry::endTyping(){
+		if (getContext().getTextEntry() == this){
+			getContext().setTextEntry(nullptr);
+		}
 	}
 	void TextEntry::moveTo(vec2 pos){
 		for (int i = 0; i < text.getString().getSize(); i++){
@@ -849,38 +866,8 @@ namespace ui {
 				return;
 			}
 		}
-		cursor_index = (unsigned)text.getString().getSize();
+		cursor_index = text.getString().getSize();
 		updateSize();
-	}
-	void TextEntry::setText(const std::string& str){
-		text.setString(str);
-	}
-	std::string TextEntry::getText() const {
-		return text.getString().toAnsiString();
-	}
-	void TextEntry::clearText(){
-		text.setString("");
-		cursor_index = 0;
-		updateSize();
-	}
-	void TextEntry::setTextColor(sf::Color color){
-		text.setFillColor(color);
-	}
-	sf::Color TextEntry::getTextColor() const {
-		return text.getFillColor();
-	}
-	void TextEntry::setBackGroundColor(sf::Color color){
-		background_color = color;
-	}
-	sf::Color TextEntry::getBackGroundColor() const {
-		return background_color;
-	}
-	void TextEntry::setCharacterSize(unsigned int size){
-		text.setCharacterSize(size);
-		updateSize();
-	}
-	unsigned int TextEntry::getCharacterSize() const {
-		return text.getCharacterSize();
 	}
 	void TextEntry::onReturn(const std::string& entered_text){
 		
@@ -893,7 +880,8 @@ namespace ui {
 		rect.setFillColor(background_color);
 		renderwindow.draw(rect);
 		renderwindow.draw(text);
-		if (Context::getTextEntry() == this){
+		if (getContext().getTextEntry() == this){
+			positionCursor();
 			sf::RectangleShape rect2(vec2(cursor_width, (float)text.getCharacterSize()));
 			rect2.setFillColor(sf::Color(
 				text.getFillColor().r,
@@ -959,11 +947,8 @@ namespace ui {
 		cursor_index = (unsigned)text.getString().getSize();
 		updateSize();
 	}
-	void TextEntry::updateSize(){
-		sf::FloatRect rect = text.getLocalBounds();
-		const float minwidth = text.getCharacterSize() * 5.0f;
-		size.x = std::max(rect.width, minwidth);
-		size.y = (float)text.getCharacterSize();
+	void TextEntry::positionCursor(){
+		cursor_index == std::min((size_t)cursor_index, text.getString().getSize());
 		cursor_pos = text.findCharacterPos(cursor_index).x;
 		if (cursor_index == text.getString().getSize()){
 			cursor_width = text.getCharacterSize() * 0.5f;
@@ -978,110 +963,116 @@ namespace ui {
 		static Window rootwin;
 		return &rootwin;
 	}
-	void addKeyboardCommand(sf::Keyboard::Key trigger_key, void (*handler)()){
-		Context::addKeyboardCommand(trigger_key, handler);
+	void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::function<void()>& handler){
+		getContext().addKeyboardCommand(trigger_key, handler);
 	}
-	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, void (*handler)()){
-		Context::addKeyboardCommand(trigger_key, required_keys, handler);
+	void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::vector<sf::Keyboard::Key>& required_keys, const std::function<void()>& handler){
+		getContext().addKeyboardCommand(trigger_key, required_keys, handler);
 	}
-	void setQuitHandler(bool (*handler)()){
-		Context::setQuitHandler(handler);
+	void setQuitHandler(const std::function<bool()>& handler){
+		getContext().setQuitHandler(handler);
 	}
 	long double getProgramTime(){
-		return Context::getProgramTime();
+		return getContext().getProgramTime();
 	}
 	vec2 getScreenSize(){
-		return (vec2)Context::getRenderWindow().getSize();
+		sf::Vector2u size = getContext().getRenderWindow().getSize();
+		return vec2((float)size.x, (float)size.y);
 	}
 	vec2 getMousePos(){
-		return vec2(sf::Mouse::getPosition(Context::getRenderWindow()));
+		return vec2(sf::Mouse::getPosition(getContext().getRenderWindow()));
+	}
+
+	Context & getContext(){
+		static Context context;
+		return context;
 	}
 
 	void init(unsigned width, unsigned height, std::string title, int target_fps){
-		Context::init(width, height, title, 1.0 / target_fps);
+		getContext().init(width, height, title, 1.0 / target_fps);
 	}
 	void quit(bool force){
-		Context::handleQuit(force);
+		getContext().handleQuit(force);
 	}
 	void run(){
-		long double prev_time = Context::getProgramTime();
-		while (Context::getRenderWindow().isOpen() && !Context::hasQuit()){
+		long double prev_time = getContext().getProgramTime();
+		while (getContext().getRenderWindow().isOpen() && !getContext().hasQuit()){
 			sf::Event event;
-			while (Context::getRenderWindow().pollEvent(event)){
+			while (getContext().getRenderWindow().pollEvent(event)){
 				switch (event.type){
 					case sf::Event::Closed:
 						quit();
 						break;
 					case sf::Event::Resized:
-						Context::resize(event.size.width, event.size.height);
+						getContext().resize(event.size.width, event.size.height);
 						break;
 					case sf::Event::LostFocus:
-						if (Context::getCurrentWindow()){
-							Context::focusTo(nullptr);
+						if (getContext().getCurrentWindow()){
+							getContext().focusTo(nullptr);
 						}
-						if (Context::getDraggingWindow()){
-							Context::setDraggingWindow(nullptr);
+						if (getContext().getDraggingWindow()){
+							getContext().setDraggingWindow(nullptr);
 						}
 						break;
 					case sf::Event::TextEntered:
-						if (Context::getTextEntry()){
+						if (getContext().getTextEntry()){
 							if (event.text.unicode != '\b'){
-								Context::getTextEntry()->write(static_cast<char>(event.text.unicode));
+								getContext().getTextEntry()->write(static_cast<char>(event.text.unicode));
 							}
 						}
 						break;
 					case sf::Event::KeyPressed:
-						if (Context::getTextEntry()){
+						if (getContext().getTextEntry()){
 							switch (event.key.code){
 								case sf::Keyboard::BackSpace:
-									Context::getTextEntry()->onBackspace();
+									getContext().getTextEntry()->onBackspace();
 									break;
 								case sf::Keyboard::Delete:
-									Context::getTextEntry()->onDelete();
+									getContext().getTextEntry()->onDelete();
 									break;
 								case sf::Keyboard::Left:
-									Context::getTextEntry()->onLeft();
+									getContext().getTextEntry()->onLeft();
 									break;
 								case sf::Keyboard::Right:
-									Context::getTextEntry()->onRight();
+									getContext().getTextEntry()->onRight();
 									break;
 								case sf::Keyboard::Home:
-									Context::getTextEntry()->onHome();
+									getContext().getTextEntry()->onHome();
 									break;
 								case sf::Keyboard::End:
-									Context::getTextEntry()->onEnd();
+									getContext().getTextEntry()->onEnd();
 									break;
 								case sf::Keyboard::Return:
-									Context::getTextEntry()->onReturn(Context::getTextEntry()->getText());
+									getContext().getTextEntry()->onReturn(getContext().getTextEntry()->getText());
 									break;
 								default:
-									Context::handleKeyPress(event.key.code);
+									getContext().handleKeyPress(event.key.code);
 									break;
 							}
 						} else {
-							Context::handleKeyPress(event.key.code);
+							getContext().handleKeyPress(event.key.code);
 						}
 						
 						break;
 					case sf::Event::KeyReleased:
-						if (Context::getCurrentWindow()){
-							Context::getCurrentWindow()->onKeyUp(event.key.code);
+						if (getContext().getCurrentWindow()){
+							getContext().getCurrentWindow()->onKeyUp(event.key.code);
 						}
 						break;
 					case sf::Event::MouseButtonPressed:
 					{
-						Context::handleMouseDown(event.mouseButton.button, vec2((float)event.mouseButton.x, (float)event.mouseButton.y));
+						getContext().handleMouseDown(event.mouseButton.button, vec2((float)event.mouseButton.x, (float)event.mouseButton.y));
 						break;
 					}
 					case sf::Event::MouseButtonReleased:
-						Context::handleMouseUp(event.mouseButton.button, vec2((float)event.mouseButton.x, (float)event.mouseButton.y));
+						getContext().handleMouseUp(event.mouseButton.button, vec2((float)event.mouseButton.x, (float)event.mouseButton.y));
 						break;
 					case sf::Event::MouseWheelScrolled:
-						if (Context::getCurrentWindow()){
+						if (getContext().getCurrentWindow()){
 							if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
-								Context::getCurrentWindow()->onScroll(event.mouseWheelScroll.delta, 0.0);
+								getContext().getCurrentWindow()->onScroll(event.mouseWheelScroll.delta, 0.0);
 							} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
-								Context::getCurrentWindow()->onScroll(0.0, event.mouseWheelScroll.delta);
+								getContext().getCurrentWindow()->onScroll(0.0, event.mouseWheelScroll.delta);
 							}
 						}
 						break;
@@ -1089,38 +1080,38 @@ namespace ui {
 			}
 
 			//drag what's being dragged
-			Context::handleDrag();
+			getContext().handleDrag();
 
 			//mouse-over what needs mousing over
-			Context::handleHover();
+			getContext().handleHover();
 
 			//apply transitions
-			Context::applyTransitions();
+			getContext().applyTransitions();
 
 			//clear the screen
-			Context::getRenderWindow().clear();
-			Context::resetView();
+			getContext().getRenderWindow().clear();
+			getContext().resetView();
 
 			//render the root window, and all child windows it contains
 			root()->size = getScreenSize();
-			root()->render(Context::getRenderWindow());
+			root()->render(getContext().getRenderWindow());
 
 			//highlight current window if alt is pressed
-			if ((sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) || sf::Keyboard::isKeyPressed(sf::Keyboard::RAlt)) && Context::getCurrentWindow()){
-				sf::RectangleShape rect(Context::getCurrentWindow()->size);
-				rect.setPosition(Context::getCurrentWindow()->absPos());
+			if ((sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) || sf::Keyboard::isKeyPressed(sf::Keyboard::RAlt)) && getContext().getCurrentWindow()){
+				sf::RectangleShape rect(getContext().getCurrentWindow()->size);
+				rect.setPosition(getContext().getCurrentWindow()->absPos());
 				rect.setFillColor(sf::Color(0));
 				rect.setOutlineColor(sf::Color(0xFFFF0080));
 				rect.setOutlineThickness(2);
-				Context::getRenderWindow().draw(rect);
+				getContext().getRenderWindow().draw(rect);
 			}
 
-			Context::getRenderWindow().display();
+			getContext().getRenderWindow().display();
 
 			//sleep only as long as needed
-			long double now = Context::getProgramTime();
-			double delay = Context::getRenderDelay();
-			sf::sleep(sf::seconds(std::max(0.0f, (float)(Context::getRenderDelay() - (now - prev_time)))));
+			long double now = getContext().getProgramTime();
+			double delay = getContext().getRenderDelay();
+			sf::sleep(sf::seconds(std::max(0.0f, (float)(getContext().getRenderDelay() - (now - prev_time)))));
 			prev_time = now;
 		}
 
