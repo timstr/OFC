@@ -1,8 +1,9 @@
 #pragma once
 
-#include "guiwindow.h"
-#include "guitransition.h"
-#include "guitextentry.h"
+#include "window.h"
+#include "transition.h"
+#include "textentry.h"
+#include <map>
 
 namespace ui {
 
@@ -71,7 +72,7 @@ namespace ui {
 		// the window that was last clicked
 		Window* click_window;
 		// maximum time between clicks of a double-click, in seconds
-		const double doubleclicktime;
+		const float doubleclicktime;
 		// time of last click
 		sf::Time click_timestamp;
 		// the mouse button that was last clicked
@@ -99,6 +100,4 @@ namespace ui {
 		// height of the program's window
 		int height;
 	};
-
-	Context& getContext();
 }

@@ -1,9 +1,9 @@
-#include "guicontext.h"
+#include "context.h"
 #include "gui.h"
 
 namespace ui {
 
-	Context::Context() : doubleclicktime(0.25) {
+	Context::Context() : doubleclicktime(0.25f) {
 		quit = false;
 		dragging_window = nullptr;
 		current_window = nullptr;
@@ -318,11 +318,6 @@ namespace ui {
 		);
 		view.setViewport(vp);
 		renderwindow.setView(view);
-	}
-
-	Context & getContext(){
-		static Context context;
-		return context;
 	}
 
 }

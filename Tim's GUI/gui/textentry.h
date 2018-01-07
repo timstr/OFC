@@ -1,6 +1,6 @@
 #pragma once
 
-#include "guitext.h"
+#include "text.h"
 
 namespace ui {
 
@@ -32,7 +32,7 @@ namespace ui {
 		void onEnd();
 		void positionCursor();
 
-		unsigned cursor_index = 0;
+		size_t cursor_index = 0;
 		float cursor_pos;
 		float cursor_width;
 

@@ -1,5 +1,5 @@
-#include "guiwindow.h"
-#include "guicontext.h"
+#include "window.h"
+#include "gui.h"
 #include <set>
 
 namespace ui {

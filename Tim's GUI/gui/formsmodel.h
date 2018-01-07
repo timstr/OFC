@@ -1,6 +1,6 @@
 #pragma once
 
-#include "guiformscontrol.h"
+#include "formscontrol.h"
 #include <map>
 #include <memory>
 #include <typeinfo>

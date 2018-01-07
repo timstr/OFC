@@ -1,4 +1,4 @@
-#include "guitransition.h"
+#include "transition.h"
 #include "gui.h"
 
 namespace ui {

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <type_traits>
-#include "guiformscontrol.h"
-#include "guiformsmodel.h"
-#include "guihelpers.h"
+#include "formscontrol.h"
+#include "formsmodel.h"
+#include "helpers.h"
 
 namespace ui {
 	namespace forms {

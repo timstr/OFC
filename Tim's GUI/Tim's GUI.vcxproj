@@ -19,26 +19,26 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui.cpp" />
-    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\guicontext.cpp" />
-    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\guitext.cpp" />
-    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\guitextentry.cpp" />
-    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\guitransition.cpp" />
-    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\guiwindow.cpp" />
-    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\stringhelpers.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\context.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\gui.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringhelpers.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\text.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\textentry.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\transition.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guicontext.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiforms.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiformscontrol.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiformsmodel.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guihelpers.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guitext.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guitextentry.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guitransition.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\guiwindow.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\stringhelpers.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\context.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\forms.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formscontrol.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formsmodel.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\gui.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\helpers.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringhelpers.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\text.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\textentry.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\transition.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{5F4916FE-9139-454A-995F-93202E93B90D}</ProjectGuid>

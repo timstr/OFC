@@ -1,4 +1,4 @@
-#include "guitext.h"
+#include "text.h"
 
 namespace ui {
 

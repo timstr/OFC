@@ -1,5 +1,5 @@
-#include "guitextentry.h"
-#include "guicontext.h"
+#include "textentry.h"
+#include "context.h"
 #include "gui.h"
 
 namespace ui {
@@ -115,7 +115,7 @@ namespace ui {
 		updateSize();
 	}
 	void TextEntry::positionCursor(){
-		cursor_index == std::min((size_t)cursor_index, text.getString().getSize());
+		cursor_index = std::min(cursor_index, text.getString().getSize());
 		cursor_pos = text.findCharacterPos(cursor_index).x;
 		if (cursor_index == text.getString().getSize()){
 			cursor_width = text.getCharacterSize() * 0.5f;

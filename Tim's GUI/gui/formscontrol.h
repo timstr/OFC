@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gui.h"
-#include "guihelpers.h"
+#include "helpers.h"
 
 namespace ui {
 	namespace forms {
