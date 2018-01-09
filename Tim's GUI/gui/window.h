@@ -3,6 +3,7 @@
 #include <SFML\Graphics.hpp>
 #include <vector>
 #include <functional>
+#include <set>
 
 typedef sf::Vector2f vec2;
 
@@ -31,10 +32,13 @@ namespace ui {
 		virtual void onLeftRelease();
 		virtual void onRightClick(int clicks);
 		virtual void onRightRelease();
+		bool leftMouseDown();
+		bool rightMouseDown();
 
 		virtual void onScroll(double delta_x, double delta_y);
 
 		void startDrag();
+		// TODO: add explicit stopDrag instead of automatically stopping when mouse button lifted?
 		virtual void onDrag();
 
 		virtual void onHover();
@@ -94,6 +98,7 @@ namespace ui {
 		void setYAlign(YAlignment yalignment = YAlignment(Alignment::None, nullptr));
 		void align();
 		void alignChildren();
+		void alignAndAutoSize(float margin);
 
 		static XAlignment noAlignX();
 		static XAlignment leftOf(Window* window, float margin = 0.0f);
@@ -136,6 +141,9 @@ namespace ui {
 		XAlignment xalign = XAlignment(Alignment::None, nullptr);
 		YAlignment yalign = YAlignment(Alignment::None, nullptr);
 		bool children_aligned = false;
+
+		void alignWindows(const std::vector<Window*>& windows);
+		vec2 getBounds(const std::vector<Window*>& windows);
 
 		friend struct Context;
 	};

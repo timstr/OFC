@@ -1,6 +1,5 @@
 #include "window.h"
 #include "gui.h"
-#include <set>
 
 namespace ui {
 
@@ -52,6 +51,20 @@ namespace ui {
 	}
 	void Window::onRightRelease(){
 
+	}
+	bool Window::leftMouseDown(){
+		if (getContext().getCurrentWindow() == this){
+			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
+		} else {
+			return false;
+		}
+	}
+	bool Window::rightMouseDown(){
+		if (getContext().getCurrentWindow() == this){
+			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
+		} else {
+			return false;
+		}
 	}
 	void Window::onScroll(double delta_x, double delta_y){
 
@@ -234,30 +247,135 @@ namespace ui {
 		}
 	}
 	void Window::alignChildren(){
-		std::set<Window*> remaining;
-
-		for (Window* w : childwindows){
-			remaining.insert(w);
-		}
-
-		while (remaining.size() > 0){
-			bool found = false;
-			for (auto it = remaining.begin(); !found && it != remaining.end(); it++){
-				Window* xwin = (*it)->xalign.relative_to;
-				Window* ywin = (*it)->yalign.relative_to;
-				if ((!xwin || (remaining.find(xwin) == remaining.end())) && (!ywin || (remaining.find(ywin) == remaining.end()))){
-					(*it)->align();
-					remaining.erase(it);
-					found = true;
-					break;
-				}
-			}
-			if (!found){
-				throw std::runtime_error("The relative alignments are cyclical");
-			}
-		}
+		alignWindows(childwindows);
 	}
+	void Window::alignAndAutoSize(float margin){
+		size = vec2(0, 0);
+		std::set<Window*> left, middlex, right, top, middley, bottom, otherx, othery;
 
+		// copy child windows to 'remaining'
+		std::vector<Window*> remaining;
+		for (Window* w : childwindows){
+			remaining.push_back(w);
+		}
+
+		// add all windows to corresponding sets based on their alignment
+		while (remaining.size() > 0){
+			for (Window* w : remaining){
+
+				if (w->xalign.relative_to == this){
+					switch (w->xalign.type){
+						case Alignment::InsideMin:
+							left.insert(w);
+							break;
+						case Alignment::Center:
+							middlex.insert(w);
+							break;
+						case Alignment::InsideMax:
+							right.insert(w);
+							break;
+						default:
+							otherx.insert(w);
+							break;
+					}
+				} else if (w->xalign.type == Alignment::None){
+					otherx.insert(w);
+				} else if (left.find(w->xalign.relative_to) != left.end()){
+					left.insert(w);
+				} else if (middlex.find(w->xalign.relative_to) != middlex.end()){
+					middlex.insert(w);
+				} else if (right.find(w->xalign.relative_to) != right.end()){
+					right.insert(w);
+				} else if (otherx.find(w->xalign.relative_to) != otherx.end()){
+					otherx.insert(w);
+				}
+				
+				if (w->yalign.relative_to == this){
+					switch (w->yalign.type){
+						case Alignment::InsideMin:
+							top.insert(w);
+							break;
+						case Alignment::Center:
+							middley.insert(w);
+							break;
+						case Alignment::InsideMax:
+							bottom.insert(w);
+							break;
+						default:
+							othery.insert(w);
+							break;
+					}
+				} else if (w->yalign.type == Alignment::None){
+					othery.insert(w);
+				} else if (top.find(w->yalign.relative_to) != top.end()){
+					top.insert(w);
+				} else if (middley.find(w->xalign.relative_to) != middley.end()){
+					middley.insert(w);
+				} else if (bottom.find(w->xalign.relative_to) != bottom.end()){
+					bottom.insert(w);
+				} else if (othery.find(w->xalign.relative_to) != othery.end()){
+					otherx.insert(w);
+				}
+
+			}
+		}
+
+		// align sets separately
+		std::vector<Window*> tl, tm, tr, ml, mm, mr, bl, bm, br;
+		for (Window* w : left){
+			if (top.find(w) != top.end()){
+				tl.push_back(w);
+			} else if (middlex.find(w) != middlex.end()){
+				ml.push_back(w);
+			} else if (bottom.find(w) != bottom.end()){
+				bl.push_back(w);
+			}
+		}
+		for (Window* w : middlex){
+			if (top.find(w) != top.end()){
+				ml.push_back(w);
+			} else if (middlex.find(w) != middlex.end()){
+				mm.push_back(w);
+			} else if (bottom.find(w) != bottom.end()){
+				mr.push_back(w);
+			}
+		}
+		for (Window* w : right){
+			if (top.find(w) != top.end()){
+				tr.push_back(w);
+			} else if (middlex.find(w) != middlex.end()){
+				mr.push_back(w);
+			} else if (bottom.find(w) != bottom.end()){
+				br.push_back(w);
+			}
+		}
+
+		alignWindows(tl);
+		alignWindows(tm);
+		alignWindows(tr);
+		alignWindows(ml);
+		alignWindows(mm);
+		alignWindows(mr);
+		alignWindows(bl);
+		alignWindows(bm);
+		alignWindows(br);
+
+		// calculate size of each set
+		vec2 tls, tms, trs, mls, mms, mrs, bls, bms, brs;
+		tls = getBounds(tl);
+		tms = getBounds(tm);
+		trs = getBounds(tr);
+		mls = getBounds(ml);
+		mms = getBounds(mm);
+		mrs = getBounds(mr);
+		bls = getBounds(bl);
+		bms = getBounds(bm);
+		brs = getBounds(br);
+
+		// TODO: continue from notes
+		throw std::runtime_error("Not implemented");
+		// TODO: align other
+	}
 	Window::XAlignment Window::noAlignX(){
 		return XAlignment(Alignment::None);
 	}
@@ -427,6 +545,43 @@ namespace ui {
 	}
 	Window* Window::getParent() const {
 		return parent;
+	}
+	void Window::alignWindows(const std::vector<Window*>& windows){
+		std::set<Window*> remaining;
+
+		for (Window* w : childwindows){
+			remaining.insert(w);
+		}
+
+		while (remaining.size() > 0){
+			bool found = false;
+			for (auto it = remaining.begin(); !found && it != remaining.end(); it++){
+				Window* xwin = (*it)->xalign.relative_to;
+				Window* ywin = (*it)->yalign.relative_to;
+				if ((!xwin || (remaining.find(xwin) == remaining.end())) && (!ywin || (remaining.find(ywin) == remaining.end()))){
+					(*it)->align();
+					remaining.erase(it);
+					found = true;
+					break;
+				}
+			}
+			if (!found){
+				throw std::runtime_error("The relative alignments are cyclical");
+			}
+		}
+	}
+	vec2 Window::getBounds(const std::vector<Window*>& windows){
+		if (windows.size() == 0){
+			return vec2(0.0f, 0.0f);
+		}
+		float minx = 1000000.0f, maxx = -1000000.0f, miny = 1000000.0f, maxy = -1000000.0f;
+		for (Window* w : windows){
+			minx = std::min(w->pos.x, minx);
+			maxx = std::max(w->pos.x + w->size.x, maxx);
+			miny = std::min(w->pos.y, miny);
+			maxy = std::max(w->pos.y + w->size.y, maxy);
+		}
+		return vec2(maxx - minx, maxy - miny);
 	}
 
 }
