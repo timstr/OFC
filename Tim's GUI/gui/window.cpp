@@ -537,7 +537,7 @@ namespace ui {
 			}
 		}
 	}
-	void Window::startTransition(double duration, const std::function<void(double)> transitionFn, const std::function<void()>& onComplete){
+	void Window::startTransition(double duration, std::function<void(double)> transitionFn, std::function<void()> onComplete){
 		getContext().addTransition(Transition(this, duration, transitionFn, onComplete));
 	}
 	const std::vector<Window*>& Window::getChildWindows() const {

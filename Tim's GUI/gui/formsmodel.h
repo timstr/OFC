@@ -10,7 +10,7 @@ namespace ui {
 	namespace forms {
 
 		struct Property {
-			Property(const std::type_index& _typeindex) : typeindex(_typeindex) {
+			Property(std::type_index _typeindex) : typeindex(_typeindex) {
 
 			}
 			virtual ~Property(){
@@ -46,7 +46,7 @@ namespace ui {
 
 		template<typename Type>
 		struct TypeProperty : Property {
-			TypeProperty(const Type& _val = {})
+			TypeProperty(Type _val = {})
 				: Property(std::type_index(typeid(Type))),
 				value(_val) {
 
@@ -71,7 +71,7 @@ namespace ui {
 
 			struct Proxy {
 				template<typename PropertyType>
-				void operator=(const PropertyType& p){
+				void operator=(PropertyType p){
 					static_assert(std::is_base_of<Property, PropertyType>::value, "The provided type must derive from Property");
 					property = std::make_shared<PropertyType>(p);
 				}

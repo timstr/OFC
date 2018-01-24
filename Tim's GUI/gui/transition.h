@@ -5,7 +5,7 @@
 namespace ui {
 
 	struct Transition {
-		Transition(Window* _target, double _duration, const std::function<void(double)>& _transitionFn, const std::function<void()>& _onComplete = {});
+		Transition(Window* _target, double _duration, std::function<void(double)> _transitionFn, std::function<void()> _onComplete = {});
 
 		void apply();
 

@@ -10,7 +10,7 @@ namespace ui {
 		// slider
 
 		struct CallbackButton : Window {
-			CallbackButton(const std::string& label, const sf::Font& font, const std::function<void()>& _onClick) : onClick(_onClick) {
+			CallbackButton(std::string label, const sf::Font& font, std::function<void()> _onClick) : onClick(_onClick) {
 				auto text = new Text(label, font);
 				addChildWindow(text, vec2(0, 0));
 				size = text->size;
@@ -83,23 +83,23 @@ namespace ui {
 		on-return callback?
 		*/
 		struct TextEntryHelper : TextEntry {
-			TextEntryHelper(const std::string& str, const sf::Font& font,
-						const std::function<void(const std::string&)>& _on_return,
-						const std::function<bool(const std::string&)>& _validate = {},
-						const std::function<void(const std::string&)>& _on_change = {})
+			TextEntryHelper(std::string str, const sf::Font& font,
+						std::function<void(const std::string&)> _on_return,
+						std::function<bool(const std::string&)> _validate = {},
+						std::function<void(const std::string&)> _on_change = {})
 				: TextEntry(str, font), on_return(_on_return), validate(_validate), on_change(_on_change) {
 
 				setBackGroundColor(sf::Color(0xFFFFFFFF));
 				setTextColor(sf::Color(0xFF));
 			}
 
-			void onReturn(const std::string& entered_text) override {
+			void onReturn(std::string entered_text) override {
 				if (on_return && (!validate || validate(entered_text))){
 					on_return(entered_text);
 				}
 			}
 
-			void onType(const std::string& full_text) override {
+			void onType(std::string full_text) override {
 				if (validate){
 					if (validate(full_text)){
 						setBackGroundColor(sf::Color(0xFFFFFFFF));
@@ -119,20 +119,20 @@ namespace ui {
 		};
 
 		struct NumberTextEntry : TextEntry {
-			NumberTextEntry(float default, float _min, float _max, const std::function<void(float)>& _callback, const sf::Font& font)
+			NumberTextEntry(float default, float _min, float _max, std::function<void(float)> _callback, const sf::Font& font)
 				: TextEntry(toString(default), font), value(default), min(_min), max(_max), callback(_callback) {
 				setBackGroundColor(sf::Color(0xFFFFFFFF));
 				setTextColor(sf::Color(0xFF));
 			}
 
-			void onReturn(const std::string& entered_text) override {
+			void onReturn(std::string entered_text) override {
 				if (validate(entered_text) && callback){
 					float val = stringToFloat(entered_text);
 					callback(val);
 				}
 			}
 
-			void onType(const std::string& full_text) override {
+			void onType(std::string full_text) override {
 				if (validate(full_text)){
 					setBackGroundColor(sf::Color(0xFFFFFFFF));
 				} else {

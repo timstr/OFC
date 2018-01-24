@@ -12,13 +12,13 @@ namespace ui {
 
 		void init(unsigned width, unsigned height, std::string title, double _render_delay);
 
-		void addTransition(const Transition& transition);
+		void addTransition(Transition transition);
 		void applyTransitions();
 		void clearTransitions(Window* target);
 
-		void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::function<void()>& handler);
-		void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::vector<sf::Keyboard::Key>& required_keys, const std::function<void()>& handler);
-		void setQuitHandler(const std::function<bool()>& handler);
+		void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler);
+		void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler);
+		void setQuitHandler(std::function<bool()> handler);
 
 		void handleKeyPress(sf::Keyboard::Key key);
 		void handleMouseDown(sf::Mouse::Button button, vec2 pos);

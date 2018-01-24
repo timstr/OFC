@@ -5,9 +5,9 @@
 namespace ui {
 
 	struct Text : Window {
-		Text(const std::string& _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), int charsize = 15);
+		Text(std::string _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), int charsize = 15);
 
-		void setText(const std::string& _text);
+		void setText(std::string _text);
 		std::string getText();
 		void clearText();
 

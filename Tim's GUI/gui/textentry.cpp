@@ -4,15 +4,12 @@
 
 namespace ui {
 
-	TextEntry::TextEntry(const sf::Font& font, int charsize) : Text("", font, sf::Color(0xFF), charsize) {
-		text = sf::Text("", font, charsize);
-		updateSize();
+	TextEntry::TextEntry(const sf::Font& font, int charsize)
+		: Text("", font, sf::Color(0xFF), charsize) {
+
 	}
-	TextEntry::TextEntry(const std::string& str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color)
+	TextEntry::TextEntry(std::string str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color)
 		: Text(str, font, _text_color, charsize) {
-		text = sf::Text(str, font, charsize);
-		updateSize();
-		setTextColor(_text_color);
 		setBackGroundColor(_bg_color);
 	}
 	void TextEntry::beginTyping(){
@@ -36,10 +33,10 @@ namespace ui {
 		cursor_index = text.getString().getSize();
 		updateSize();
 	}
-	void TextEntry::onReturn(const std::string& entered_text){
+	void TextEntry::onReturn(std::string entered_text){
 
 	}
-	void TextEntry::onType(const std::string& full_text){
+	void TextEntry::onType(std::string full_text){
 
 	}
 	void TextEntry::render(sf::RenderWindow& renderwindow){

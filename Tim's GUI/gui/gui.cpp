@@ -12,13 +12,13 @@ namespace ui {
 		static Window rootwin;
 		return &rootwin;
 	}
-	void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::function<void()>& handler){
+	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler){
 		getContext().addKeyboardCommand(trigger_key, handler);
 	}
-	void addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::vector<sf::Keyboard::Key>& required_keys, const std::function<void()>& handler){
+	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler){
 		getContext().addKeyboardCommand(trigger_key, required_keys, handler);
 	}
-	void setQuitHandler(const std::function<bool()>& handler){
+	void setQuitHandler(std::function<bool()> handler){
 		getContext().setQuitHandler(handler);
 	}
 	long double getProgramTime(){

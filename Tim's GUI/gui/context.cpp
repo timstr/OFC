@@ -18,7 +18,7 @@ namespace ui {
 		current_window = root();
 		clock.restart();
 	}
-	void Context::addTransition(const Transition& transition){
+	void Context::addTransition(Transition transition){
 		transitions.push_back(transition);
 	}
 	void Context::applyTransitions(){
@@ -156,7 +156,7 @@ namespace ui {
 		click_button = button;
 		click_window = hitwin;
 	}
-	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::function<void()>& handler){
+	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler){
 		auto pair = std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>(trigger_key, {});
 		auto it = commands.find(pair);
 		if (it == commands.end()){
@@ -165,7 +165,7 @@ namespace ui {
 			throw;
 		}
 	}
-	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, const std::vector<sf::Keyboard::Key>& required_keys, const std::function<void()>& handler){
+	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler){
 		auto pair = std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>(trigger_key, required_keys);
 		auto it = commands.find(pair);
 		if (it == commands.end()){
@@ -174,7 +174,7 @@ namespace ui {
 			throw;
 		}
 	}
-	void Context::setQuitHandler(const std::function<bool()>& handler){
+	void Context::setQuitHandler(std::function<bool()> handler){
 		quit_handler = handler;
 	}
 	void Context::handleKeyPress(sf::Keyboard::Key key){

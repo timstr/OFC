@@ -12,7 +12,7 @@ namespace ui {
 		// tab navigation, space/enter toggling, automatic alignment and sizing
 
 		struct Form : Window {
-			Form(const Model& _model, const sf::Font& font) : model(_model) {
+			Form(Model _model, const sf::Font& font) : model(_model) {
 				size = {0, 5};
 				float y = 5;
 				for (auto it = model.properties.begin(); it != model.properties.end(); it++){
@@ -57,7 +57,7 @@ namespace ui {
 
 
 		struct StringProperty : TypeProperty<std::string> {
-			StringProperty(const std::string& str) : TypeProperty(str) {
+			StringProperty(std::string str) : TypeProperty(str) {
 
 			}
 

@@ -129,7 +129,7 @@ namespace ui {
 		virtual void render(sf::RenderWindow& renderwindow);
 		void renderChildWindows(sf::RenderWindow& renderwindow);
 
-		void startTransition(double duration, const std::function<void(double)> transitionFn, const std::function<void()>& onComplete = {});
+		void startTransition(double duration, std::function<void(double)> transitionFn, std::function<void()> onComplete = {});
 
 		const std::vector<Window*>& getChildWindows() const;
 		Window* getParent() const;
