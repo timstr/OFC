@@ -16,3 +16,5 @@ double stringToDouble(const std::string& str);
 
 // returns entire string read as int, or default_value
 int stringToInt(const std::string& str, int default_value = 0);
+
+bool stringIsInt(const std::string& str);

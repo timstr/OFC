@@ -62,3 +62,11 @@ int stringToInt(const std::string& str, int default_value){
 		return default_value;
 	}
 }
+
+bool stringIsInt(const std::string& str){
+	stream.str(str);
+	stream.clear();
+	int x;
+	stream >> x;
+	return !stream.fail() && stream.eof();
+}

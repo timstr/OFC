@@ -36,7 +36,7 @@ namespace ui {
 				return get<T>();
 			}
 
-			virtual Control* makeControl() = 0;
+			virtual Control* makeControl(const sf::Font& font) = 0;
 
 			private:
 			const std::type_index typeindex;
@@ -57,7 +57,7 @@ namespace ui {
 			private:
 
 			void* getValue() override {
-				return &value;
+				return static_cast<void*>(&value);
 			}
 		};
 
@@ -71,9 +71,9 @@ namespace ui {
 
 			struct Proxy {
 				template<typename PropertyType>
-				void operator=(PropertyType p){
+				void operator=(PropertyType&& p){
 					static_assert(std::is_base_of<Property, PropertyType>::value, "The provided type must derive from Property");
-					property = std::make_shared<PropertyType>(p);
+					property = std::make_shared<PropertyType>(std::forward<PropertyType>(p));
 				}
 
 				operator Property*(){

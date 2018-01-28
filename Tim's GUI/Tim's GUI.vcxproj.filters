@@ -71,5 +71,14 @@
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\window.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringproperty.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\numberproperty.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\doubleproperty.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

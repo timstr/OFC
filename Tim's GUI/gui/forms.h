@@ -5,6 +5,10 @@
 #include "formsmodel.h"
 #include "helpers.h"
 
+#include "stringproperty.h"
+
+// TODO: add toggle button, sliders, number text field for doubles and ints, pull-down list
+
 namespace ui {
 	namespace forms {
 		
@@ -17,7 +21,7 @@ namespace ui {
 				float y = 5;
 				for (auto it = model.properties.begin(); it != model.properties.end(); it++){
 					Text* caption = new Text(it->first, font);
-					Control* control = it->second->makeControl();
+					Control* control = it->second->makeControl(font);
 					controls.push_back(control);
 					addChildWindow(caption, insideLeft(this, 5), y);
 					addChildWindow(control, rightOf(caption, 5), y);
@@ -55,38 +59,5 @@ namespace ui {
 			friend struct Control;
 		};
 
-
-		struct StringProperty : TypeProperty<std::string> {
-			StringProperty(std::string str) : TypeProperty(str) {
-
-			}
-
-			Control* makeControl();
-		};
-
-		struct StringControl : Control {
-			StringControl(StringProperty& _strprop, const sf::Font& font) : strprop(_strprop) {
-				text = new TextEntry(strprop.value, font);
-				addChildWindow(text);
-				size = text->size;
-			}
-
-			void submit() override {
-				strprop.value = text->getText();
-			}
-
-			void render(sf::RenderWindow& rw) override {
-				size = text->size;
-				renderChildWindows(rw);
-			}
-
-			private:
-			TextEntry* text;
-			StringProperty& strprop;
-		};
-
-		Control* StringProperty::makeControl(){
-			return new StringControl(*this);
-		}
 	}
 }
