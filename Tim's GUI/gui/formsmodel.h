@@ -20,7 +20,7 @@ namespace ui {
 			template<typename T>
 			T& get(){
 				if (typeindex == std::type_index(typeid(T))){
-					return *(T*)getValue();
+					return *static_cast<T*>(getValue());
 				} else {
 					throw std::bad_cast();
 				}
@@ -74,10 +74,6 @@ namespace ui {
 				void operator=(PropertyType&& p){
 					static_assert(std::is_base_of<Property, PropertyType>::value, "The provided type must derive from Property");
 					property = std::make_shared<PropertyType>(std::forward<PropertyType>(p));
-				}
-
-				operator Property*(){
-					return property.get();
 				}
 
 				Property* operator->(){

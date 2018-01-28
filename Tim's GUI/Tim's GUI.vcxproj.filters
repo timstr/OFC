@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\forms">
+      <UniqueIdentifier>{138afa80-9f9d-4fd3-9b91-e3785e96b487}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\forms\properties">
+      <UniqueIdentifier>{eca9eeb1-aaf6-4bb9-bbfc-d2d5156ba6a2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\context.cpp">
@@ -41,15 +47,6 @@
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\context.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\forms.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formscontrol.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formsmodel.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\gui.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -71,14 +68,26 @@
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\window.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringproperty.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formsmodel.h">
+      <Filter>Source Files\forms</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\numberproperty.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\forms.h">
+      <Filter>Source Files\forms</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formscontrol.h">
+      <Filter>Source Files\forms</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\doubleproperty.h">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\forms\properties</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\floatproperty.h">
+      <Filter>Source Files\forms\properties</Filter>
+    </ClInclude>
+    <ClInclude Include="gui\integerproperty.h">
+      <Filter>Source Files\forms\properties</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringproperty.h">
+      <Filter>Source Files\forms\properties</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

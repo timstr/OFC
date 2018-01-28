@@ -6,8 +6,11 @@
 #include "helpers.h"
 
 #include "stringproperty.h"
+#include "floatproperty.h"
+#include "doubleproperty.h"
+#include "integerproperty.h"
 
-// TODO: add toggle button, sliders, number text field for doubles and ints, pull-down list
+// TODO: add toggle button, sliders, pull-down list
 
 namespace ui {
 	namespace forms {

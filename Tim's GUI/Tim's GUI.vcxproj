@@ -30,12 +30,13 @@
   <ItemGroup>
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\context.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\doubleproperty.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\floatproperty.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\forms.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formscontrol.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formsmodel.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\gui.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\helpers.h" />
-    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\numberproperty.h" />
+    <ClInclude Include="gui\integerproperty.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringhelpers.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringproperty.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\text.h" />
