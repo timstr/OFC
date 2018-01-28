@@ -22,7 +22,7 @@ namespace ui {
 				};
 
 
-				text = new helpers::TextEntryHelper(std::to_string(prop.value), font, {}, validate);
+				text = new helpers::TextEntryHelper(toString(prop.value), font, {}, validate);
 				addChildWindow(text);
 				size = text->size;
 			}
