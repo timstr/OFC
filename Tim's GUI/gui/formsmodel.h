@@ -61,6 +61,13 @@ namespace ui {
 			}
 		};
 
+		template<typename Type>
+		struct PropertyTemplate {
+			PropertyTemplate(){
+				static_assert(false, "A template specialization is not defined for this type");
+			}
+		};
+
 		struct Model {
 
 			struct Proxy;
@@ -70,10 +77,17 @@ namespace ui {
 			}
 
 			struct Proxy {
-				template<typename PropertyType>
-				void operator=(PropertyType&& p){
-					static_assert(std::is_base_of<Property, PropertyType>::value, "The provided type must derive from Property");
-					property = std::make_shared<PropertyType>(std::forward<PropertyType>(p));
+				template<typename Type>
+				void operator=(PropertyTemplate<Type> p){
+					static_assert(std::is_base_of<Property, PropertyTemplate<Type>>::value, "There is no default property for the provided type");
+					property = std::make_shared<PropertyTemplate<Type>>(p);
+				}
+
+				template<typename Type>
+				void operator=(Type&& t){
+					typedef std::remove_reference<Type>::type NonRefType;
+					static_assert(std::is_base_of<Property, PropertyTemplate<NonRefType>>::value, "There is no default property for the provided type");
+					property = std::make_shared<PropertyTemplate<NonRefType>>(std::forward<Type>(t));
 				}
 
 				Property* operator->(){

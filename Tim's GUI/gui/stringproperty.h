@@ -6,38 +6,41 @@
 namespace ui {
 	namespace forms {
 
-		struct StringProperty : TypeProperty<std::string> {
+		typedef PropertyTemplate<std::string> StringProperty;
+
+		template<>
+		struct PropertyTemplate<std::string> : TypeProperty<std::string> {
 			StringProperty(std::string str) : TypeProperty(str) {
 
 			}
 
-			Control* makeControl(const sf::Font& font) override;
-		};
-
-		struct StringControl : Control {
-			StringControl(StringProperty& _strprop, const sf::Font& font) : strprop(_strprop) {
-				text = new TextEntry(strprop.value, font);
-				addChildWindow(text);
-				size = text->size;
-			}
-
-			void submit() override {
-				strprop.value = text->getText();
-			}
-
-			void render(sf::RenderWindow& rw) override {
-				size = text->size;
-				renderChildWindows(rw);
+			Control* makeControl(const sf::Font& font) override {
+				return new StringControl(*this, font);
 			}
 
 			private:
-			TextEntry* text;
-			StringProperty& strprop;
-		};
 
-		Control* StringProperty::makeControl(const sf::Font& font){
-			return new StringControl(*this, font);
-		}
+			struct StringControl : Control {
+				StringControl(StringProperty& _strprop, const sf::Font& font) : strprop(_strprop) {
+					text = new TextEntry(strprop.value, font);
+					addChildWindow(text);
+					size = text->size;
+				}
+
+				void submit() override {
+					strprop.value = text->getText();
+				}
+
+				void render(sf::RenderWindow& rw) override {
+					size = text->size;
+					renderChildWindows(rw);
+				}
+
+				private:
+				TextEntry* text;
+				StringProperty& strprop;
+			};
+		};
 
 	}
 }
