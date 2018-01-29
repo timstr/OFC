@@ -77,16 +77,15 @@ namespace ui {
 			}
 
 			struct Proxy {
-				template<typename Type>
-				void operator=(PropertyTemplate<Type> p){
-					static_assert(std::is_base_of<Property, PropertyTemplate<Type>>::value, "There is no default property for the provided type");
-					property = std::make_shared<PropertyTemplate<Type>>(p);
+
+				template<typename PropertyType, typename = std::enable_if<std::is_base_of<Property, PropertyType>::value>::type>
+				void operator=(PropertyType p){
+					property = std::make_shared<PropertyType>(p);
 				}
 
-				template<typename Type>
+				template<typename Type, typename = std::enable_if<std::is_base_of<Property, PropertyTemplate<std::remove_reference<Type>::type>>::value>::type>
 				void operator=(Type&& t){
 					typedef std::remove_reference<Type>::type NonRefType;
-					static_assert(std::is_base_of<Property, PropertyTemplate<NonRefType>>::value, "There is no default property for the provided type");
 					property = std::make_shared<PropertyTemplate<NonRefType>>(std::forward<Type>(t));
 				}
 

@@ -9,6 +9,7 @@
 #include "floatproperty.h"
 #include "doubleproperty.h"
 #include "integerproperty.h"
+#include "pulldownproperty.h"
 
 // TODO: add toggle button, sliders, pull-down list
 

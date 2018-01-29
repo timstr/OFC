@@ -89,5 +89,8 @@
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringproperty.h">
       <Filter>Source Files\forms\properties</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\pulldownproperty.h">
+      <Filter>Source Files\forms\properties</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

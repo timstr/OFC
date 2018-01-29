@@ -36,6 +36,7 @@
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formsmodel.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\gui.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\helpers.h" />
+    <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\pulldownproperty.h" />
     <ClInclude Include="gui\integerproperty.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringhelpers.h" />
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringproperty.h" />
