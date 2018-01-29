@@ -27,11 +27,14 @@ namespace ui {
 
 			struct PullDownControl : Control {
 				PullDownControl(PullDownProperty& _prop, const sf::Font& font) : prop(_prop) {
+					const float width = 100.0f;
 					caption = new ui::Text(prop.items.size() > 0 ? prop.items[0].second : "-", font);
 					caption->setBackGroundColor(sf::Color(0xFFFFFFFF));
-					size = caption->size;
+					size.x = width;
+					caption->size.x = width;
+					size.y = caption->size.y;
 					addChildWindow(caption);
-					list = new List(*this, font);
+					list = new List(*this, font, width);
 					addChildWindow(list, below(caption));
 					list->visible = false;
 				}
@@ -41,21 +44,28 @@ namespace ui {
 				}
 
 				void onLeftClick(int clicks) override {
-					list->visible = true;
+					list->visible = !list->visible;
+					if (list->visible){
+						list->grabFocus();
+					}
 				}
 
 				struct Item : Window {
-					Item(PullDownControl& _control, const Type& _val, const std::string& _str, const sf::Font& font)
+					Item(PullDownControl& _control, const Type& _val, const std::string& _str, const sf::Font& font, float width)
 						: control(_control), val(_val), str(_str) {
 						ui::Text* text = new ui::Text(str, font);
 						text->setBackGroundColor(sf::Color(0xFFFFFFFF));
 						addChildWindow(text);
-						size = text->size;
+						size.x = width;
+						text->size.x = width;
+						text->size.y += 2.0f;
+						size.y = text->size.y;
 					}
 
 					void onLeftClick(int clicks) override {
 						control.prop.value = val;
 						control.caption->setText(str);
+						control.caption->size.x = size.x;
 						control.list->visible = false;
 					}
 
@@ -65,14 +75,18 @@ namespace ui {
 				};
 
 				struct List : Window {
-					List(PullDownControl& control, const sf::Font& font){
+					List(PullDownControl& control, const sf::Font& font, float width){
 						float ypos = 0.0f;
 						for (const auto& it : control.prop.items){
-							Item* item = new Item(control, it.first, it.second, font);
+							Item* item = new Item(control, it.first, it.second, font, width);
 							addChildWindow(item);
 							item->pos.y = ypos;
 							ypos += item->size.y;
 						}
+					}
+
+					void onLoseFocus() override {
+						visible = false;
 					}
 				};
 
