@@ -8,9 +8,7 @@ namespace ui {
 
 		// Control is a user interface element for manipulating a model's property
 		struct Control : ui::Window {
-			Control(){
-				bring_to_front = true;
-			}
+			Control();
 
 			virtual void submit() = 0;
 		};

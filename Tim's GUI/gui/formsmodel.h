@@ -10,12 +10,8 @@ namespace ui {
 	namespace forms {
 
 		struct Property {
-			Property(std::type_index _typeindex) : typeindex(_typeindex) {
-
-			}
-			virtual ~Property(){
-
-			}
+			Property(std::type_index _typeindex);
+			virtual ~Property();
 
 			template<typename T>
 			T& get(){
@@ -46,9 +42,18 @@ namespace ui {
 
 		template<typename Type>
 		struct TypeProperty : Property {
-			TypeProperty(Type _val = {})
+			TypeProperty()
+				: Property(std::type_index(typeid(Type))){
+
+			}
+			TypeProperty(Type _val)
 				: Property(std::type_index(typeid(Type))),
 				value(_val) {
+
+			}
+			TypeProperty(Type&& _val)
+				: Property(std::type_index(typeid(Type))),
+				value(std::move(_val)) {
 
 			}
 
@@ -72,9 +77,7 @@ namespace ui {
 
 			struct Proxy;
 
-			Proxy& operator[](const std::string& name){
-				return properties[name];
-			}
+			Proxy& operator[](const std::string& name);
 
 			struct Proxy {
 
@@ -89,9 +92,7 @@ namespace ui {
 					property = std::make_shared<PropertyTemplate<NonRefType>>(std::forward<Type>(t));
 				}
 
-				Property* operator->(){
-					return property.get();
-				}
+				Property* operator->();
 
 				template<typename T>
 				operator const T&(){

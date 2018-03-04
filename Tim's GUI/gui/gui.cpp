@@ -126,6 +126,9 @@ namespace ui {
 				}
 			}
 
+			// cache current time
+			getContext().updateTime();
+
 			//drag what's being dragged
 			getContext().handleDrag();
 

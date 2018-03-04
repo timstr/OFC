@@ -28,7 +28,6 @@ namespace ui {
 		void handleQuit(bool force);
 
 		bool hasQuit();
-		long double getProgramTime();
 		vec2 getMousePosition();
 		sf::RenderWindow& getRenderWindow();
 		double getRenderDelay();
@@ -40,6 +39,9 @@ namespace ui {
 		void setClipRect(const sf::FloatRect& rect);
 		void intersectClipRect(const sf::FloatRect& rect);
 		void resize(int w, int h);
+
+		void updateTime();
+		double getProgramTime() const;
 
 		Window* getDraggingWindow();
 		void setDraggingWindow(Window* window, vec2 offset = vec2(0, 0));
@@ -54,6 +56,9 @@ namespace ui {
 		bool quit;
 		// desired time between frames, in seconds
 		double render_delay;
+
+		// cached current program time
+		double program_time;
 
 		// the renderwindow to which all ui elements are drawn
 		sf::RenderWindow renderwindow;

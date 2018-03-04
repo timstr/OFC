@@ -9,9 +9,22 @@ namespace ui {
 		template<typename Type>
 		struct PullDownProperty : TypeProperty<Type> {
 			PullDownProperty(std::vector<std::pair<Type, std::string>> value_strings) : items(value_strings) {
+				if (items.size() > 0){
+					value = items[0].first;
+				}
+			}
+			PullDownProperty(std::vector<std::pair<Type, std::string>> value_strings, Type default_val) : TypeProperty(default_val), items(value_strings) {
 
 			}
 			PullDownProperty(std::vector<Type> values, std::function<std::string(Type)> _to_string){
+				for (const auto& val : values){
+					items.push_back(std::make_pair(val, _to_string(val)));
+				}
+				if (items.size() > 0){
+					value = items[0].first;
+				}
+			}
+			PullDownProperty(std::vector<Type> values, Type default_value, std::function<std::string(Type)> _to_string) : TypeProperty(default_val) {
 				for (const auto& val : values){
 					items.push_back(std::make_pair(val, _to_string(val)));
 				}
@@ -28,7 +41,14 @@ namespace ui {
 			struct PullDownControl : Control {
 				PullDownControl(PullDownProperty& _prop, const sf::Font& font) : prop(_prop) {
 					const float width = 100.0f;
-					caption = new ui::Text(prop.items.size() > 0 ? prop.items[0].second : "-", font);
+					std::string caption_str = "~";
+					for (const auto& item : prop.items){
+						if (item.first == prop.value){
+							caption_str = item.second;
+							break;
+						}
+					}
+					caption = new ui::Text(caption_str, font);
 					caption->setBackGroundColor(sf::Color(0xFFFFFFFF));
 					size.x = width;
 					caption->size.x = width;

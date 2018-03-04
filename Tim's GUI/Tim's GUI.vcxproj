@@ -20,6 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\context.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\forms.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formscontrol.cpp" />
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formsmodel.cpp" />
     <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\gui.cpp" />
     <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\stringhelpers.cpp" />
     <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\text.cpp" />

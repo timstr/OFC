@@ -414,7 +414,7 @@ namespace ui {
 	}
 	void Window::addChildWindow(Window *window){
 		if (window->parent != nullptr){
-			throw;
+			window->parent->releaseChildWindow(window);
 		}
 		window->parent = this;
 		childwindows.insert(childwindows.begin(), window);
@@ -447,14 +447,13 @@ namespace ui {
 		window->pos.y = ypos;
 	}
 	void Window::releaseChildWindow(Window* window){
+		window->parent = nullptr;
 		for (int i = 0; i < childwindows.size(); i++){
 			if (childwindows[i] == window){
-				childwindows[i]->parent = nullptr;
 				childwindows.erase(childwindows.begin() + i);
 				return;
 			}
 		}
-		throw;
 	}
 	void Window::bringToFront(){
 		if (!parent){
@@ -467,7 +466,6 @@ namespace ui {
 				return;
 			}
 		}
-		throw;
 	}
 	void Window::clear(){
 		while (childwindows.size() > 0){

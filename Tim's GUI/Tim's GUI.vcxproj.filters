@@ -42,6 +42,15 @@
     <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formscontrol.cpp">
+      <Filter>Source Files\forms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\formsmodel.cpp">
+      <Filter>Source Files\forms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\forms.cpp">
+      <Filter>Source Files\forms</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Tim%27s GUI\Tim%27s GUI\gui\context.h">

@@ -158,21 +158,11 @@ namespace ui {
 	}
 	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler){
 		auto pair = std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>(trigger_key, {});
-		auto it = commands.find(pair);
-		if (it == commands.end()){
-			commands[pair] = handler;
-		} else {
-			throw;
-		}
+		commands[pair] = handler;
 	}
 	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler){
 		auto pair = std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>(trigger_key, required_keys);
-		auto it = commands.find(pair);
-		if (it == commands.end()){
-			commands[pair] = handler;
-		} else {
-			throw;
-		}
+		commands[pair] = handler;
 	}
 	void Context::setQuitHandler(std::function<bool()> handler){
 		quit_handler = handler;
@@ -248,9 +238,6 @@ namespace ui {
 	bool Context::hasQuit(){
 		return quit;
 	}
-	long double Context::getProgramTime(){
-		return clock.getElapsedTime().asMilliseconds() / 1000.0;
-	}
 	sf::RenderWindow& Context::getRenderWindow(){
 		return renderwindow;
 	}
@@ -286,6 +273,12 @@ namespace ui {
 	void Context::resize(int w, int h){
 		width = w;
 		height = h;
+	}
+	void Context::updateTime(){
+		program_time = clock.getElapsedTime().asMilliseconds() / 1000.0;
+	}
+	double Context::getProgramTime() const {
+		return program_time;
 	}
 	Window* Context::getDraggingWindow(){
 		return dragging_window;

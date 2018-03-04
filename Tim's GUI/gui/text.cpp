@@ -47,12 +47,11 @@ namespace ui {
 	}
 	void Text::updateSize(){
 		sf::FloatRect bounds = text.getGlobalBounds();
+		size.y = std::max((float)text.getCharacterSize(), bounds.height - bounds.top);
 		if (text.getString().isEmpty()){
 			size.x = (float)text.getCharacterSize();
-			size.y = (float)text.getCharacterSize();
 		} else {
 			size.x = bounds.width + bounds.left;
-			size.y = bounds.height + bounds.top;
 		}
 	}
 
