@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-project(timsgui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library using SFML")
+project(tims-gui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library using SFML")
 
 set(SFML_STATIC_LIBRARIES TRUE)
 find_package(SFML 2.4 COMPONENTS system window graphics audio main REQUIRED)
@@ -9,7 +9,7 @@ if (NOT SFML_FOUND)
 	message(FATAL_ERROR "Could not find SFML. Please install SFML.")
 endif()
 
-set(timsgui_headers
+set(tims-gui_headers
 	include/gui/context.h
 	include/gui/doubleproperty.h
 	include/gui/floatproperty.h
@@ -28,7 +28,7 @@ set(timsgui_headers
 	include/gui/window.h
 )
 
-set(timsgui_srcs
+set(tims-gui_srcs
 	src/context.cpp
 	src/doubleproperty.cpp
 	src/forms.cpp
@@ -42,8 +42,8 @@ set(timsgui_srcs
 	src/window.cpp
 )
 	
-add_library(timsgui STATIC ${timsgui_headers} ${timsgui_srcs})
+add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})
 
-target_link_libraries(timsgui sfml-system sfml-window sfml-graphics sfml-audio sfml-main)
+target_link_libraries(tims-gui sfml-system sfml-window sfml-graphics sfml-audio sfml-main)
 
-target_include_directories(timsgui PUBLIC "include")
+target_include_directories(tims-gui PUBLIC "include")
