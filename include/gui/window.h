@@ -16,6 +16,7 @@ namespace ui {
 	/******* THOUGHTS ***********
 	- use shared pointers (and [const] references where possible) instead of raw pointers
 		-> this will make debugging much easier and children management much simpler
+		-> BEWARE: close() function is in violation of this
 	- general code cleanup
 		-> make methods const whenever possible
 		-> reconsider how arguments are passed
@@ -24,9 +25,14 @@ namespace ui {
 	- allow more natural binding to data
 		-> add update() method that performs custom update and updates children?
 			What would that look like?
+
+	- some common boilerplate that could use a design pattern:
+		-> keeping a well-typed reference to parent window to use it in handler functions
+		-> alignment is a bit messy
+			-> remove and add html-style block and inline elements?
 	*/
 
-	struct Window { // TODO: derive from std::enable_shared_from_this
+	struct Window { // TODO: derive from std::enable_shared_from_this?
 
 		// prevents the window from receiving input
 		bool disabled = false;
@@ -230,6 +236,7 @@ namespace ui {
 
 		XAlignment xalign = XAlignment(Alignment::None, nullptr);
 		YAlignment yalign = YAlignment(Alignment::None, nullptr);
+		bool children_aligned = false;
 
 		friend struct Context;
 	};
