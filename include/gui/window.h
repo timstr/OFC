@@ -16,7 +16,11 @@ namespace ui {
 	/******* THOUGHTS ***********
 	- use shared pointers (and [const] references where possible) instead of raw pointers
 		-> this will make debugging much easier and children management much simpler
-		-> BEWARE: close() function is in violation of this
+		-> BEWARE: close() function is possibly in violation of this
+		-> all child windows shall be shared_ptr, and thus a parent window may be aware
+		   of its children being shared_ptrs and weak_ptrs. HOWEVER for safety's sake, a
+		   window should not be aware of itself being a shared_ptr (don't derive from
+		   std::enable_shared_from_this).
 	- general code cleanup
 		-> make methods const whenever possible
 		-> reconsider how arguments are passed
@@ -26,13 +30,73 @@ namespace ui {
 		-> add update() method that performs custom update and updates children?
 			What would that look like?
 
+
 	- some common boilerplate that could use a design pattern:
-		-> keeping a well-typed reference to parent window to use it in handler functions
-		-> alignment is a bit messy
-			-> remove and add html-style block and inline elements?
+	-> keeping a well-typed reference to parent window to use it in handler functions
+	-> alignment is a bit messy
+	-> remove and add html-style block and inline elements?
+		   
+	|
+	|
+	*-->	- Every window shall have exclusive ownership of its child windows via a shared_ptr
+			- this shared_ptr shall be the *only* lasting shared_ptr to a child window, such that
+			  when a child window is removed from the parent, its resources are destroyed
+			- every other reference to this child shall be in the form of a weak_ptr or some convenient
+			  wrapper/alias
+	
+	Some thoughts:
+
+	using WindowRef<WindowType> = std::weak_ptr<WindowType>;
+
+	SomeWindow::someFunction(){
+		WindowRef<WidgetWin> interesting_window; // reference to some other window, whatever that may be
+
+		if (auto win = interesting_window.lock()){
+			win->makeMeHappy();
+		}
+	}
+
+	Window::close(){
+		if (auto p = parent.lock()){
+			p->remove(this); // remove last strong reference to this, so this should get destroyed
+		}
+	}
+
+	template<typename WindowType, typename... Args>
+	Window::add(Args... args){
+		child_windows.emplace_back(std::maked_shared<WindowType>(...args));
+	}
+	--> usage: window->add<Widget>("steve", 96);
+
+
+	ADD:
+	enum class Window::AlignmentType {
+		block, inline, float
+	};
+
+	AlignmentType Window::alignment
+
+	When windows are placed in an auto-aligning container:
+	-> consecutive inline elements are appended to the same row
+	-> block elements always go on a unique row
+
+	struct Divider : Window {
+		// like an HTML div, automatically aligns all child windows by their alignment type
+		// and resizes itself, with a padding option
+	}
+
+
+
+
+	// some convenient overloads...?
+	window::remove(WindowRef<T>);
+	window::remove(const Window&)
+	window::remove(Window const*)
+
+	
 	*/
 
-	struct Window { // TODO: derive from std::enable_shared_from_this?
+	struct Window {
 
 		// prevents the window from receiving input
 		bool disabled = false;
