@@ -5,15 +5,15 @@
 #include "textentry.h"
 #include "context.h"
 
-// TODO: reconsider references to improve move semantics and rvo
-
 namespace ui {
 
-	Window* root();
+	Window& root();
 
 	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler);
 	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler);
 	void setQuitHandler(std::function<bool()> handler);
+
+	void startTransition(double duration, std::function<void(double)> transitionFn, std::function<void()> onComplete = {});
 
 	long double getProgramTime();
 

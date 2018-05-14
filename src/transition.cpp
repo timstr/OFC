@@ -3,8 +3,8 @@
 
 namespace ui {
 
-	Transition::Transition(Window* _target, double _duration, std::function<void(double)> _transitionFn, std::function<void()> _onComplete)
-		: target(_target), duration(_duration), transitionFn(_transitionFn), onComplete(_onComplete), timestamp(getProgramTime()), completed(false) {
+	Transition::Transition(double _duration, std::function<void(double)> _transitionFn, std::function<void()> _onComplete)
+		: duration(_duration), transitionFn(_transitionFn), onComplete(_onComplete), timestamp(getProgramTime()), completed(false) {
 
 	}
 	void Transition::apply(){

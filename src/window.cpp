@@ -1,44 +1,40 @@
 #include "gui/window.h"
 #include "gui/gui.h"
+#include <set>
 
 namespace ui {
 
 	Window::~Window(){
-		if (parent){
-			parent->releaseChildWindow(this);
-			if (getContext().getCurrentWindow() == this){
-				getContext().focusTo(parent);
-			}
+		childwindows.clear();
+		if (inFocus()){
+			getContext().focusTo(parent);
 		}
-		getContext().clearTransitions(this);
-		if (getContext().getDraggingWindow() == this){
-			getContext().setDraggingWindow(nullptr);
-		}
-		clear();
 	}
 	void Window::close(){
-		delete this;
+		if (auto p = parent.lock()){
+			p->remove(weak_from_this());
+		}
 	}
-	bool Window::hit(vec2 testpos){
+	bool Window::hit(vec2 testpos) const {
 		return ((testpos.x >= 0.0f) && (testpos.x < size.x) && (testpos.y >= 0.0f) && (testpos.y < size.y));
 	}
-	vec2 Window::localMousePos() const{
+	vec2 Window::localMousePos() const {
 		vec2 pos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
-		const Window *window = this;
+		std::shared_ptr<const Window> window = shared_from_this();
 		while (window){
 			pos -= window->pos;
-			window = window->parent;
+			window = window->parent.lock();
 		}
-		return(pos);
+		return pos;
 	}
-	vec2 Window::absPos(){
-		vec2 pos = vec2();
-		Window *window = this;
-		while (window != nullptr){
+	vec2 Window::rootPos() const {
+		vec2 pos = {0, 0};
+		std::shared_ptr<const Window> window = shared_from_this();
+		while (window){
 			pos += window->pos;
-			window = window->parent;
+			window = window->parent.lock();
 		}
-		return(pos);
+		return pos;
 	}
 	void Window::onLeftClick(int clicks){
 
@@ -53,14 +49,14 @@ namespace ui {
 
 	}
 	bool Window::leftMouseDown() const {
-		if (getContext().getCurrentWindow() == this){
+		if (inFocus()){
 			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 		} else {
 			return false;
 		}
 	}
 	bool Window::rightMouseDown() const {
-		if (getContext().getCurrentWindow() == this){
+		if (inFocus()){
 			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 		} else {
 			return false;
@@ -70,104 +66,40 @@ namespace ui {
 
 	}
 	void Window::startDrag(){
-		if (getContext().getDraggingWindow() != this){
-			getContext().focusTo(this);
-			getContext().setDraggingWindow(this, (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
-		}
+		grabFocus();
+		getContext().setDraggingWindow(weak_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
 	}
 	void Window::onDrag(){
 		
 	}
 	void Window::stopDrag() const {
-		if (getContext().getDraggingWindow() == this){
-			getContext().setDraggingWindow(nullptr);
+		if (dragging()){
+			getContext().setDraggingWindow({});
 		}
 	}
 	bool Window::dragging() const {
-		return (getContext().getDraggingWindow() == this);
+		return (getContext().getDraggingWindow().lock() == shared_from_this());
 	}
 	void Window::onHover(){
 
 	}
-	void Window::onHoverWithWindow(Window *drag_window){
+	void Window::onHoverWithWindow(std::weak_ptr<Window> drag_window){
 
 	}
-	bool Window::onDropWindow(Window *window){
+	bool Window::onDropWindow(std::weak_ptr<Window> window){
 		return false;
 	}
 	void Window::onFocus(){
 
 	}
 	bool Window::inFocus() const {
-		return getContext().getCurrentWindow() == this;
+		return (getContext().getCurrentWindow().lock() == shared_from_this());
 	}
 	void Window::onLoseFocus(){
 
 	}
-	void Window::focusToNextWindow() const {
-		if (parent && inFocus()){
-			Window* next = nullptr;
-			for (Window* window : parent->childwindows){
-				if (window->pos.y > pos.y){
-					if (!next || window->pos.y < next->pos.y){
-						next = window;
-					}
-				} else if (window->pos.y == pos.y){
-					if (window->pos.x > pos.x){
-						if (!next || window->pos.x < next->pos.x){
-							next = window;
-						}
-					}
-				}
-			}
-			if (next == nullptr){
-				next = parent->childwindows.front();
-				for (Window* window : parent->childwindows){
-					if (window->pos.y < next->pos.y){
-						next = window;
-					} else if (window->pos.y == next->pos.y){
-						if (window->pos.x < next->pos.x){
-							next = window;
-						}
-					}
-				}
-			}
-			getContext().focusTo(next);
-		}
-	}
-	void Window::focusToPreviousWindow() const {
-		if (parent && inFocus()){
-			Window* prev = nullptr;
-			for (Window* window : parent->childwindows){
-				if (window->pos.y < pos.y){
-					if (!prev || window->pos.y > prev->pos.y){
-						prev = window;
-					}
-				} else if (window->pos.y == pos.y){
-					if (window->pos.x < pos.x){
-						if (!prev || window->pos.x > prev->pos.x){
-							prev = window;
-						}
-					}
-				}
-			}
-			if (prev == nullptr){
-				prev = parent->childwindows.front();
-				for (Window* window : parent->childwindows){
-					if (window->pos.y > prev->pos.y){
-						prev = window;
-					} else if (window->pos.y == prev->pos.y){
-						if (window->pos.x > prev->pos.x){
-							prev = window;
-						}
-					}
-				}
-			}
-			getContext().focusTo(prev);
-		}
-	}
 	void Window::grabFocus(){
-		getContext().focusTo(this);
+		getContext().focusTo(weak_from_this());
 	}
 	void Window::onKeyDown(sf::Keyboard::Key key){
 
@@ -176,230 +108,69 @@ namespace ui {
 
 	}
 	bool Window::keyDown(sf::Keyboard::Key key) const {
-		if (inFocus()){
-			return sf::Keyboard::isKeyPressed(key) ;
-		} else {
-			return false;
-		}
+		return inFocus() && sf::Keyboard::isKeyPressed(key);
 	}
-	Window::Alignment::Alignment(Type _type, Window* _relative_to, float _margin){
-		type = _type;
-		relative_to = _relative_to;
-		margin = _margin;
-	}
-	Window::XAlignment::XAlignment(Type type, Window* relative_to, float margin) : Alignment(type, relative_to, margin) {
-
-	}
-	Window::YAlignment::YAlignment(Type type, Window* relative_to, float margin) : Alignment(type, relative_to, margin) {
-
-	}
-	void Window::setXAlign(XAlignment xalignment){
-		xalign = xalignment;
-		if (parent){
-			parent->children_aligned = false;
-		}
-	}
-	void Window::setYAlign(YAlignment yalignment){
-		yalign = yalignment;
-		if (parent){
-			parent->children_aligned = false;
-		}
-	}
-	void Window::align(){
-		if (xalign.type != Alignment::None){
-			if (xalign.relative_to){
-				float relx = xalign.relative_to == parent ? 0.0f : xalign.relative_to->pos.x;
-				switch (xalign.type){
-					case Alignment::Before:
-						pos.x = relx - size.x - xalign.margin;
-						break;
-					case Alignment::After:
-						pos.x = relx + xalign.relative_to->size.x + xalign.margin;
-						break;
-					case Alignment::Center:
-						pos.x = relx + xalign.relative_to->size.x * 0.5f - size.x * 0.5f;
-						break;
-					case Alignment::InsideMin:
-						pos.x = relx + xalign.margin;
-						break;
-					case Alignment::InsideMax:
-						pos.x = relx + xalign.relative_to->size.x - size.x - xalign.margin;
-						break;
-				}
-			}
-		}
-
-		if (yalign.type != Alignment::None){
-			if (yalign.relative_to){
-				float rely = yalign.relative_to == parent ? 0.0f : yalign.relative_to->pos.y;
-				switch (yalign.type){
-					case Alignment::Before:
-						pos.y = rely - size.y - yalign.margin;
-						break;
-					case Alignment::After:
-						pos.y = rely + yalign.relative_to->size.y + yalign.margin;
-						break;
-					case Alignment::Center:
-						pos.y = rely + yalign.relative_to->size.y * 0.5f - size.y * 0.5f;
-						break;
-					case Alignment::InsideMin:
-						pos.y = rely + yalign.margin;
-						break;
-					case Alignment::InsideMax:
-						pos.y = rely + yalign.relative_to->size.y - size.y - yalign.margin;
-						break;
+	void Window::remove(std::weak_ptr<Window> window){
+		if (auto win = window.lock()){
+			for (auto it = childwindows.begin(); it != childwindows.end(); ++it){
+				if (*it == win){
+					childwindows.erase(it);
+					return;
 				}
 			}
 		}
 	}
-	void Window::alignChildren(){
-		std::set<Window*> remaining;
-
-		for (Window* w : childwindows){
-			remaining.insert(w);
-		}
-
-		while (remaining.size() > 0){
-			bool found = false;
-			for (auto it = remaining.begin(); !found && it != remaining.end(); it++){
-				Window* xwin = (*it)->xalign.relative_to;
-				Window* ywin = (*it)->yalign.relative_to;
-				if ((!xwin || (remaining.find(xwin) == remaining.end())) && (!ywin || (remaining.find(ywin) == remaining.end()))){
-					(*it)->align();
-					remaining.erase(it);
-					found = true;
-					break;
+	std::shared_ptr<Window> Window::release(std::weak_ptr<Window> window){
+		if (auto win = window.lock()){
+			for (auto it = childwindows.begin(); it != childwindows.end(); ++it){
+				if (*it == win){
+					std::shared_ptr<Window> child = *it;
+					childwindows.erase(it);
+					return child;
 				}
 			}
-			if (!found){
-				throw std::runtime_error("The relative alignments are cyclical");
-			}
 		}
-	}
-	void Window::alignAndAutoSize(float margin){
-		// TODO: implement
-	}
-	Window::XAlignment Window::noAlignX(){
-		return XAlignment(Alignment::None);
-	}
-	Window::XAlignment Window::leftOf(Window* window, float margin){
-		return XAlignment(Alignment::Before, window, margin);
-	}
-	Window::XAlignment Window::rightOf(Window* window, float margin){
-		return XAlignment(Alignment::After, window, margin);
-	}
-	Window::XAlignment Window::middleOfX(Window* window){
-		return XAlignment(Alignment::Center, window, 0.0f);
-	}
-	Window::XAlignment Window::insideLeft(Window* window, float margin){
-		return XAlignment(Alignment::InsideMin, window, margin);
-	}
-	Window::XAlignment Window::insideRight(Window* window, float margin){
-		return XAlignment(Alignment::InsideMax, window, margin);
-	}
-	Window::YAlignment Window::noAlignY(){
-		return YAlignment(Alignment::None);
-	}
-	Window::YAlignment Window::above(Window* window, float margin){
-		return YAlignment(Alignment::Before, window, margin);
-	}
-	Window::YAlignment Window::below(Window* window, float margin){
-		return YAlignment(Alignment::After, window, margin);
-	}
-	Window::YAlignment Window::middleOfY(Window* window){
-		return YAlignment(Alignment::Center, window, 0.0f);
-	}
-	Window::YAlignment Window::insideTop(Window* window, float margin){
-		return YAlignment(Alignment::InsideMin, window, margin);
-	}
-	Window::YAlignment Window::insideBottom(Window* window, float margin){
-		return YAlignment(Alignment::InsideMax, window, margin);
-	}
-	void Window::addChildWindow(Window *window){
-		if (window->parent != nullptr){
-			window->parent->releaseChildWindow(window);
-		}
-		window->parent = this;
-		childwindows.insert(childwindows.begin(), window);
-	}
-	void Window::addChildWindow(Window *window, vec2 pos){
-		window->pos = pos;
-		addChildWindow(window);
-	}
-	void Window::addChildWindow(Window *window, XAlignment xalignment){
-		addChildWindow(window);
-		window->setXAlign(xalignment);
-	}
-	void Window::addChildWindow(Window *window, YAlignment yalignment){
-		addChildWindow(window);
-		window->setYAlign(yalignment);
-	}
-	void Window::addChildWindow(Window *window, XAlignment xalignment, YAlignment yalignment){
-		addChildWindow(window);
-		window->setXAlign(xalignment);
-		window->setYAlign(yalignment);
-	}
-	void Window::addChildWindow(Window* window, float xpos, YAlignment yalignment){
-		addChildWindow(window);
-		window->pos.x = xpos;
-		window->setYAlign(yalignment);
-	}
-	void Window::addChildWindow(Window* window, XAlignment xalignment, float ypos){
-		addChildWindow(window);
-		window->setXAlign(xalignment);
-		window->pos.y = ypos;
-	}
-	void Window::releaseChildWindow(Window* window){
-		window->parent = nullptr;
-		for (int i = 0; i < childwindows.size(); i++){
-			if (childwindows[i] == window){
-				childwindows.erase(childwindows.begin() + i);
-				return;
-			}
-		}
+		return nullptr;
 	}
 	void Window::bringToFront(){
-		if (!parent){
-			return;
-		}
-		for (int i = 0; i < parent->childwindows.size(); i++){
-			if (parent->childwindows[i] == this){
-				parent->childwindows.erase(parent->childwindows.begin() + i);
-				parent->childwindows.insert(parent->childwindows.begin(), this);
-				return;
+		if (auto p = parent.lock()){
+			auto self = shared_from_this();
+			for (auto it = p->childwindows.begin(); it != p->childwindows.end(); ++it){
+				if (*it == self){
+					p->childwindows.erase(it);
+					p->childwindows.insert(p->childwindows.begin(), self);
+					return;
+				}
 			}
 		}
 	}
 	void Window::clear(){
-		while (childwindows.size() > 0){
-			childwindows[0]->close();
-		}
+		childwindows.clear();
 	}
-	Window* Window::findWindowAt(vec2 _pos){
+	std::weak_ptr<Window> Window::findWindowAt(vec2 _pos){
 		if (!visible || disabled){
-			return nullptr;
+			return {};
 		}
 
 		if (clipping && ((_pos.x < 0.0f) || (_pos.x > size.x) || (_pos.y < 0.0) || (_pos.y > size.y))){
-			return false;
+			return {};
 		}
 
-		Window* window = nullptr;
-		for (int i = 0; i < childwindows.size() && window == nullptr; i++){
-			window = childwindows[i]->findWindowAt(_pos - childwindows[i]->pos);
-			if (window && (window == getContext().getDraggingWindow())){
-				window = nullptr;
+		std::weak_ptr<Window> window;
+		for (auto it = childwindows.begin(); it != childwindows.end(); ++it){
+			window = (*it)->findWindowAt(_pos - (*it)->pos);
+			if (auto win = window.lock()){
+				if (!win->dragging()){
+					return win;
+				}
 			}
-		}
-		if (window){
-			return window;
 		}
 
 		if (this->hit(_pos)){
-			return this;
+			return weak_from_this();
 		}
 
-		return nullptr;
+		return {};
 	}
 	void Window::render(sf::RenderWindow& renderwindow){
 		sf::RectangleShape rectshape;
@@ -411,40 +182,39 @@ namespace ui {
 		renderChildWindows(renderwindow);
 	}
 	void Window::renderChildWindows(sf::RenderWindow& renderwindow){
-		if (!children_aligned){
-			alignChildren();
-			children_aligned = true;
-		}
-		for (int i = (int)childwindows.size() - 1; i >= 0; i -= 1){
-			if (childwindows[i]->visible){
-				if (childwindows[i]->clipping){
-					getContext().translateView(childwindows[i]->pos);
+		for (auto it = childwindows.rbegin(); it != childwindows.rend(); ++it){
+			const std::shared_ptr<Window>& child = *it;
+			if (child->visible){
+				if (child->clipping){
+					getContext().translateView(child->pos);
 
 					sf::FloatRect rect = getContext().getClipRect();
 					vec2 pos = getContext().getViewOffset();
-					getContext().intersectClipRect(sf::FloatRect(-pos, childwindows[i]->size));
+					getContext().intersectClipRect(sf::FloatRect(-pos, child->size));
 					getContext().updateView();
-					childwindows[i]->render(renderwindow);
+					child->render(renderwindow);
 					getContext().setClipRect(rect);
-					getContext().translateView(-childwindows[i]->pos);
+					getContext().translateView(-child->pos);
 					getContext().updateView();
 				} else {
-					getContext().translateView(childwindows[i]->pos);
+					getContext().translateView(child->pos);
 					getContext().updateView();
-					childwindows[i]->render(renderwindow);
-					getContext().translateView(-childwindows[i]->pos);
+					child->render(renderwindow);
+					getContext().translateView(-child->pos);
 					getContext().updateView();
 				}
 			}
 		}
 	}
-	void Window::startTransition(double duration, std::function<void(double)> transitionFn, std::function<void()> onComplete){
-		getContext().addTransition(Transition(this, duration, transitionFn, onComplete));
+	std::vector<std::weak_ptr<Window>> Window::getChildWindows() const {
+		std::vector<std::weak_ptr<Window>> ret;
+		ret.reserve(childwindows.size());
+		for (auto it = childwindows.begin(); it != childwindows.end(); ++it){
+			ret.push_back(*it);
+		}
+		return ret;
 	}
-	const std::vector<Window*>& Window::getChildWindows() const {
-		return childwindows;
-	}
-	Window* Window::getParent() const {
+	std::weak_ptr<Window> Window::getParent() const {
 		return parent;
 	}
 

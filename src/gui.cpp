@@ -8,9 +8,9 @@
 
 namespace ui {
 	
-	Window* root(){
-		static Window rootwin;
-		return &rootwin;
+	Window& root(){
+		static std::shared_ptr<Window> rootwin { std::make_shared<Window>() };
+		return *rootwin;
 	}
 	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler){
 		getContext().addKeyboardCommand(trigger_key, handler);
@@ -20,6 +20,9 @@ namespace ui {
 	}
 	void setQuitHandler(std::function<bool()> handler){
 		getContext().setQuitHandler(handler);
+	}
+	void startTransition(double duration, std::function<void(double)> transitionFn, std::function<void()> onComplete){
+		getContext().addTransition(Transition(duration, transitionFn, onComplete));
 	}
 	long double getProgramTime(){
 		return getContext().getProgramTime();
@@ -54,43 +57,39 @@ namespace ui {
 						getContext().resize(event.size.width, event.size.height);
 						break;
 					case sf::Event::LostFocus:
-						if (getContext().getCurrentWindow()){
-							getContext().focusTo(nullptr);
-						}
-						if (getContext().getDraggingWindow()){
-							getContext().setDraggingWindow(nullptr);
-						}
+						getContext().setDraggingWindow({});
 						break;
 					case sf::Event::TextEntered:
-						if (getContext().getTextEntry()){
+						// TODO: this looks sketchy
+						if (auto text_entry = getContext().getTextEntry().lock()){
 							if (event.text.unicode != '\b'){
-								getContext().getTextEntry()->write(static_cast<char>(event.text.unicode));
+								text_entry->write(static_cast<char>(event.text.unicode));
 							}
 						}
 						break;
 					case sf::Event::KeyPressed:
-						if (getContext().getTextEntry()){
+						if (auto text_entry = getContext().getTextEntry().lock()){
 							switch (event.key.code){
 								case sf::Keyboard::BackSpace:
-									getContext().getTextEntry()->onBackspace();
+									text_entry->onBackspace();
 									break;
 								case sf::Keyboard::Delete:
-									getContext().getTextEntry()->onDelete();
+									text_entry->onDelete();
 									break;
 								case sf::Keyboard::Left:
-									getContext().getTextEntry()->onLeft();
+									text_entry->onLeft();
 									break;
 								case sf::Keyboard::Right:
-									getContext().getTextEntry()->onRight();
+									text_entry->onRight();
 									break;
 								case sf::Keyboard::Home:
-									getContext().getTextEntry()->onHome();
+									text_entry->onHome();
 									break;
 								case sf::Keyboard::End:
-									getContext().getTextEntry()->onEnd();
+									text_entry->onEnd();
 									break;
 								case sf::Keyboard::Return:
-									getContext().getTextEntry()->onReturn(getContext().getTextEntry()->getText());
+									text_entry->onReturn(text_entry->getText());
 									break;
 								default:
 									getContext().handleKeyPress(event.key.code);
@@ -102,24 +101,28 @@ namespace ui {
 						
 						break;
 					case sf::Event::KeyReleased:
-						if (getContext().getCurrentWindow()){
-							getContext().getCurrentWindow()->onKeyUp(event.key.code);
+						if (auto curr = getContext().getCurrentWindow().lock()){
+							curr->onKeyUp(event.key.code);
 						}
 						break;
 					case sf::Event::MouseButtonPressed:
 					{
-						getContext().handleMouseDown(event.mouseButton.button, vec2((float)event.mouseButton.x, (float)event.mouseButton.y));
+						getContext().handleMouseDown(event.mouseButton.button,
+													 vec2((float)event.mouseButton.x,
+														  (float)event.mouseButton.y));
 						break;
 					}
 					case sf::Event::MouseButtonReleased:
-						getContext().handleMouseUp(event.mouseButton.button, vec2((float)event.mouseButton.x, (float)event.mouseButton.y));
+						getContext().handleMouseUp(event.mouseButton.button,
+												   vec2((float)event.mouseButton.x,
+														(float)event.mouseButton.y));
 						break;
 					case sf::Event::MouseWheelScrolled:
-						if (getContext().getCurrentWindow()){
+						if (auto curr = getContext().getCurrentWindow().lock()){
 							if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
-								getContext().getCurrentWindow()->onScroll(event.mouseWheelScroll.delta, 0.0);
+								curr->onScroll(event.mouseWheelScroll.delta, 0.0);
 							} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
-								getContext().getCurrentWindow()->onScroll(0.0, event.mouseWheelScroll.delta);
+								curr->onScroll(0.0, event.mouseWheelScroll.delta);
 							}
 						}
 						break;
@@ -143,17 +146,19 @@ namespace ui {
 			getContext().resetView();
 
 			//render the root window, and all child windows it contains
-			root()->size = getScreenSize();
-			root()->render(getContext().getRenderWindow());
+			root().size = getScreenSize();
+			root().render(getContext().getRenderWindow());
 
 			//highlight current window if alt is pressed
-			if ((sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) || sf::Keyboard::isKeyPressed(sf::Keyboard::RAlt)) && getContext().getCurrentWindow()){
-				sf::RectangleShape rect(getContext().getCurrentWindow()->size);
-				rect.setPosition(getContext().getCurrentWindow()->absPos());
-				rect.setFillColor(sf::Color(0));
-				rect.setOutlineColor(sf::Color(0xFFFF0080));
-				rect.setOutlineThickness(2);
-				getContext().getRenderWindow().draw(rect);
+			if (auto curr = getContext().getCurrentWindow().lock()){
+				if ((sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) || sf::Keyboard::isKeyPressed(sf::Keyboard::RAlt))){
+					sf::RectangleShape rect(curr->size);
+					rect.setPosition(curr->rootPos());
+					rect.setFillColor(sf::Color(0));
+					rect.setOutlineColor(sf::Color(0xFFFF0080));
+					rect.setOutlineThickness(2);
+					getContext().getRenderWindow().draw(rect);
+				}
 			}
 
 			getContext().getRenderWindow().display();
@@ -165,6 +170,6 @@ namespace ui {
 			prev_time = now;
 		}
 
-		root()->clear();
+		root().clear();
 	}
 }

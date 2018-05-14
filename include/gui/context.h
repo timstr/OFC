@@ -14,7 +14,6 @@ namespace ui {
 
 		void addTransition(Transition transition);
 		void applyTransitions();
-		void clearTransitions(Window* target);
 
 		void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler);
 		void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler);
@@ -43,12 +42,12 @@ namespace ui {
 		void updateTime();
 		double getProgramTime() const;
 
-		Window* getDraggingWindow();
-		void setDraggingWindow(Window* window, vec2 offset = vec2(0, 0));
-		void focusTo(Window* window);
-		Window* getCurrentWindow();
-		TextEntry* getTextEntry();
-		void setTextEntry(TextEntry* textentry);
+		std::weak_ptr<Window> getDraggingWindow();
+		void setDraggingWindow(std::weak_ptr<Window> window, vec2 offset = vec2(0, 0));
+		void focusTo(std::weak_ptr<Window> window);
+		std::weak_ptr<Window> getCurrentWindow();
+		std::weak_ptr<TextEntry> getTextEntry();
+		void setTextEntry(std::weak_ptr<TextEntry> textentry);
 
 		private:
 
@@ -64,18 +63,18 @@ namespace ui {
 		sf::RenderWindow renderwindow;
 
 		// the window currently being dragged
-		Window* dragging_window;
+		std::weak_ptr<Window> dragging_window;
 		// the mouse's relative position while dragging
 		vec2 drag_offset;
 
 		// the window currently in focus
-		Window* current_window;
+		std::weak_ptr<Window> current_window;
 
 		// the text entry currently being typed into
-		TextEntry* text_entry;
+		std::weak_ptr<TextEntry> text_entry;
 
 		// the window that was last clicked
-		Window* click_window;
+		std::weak_ptr<Window> click_window;
 		// maximum time between clicks of a double-click, in seconds
 		const float doubleclicktime;
 		// time of last click

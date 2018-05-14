@@ -15,12 +15,16 @@ namespace ui {
 	}
 	void TextEntry::beginTyping(){
 		grabFocus();
-		getContext().setTextEntry(this);
+		auto self = std::dynamic_pointer_cast<TextEntry, Window>(shared_from_this());
+		getContext().setTextEntry(self);
 	}
 	void TextEntry::endTyping(){
-		if (getContext().getTextEntry() == this){
-			getContext().setTextEntry(nullptr);
+		if (typing()){
+			getContext().setTextEntry({});
 		}
+	}
+	bool TextEntry::typing() const {
+		return (getContext().getTextEntry().lock() == shared_from_this());
 	}
 	void TextEntry::moveTo(vec2 pos){
 		for (int i = 0; i < text.getString().getSize(); i++){
@@ -45,7 +49,7 @@ namespace ui {
 		rect.setFillColor(background_color);
 		renderwindow.draw(rect);
 		renderwindow.draw(text);
-		if (getContext().getTextEntry() == this){
+		if (typing()){
 			positionCursor();
 			sf::RectangleShape rect2(vec2(cursor_width, (float)text.getCharacterSize()));
 			rect2.setFillColor(sf::Color(

@@ -1,13 +1,11 @@
 #include "gui/context.h"
 #include "gui/gui.h"
+#include <iostream>
 
 namespace ui {
 
-	Context::Context() : doubleclicktime(0.25f) {
-		quit = false;
-		dragging_window = nullptr;
-		current_window = nullptr;
-		text_entry = nullptr;
+	Context::Context() : doubleclicktime(0.25f), quit(false) {
+	
 	}
 	void Context::init(unsigned width, unsigned height, std::string title, double _render_delay){
 		render_delay = _render_delay;
@@ -15,93 +13,88 @@ namespace ui {
 		settings.antialiasingLevel = 8;
 		getRenderWindow().create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
 		resetView();
-		current_window = root();
+		current_window = root().weak_from_this();
 		clock.restart();
 	}
 	void Context::addTransition(Transition transition){
 		transitions.push_back(transition);
 	}
 	void Context::applyTransitions(){
-		for (int i = 0; i < transitions.size();){
-			if (transitions[i].complete()){
-				transitions.erase(transitions.begin() + i);
+		for (auto it = transitions.begin(); it != transitions.end(); ++it){
+			if (it->complete()){
+				it = transitions.erase(it);
 			} else {
-				transitions[i].apply();
-				i++;
+				it->apply();
 			}
 		}
 	}
-	void Context::clearTransitions(Window* target){
-		for (auto it = transitions.begin(); it != transitions.end();){
-			if (it->target == target){
-				transitions.erase(it);
+	void Context::focusTo(std::weak_ptr<Window> window){
+		if (auto win = window.lock()){
+			if (auto curr = current_window.lock()){
+				// if the window is already in focus, no work to do here
+				if (win == curr){
+					return;
+				}
+
+				// stop typing now
+				if (!getTextEntry().expired()){
+					setTextEntry({});
+				}
+
+				// paths to old and new focused window
+				std::vector<std::shared_ptr<Window>> oldpath, newpath;
+
+				// populate old
+				std::shared_ptr<Window> old = curr;
+				while (old){
+					oldpath.push_back(old);
+					old = old->parent.lock();
+				}
+
+				// populate new
+				std::shared_ptr<Window> nu = win;
+				while (nu){
+					oldpath.push_back(nu);
+					nu = nu->parent.lock();
+				}
+
+				// remove common parts
+				while (!oldpath.empty() && !newpath.empty() && (oldpath.back() == newpath.back())){
+					oldpath.pop_back();
+					newpath.pop_back();
+				}
+
+				// call handlers in order
+				for (auto it = oldpath.begin(); it != oldpath.end(); ++it){
+					(*it)->onLoseFocus();
+				}
+				for (auto it = newpath.rbegin(); it != newpath.rend(); ++it){
+					(*it)->onFocus();
+				}
 			} else {
-				it++;
+				std::cerr << "Warning: The GUI Context's current window is invalid." << std::endl;
 			}
-		}
-	}
-	void Context::focusTo(Window* window){
-		if (current_window == window){
-			return;
-		}
-
-		if (dragging_window){
-			dragging_window = nullptr;
-		}
-		if (getTextEntry()){
-			setTextEntry(nullptr);
-		}
-
-		std::vector<Window*> current_path;
-		std::vector<Window*> new_path;
-
-		Window* twindow = current_window;
-		current_window = window;
-
-		while (twindow != nullptr){
-			current_path.push_back(twindow);
-			twindow = twindow->parent;
-		}
-
-		twindow = window;
-		while (twindow != nullptr){
-			new_path.push_back(twindow);
-			twindow = twindow->parent;
-		}
-
-		while ((current_path.size() > 0) && (new_path.size() > 0) && (current_path.back() == new_path.back())){
-			current_path.pop_back();
-			new_path.pop_back();
-		}
-
-		while (current_path.size() > 0){
-			current_path.front()->onLoseFocus();
-			current_path.erase(current_path.begin());
-		}
-
-		while (new_path.size() > 0){
-			if (new_path.back()->parent && new_path.back()->bring_to_front){
-				new_path.back()->bringToFront();
-			}
-			new_path.back()->onFocus();
-			new_path.pop_back();
+		} else {
+			std::cerr << "Warning: An invalid window was attempted to be focused to" << std::endl;
 		}
 	}
 	vec2 Context::getMousePosition(){
 		return (vec2)sf::Mouse::getPosition(renderwindow);
 	}
 	void Context::handleMouseDown(sf::Mouse::Button button, vec2 pos){
-		Window* hitwin = root()->findWindowAt(pos);
+		std::shared_ptr<Window> hitwin = root().findWindowAt(pos).lock();
 
-		if (hitwin == nullptr){
+		if (!hitwin){
 			return;
 		}
 
 		if ((clock.getElapsedTime() - click_timestamp).asSeconds() <= doubleclicktime){
+			std::shared_ptr<Window> last_clicked = click_window.lock();
+
 			// if the mouse has been clicked recently:
 			if (click_button == button){
 				// if the mouse was clicked with the same button:
-				if (hitwin == click_window){
+				if (last_clicked && (hitwin == last_clicked)){
 					// if the click hit the same window again:
 
 					// double click that window
@@ -187,41 +180,41 @@ namespace ui {
 
 		if (current_it != commands.end()){
 			current_it->second();
-		} else if (current_window){
-			current_window->onKeyDown(key);
+		} else if (auto curr = current_window.lock()){
+			curr->onKeyDown(key);
 		}
 	}
 	void Context::handleMouseUp(sf::Mouse::Button button, vec2 pos){
-		if (dragging_window){
+		if (auto dragging = dragging_window.lock()){
 			if (button == sf::Mouse::Left){
-				dragging_window->onLeftRelease();
+				dragging->onLeftRelease();
 			} else if (button == sf::Mouse::Right){
-				dragging_window->onRightRelease();
+				dragging->onRightRelease();
 			}
 
-			Window* hover_window = root()->findWindowAt(pos);
+			std::shared_ptr<Window> hover_window = root().findWindowAt(pos).lock();
 			while (hover_window && !(hover_window->onDropWindow(dragging_window))){
-				hover_window = hover_window->parent;
+				hover_window = hover_window->parent.lock();
 			}
-			dragging_window = nullptr;
-		} else if (current_window){
+		} else if (auto curr = current_window.lock()){
 			if (button == sf::Mouse::Left){
-				current_window->onLeftRelease();
+				curr->onLeftRelease();
 			} else if (button == sf::Mouse::Right){
-				current_window->onRightRelease();
+				curr->onRightRelease();
 			}
 		}
 	}
 	void Context::handleDrag(){
-		if (dragging_window){
-			dragging_window->pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
-			dragging_window->onDrag();
+		if (auto dragging = dragging_window.lock()){
+			dragging->pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
+			dragging->onDrag();
 		}
 	}
 	void Context::handleHover(){
-		Window* hover_window = root()->findWindowAt((vec2)sf::Mouse::getPosition(getRenderWindow()));
+		vec2 position = (vec2)sf::Mouse::getPosition(getRenderWindow());
+		std::shared_ptr<Window> hover_window = root().findWindowAt(position).lock();
 		if (hover_window){
-			if (dragging_window){
+			if (auto draggin = dragging_window.lock()){
 				hover_window->onHoverWithWindow(dragging_window);
 			} else {
 				hover_window->onHover();
@@ -280,20 +273,20 @@ namespace ui {
 	double Context::getProgramTime() const {
 		return program_time;
 	}
-	Window* Context::getDraggingWindow(){
+	std::weak_ptr<Window> Context::getDraggingWindow(){
 		return dragging_window;
 	}
-	void Context::setDraggingWindow(Window* window, vec2 offset){
+	void Context::setDraggingWindow(std::weak_ptr<Window> window, vec2 offset){
 		dragging_window = window;
 		drag_offset = offset;
 	}
-	Window* Context::getCurrentWindow(){
+	std::weak_ptr<Window> Context::getCurrentWindow(){
 		return current_window;
 	}
-	TextEntry* Context::getTextEntry(){
+	std::weak_ptr<TextEntry> Context::getTextEntry(){
 		return text_entry;
 	}
-	void Context::setTextEntry(TextEntry* textentry){
+	void Context::setTextEntry(std::weak_ptr<TextEntry> textentry){
 		text_entry = textentry;
 	}
 	void Context::updateView(){

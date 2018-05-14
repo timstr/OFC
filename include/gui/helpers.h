@@ -9,79 +9,18 @@ namespace ui {
 		// TODO:
 		// slider
 
-		struct CallbackButton : Window {
-			CallbackButton(std::string label, const sf::Font& font, std::function<void()> _onClick) : onClick(_onClick) {
-				auto text = new Text(label, font);
-				addChildWindow(text, vec2(0, 0));
-				size = text->size;
-			}
-
-			void onLeftClick(int clicks) override {
-				if (onClick){
-					onClick();
-				}
-			}
-
-			void render(sf::RenderWindow& rw) override {
-				sf::RectangleShape rect;
-				rect.setSize(size);
-				rect.setFillColor(sf::Color(0xCCCCCCFF));
-				rect.setOutlineColor(sf::Color(0xFF));
-				rect.setOutlineThickness(1);
-				rw.draw(rect);
-				renderChildWindows(rw);
-			}
-
-			private:
-			std::function<void()> onClick;
+		struct Button : Window {
+			// TODO
 		};
-
-		struct ToggleButton : Window {
-			ToggleButton(bool& _target, float _size = 20.0f) : target(_target) {
-				size = vec2(_size, _size);
-			}
-
-			void onLeftClick(int clicks) override {
-				target = !target;
-			}
-
-			void render(sf::RenderWindow& rw) override {
-				sf::CircleShape circle;
-				circle.setRadius(size.x / 2);
-				circle.setFillColor(sf::Color(0xFFFFFFFF));
-				rw.draw(circle);
-				if (target){
-					circle.setFillColor(sf::Color(0xFF));
-					circle.setRadius(size.x * 0.45f);
-					circle.setPosition(vec2(size.x * 0.05f, size.x * 0.05f));
-					rw.draw(circle);
-				}
-			}
-
-			private:
-			bool& target;
-		};
-
+		
 		struct PullDownMenu : Window {
-			/*
-			on-change callback?
-			*/
+			// TODO
 		};
 
 		struct Slider : Window {
-			/*
-			vertical/horizontal?
-			generic/custom rendering?
-			on-change callback?
-			*/
+			// TODO
 		};
 
-		/*
-		better name?
-		validation function?
-		on-change callback?
-		on-return callback?
-		*/
 		struct TextEntryHelper : TextEntry {
 			TextEntryHelper(std::string str, const sf::Font& font,
 						std::function<void(const std::string&)> _on_return,

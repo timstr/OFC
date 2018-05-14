@@ -3,7 +3,7 @@
 #include <SFML\Graphics.hpp>
 #include <vector>
 #include <functional>
-#include <set>
+#include <memory>
 
 typedef sf::Vector2f vec2;
 
@@ -60,16 +60,24 @@ namespace ui {
 		if (auto p = parent.lock()){
 			p->remove(this); // remove last strong reference to this, so this should get destroyed
 		}
+		// vector of strong references to child window will be destroyed, and so will child windows
 	}
 
 	template<typename WindowType, typename... Args>
-	Window::add(Args... args){
+	WindowRef<WindowType> Window::add(Args... args){
 		child_windows.emplace_back(std::maked_shared<WindowType>(...args));
+		return child_windows.back();
 	}
+
+	// some convenient overloads...?
+	void window::remove(WindowRef<T>); // to use with weak references
+	void window::remove(const Window&) // ?
+	void window::remove(Window const*) // to use with 'this'
+
 	--> usage: window->add<Widget>("steve", 96);
 
 
-	ADD:
+	New alignment:
 	enum class Window::AlignmentType {
 		block, inline, float
 	};
@@ -82,21 +90,21 @@ namespace ui {
 
 	struct Divider : Window {
 		// like an HTML div, automatically aligns all child windows by their alignment type
-		// and resizes itself, with a padding option
+		// and resizes itself (?), with a padding option
+
+		Options:
+			- fixed or auto-size width/height
+			- align contents min/center/max, in x and y directions
+			- padding: space between contained elements and to own border
 	}
 
 
 
 
-	// some convenient overloads...?
-	window::remove(WindowRef<T>);
-	window::remove(const Window&)
-	window::remove(Window const*)
-
 	
 	*/
 
-	struct Window {
+	struct Window : std::enable_shared_from_this<Window> {
 
 		// prevents the window from receiving input
 		bool disabled = false;
@@ -123,13 +131,13 @@ namespace ui {
 		void close();
 
 		// true if a test point (in window space) intercepts the window
-		virtual bool hit(vec2 testpos);
+		virtual bool hit(vec2 testpos) const;
 
 		// the mouse's position relative to the window
 		vec2 localMousePos() const;
 
 		// the window's position relative to the root window
-		vec2 absPos();
+		vec2 rootPos() const;
 
 		// called when the window is clicked on with the left mouse button
 		virtual void onLeftClick(int clicks);
@@ -168,12 +176,12 @@ namespace ui {
 		virtual void onHover();
 
 		// called when the mouse passes over the window with another window being dragged
-		virtual void onHoverWithWindow(Window *drag_window);
+		virtual void onHoverWithWindow(std::weak_ptr<Window> drag_window);
 
 		// called when a dragged window is released over the window
 		// TODO: rethink the following: shall return false if the parent's method is to be invoked
 		// TODO: think about how introduction of stopDrag() and deprecation of automatic drag stopping affects this
-		virtual bool onDropWindow(Window *window);
+		virtual bool onDropWindow(std::weak_ptr<Window> window);
 
 		// called when the window gains focus
 		virtual void onFocus();
@@ -187,12 +195,6 @@ namespace ui {
 		// brings the window into focus
 		void grabFocus();
 
-		// focuses to the next window (sorted by y, then x position), if this window is in focus
-		void focusToNextWindow() const;
-
-		// focuses to the previous window (sorted by y, then x position), if this window is in focus
-		void focusToPreviousWindow() const;
-
 		// called when a key is pressed and the window is in focus
 		virtual void onKeyDown(sf::Keyboard::Key key);
 
@@ -202,73 +204,42 @@ namespace ui {
 		// true if 'key' is currently being pressed and the window is in focus
 		bool keyDown(sf::Keyboard::Key key) const;
 
-
-		struct Alignment {
-			enum Type {
-				None,
-				After,
-				Before,
-				Center,
-				InsideMin,
-				InsideMax
-			};
-
-			protected:
-			float margin;
-
-			Alignment(Type _type, Window* _relative_to = nullptr, float _margin = 0.0f);
-
-			Type type;
-			Window* relative_to;
-
-			friend struct Window;
-		};
-
-		struct XAlignment : Alignment {
-			private:
-
-			XAlignment(Type type, Window* relative_to = nullptr, float margin = 0.0f);
-
-			friend struct Window;
-		};
-		struct YAlignment : Alignment {
-			private:
-
-			YAlignment(Type type, Window* relative_to = nullptr, float margin = 0.0f);
-
-			friend struct Window;
-		};
-
-		void setXAlign(XAlignment xalignment = XAlignment(Alignment::None, nullptr));
-		void setYAlign(YAlignment yalignment = YAlignment(Alignment::None, nullptr));
-		void align();
-		void alignChildren();
-		void alignAndAutoSize(float margin);
-
-		static XAlignment noAlignX();
-		static XAlignment leftOf(Window* window, float margin = 0.0f);
-		static XAlignment rightOf(Window* window, float margin = 0.0f);
-		static XAlignment middleOfX(Window* window);
-		static XAlignment insideLeft(Window* window, float margin = 0.0f);
-		static XAlignment insideRight(Window* window, float margin = 0.0f);
-		static YAlignment noAlignY();
-		static YAlignment above(Window* window, float margin = 0.0f);
-		static YAlignment below(Window* window, float margin = 0.0f);
-		static YAlignment insideTop(Window* window, float margin = 0.0f);
-		static YAlignment insideBottom(Window* window, float margin = 0.0f);
-		static YAlignment middleOfY(Window* window);
+		// add a child window
+		template<typename WindowType>
+		std::weak_ptr<WindowType> add(std::shared_ptr<WindowType> child){
+			static_assert(std::is_base_of<Window, WindowType>::value, "WindowType must derive from Window");
+			if (auto p = child->parent.lock()){
+				p->release(child);
+			}
+			childwindows.push_back(child);
+			child->parent = weak_from_this();
+			return child;
+		}
 
 		// add a child window
-		void addChildWindow(Window* window);
-		void addChildWindow(Window* window, vec2 pos);
-		void addChildWindow(Window* window, XAlignment xalignment);
-		void addChildWindow(Window* window, YAlignment yalignment);
-		void addChildWindow(Window* window, XAlignment xalignment, YAlignment yalignment);
-		void addChildWindow(Window* window, float xpos, YAlignment yalignment);
-		void addChildWindow(Window* window, XAlignment xalignment, float ypos);
+		template<typename WindowType, typename... ArgsT>
+		std::weak_ptr<WindowType> add(ArgsT&&... args){
+			static_assert(std::is_base_of<Window, WindowType>::value, "WindowType must derive from Window");
+			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
+			childwindows.emplace_back(child);
+			return child;
+		}
+		
+		// add a child window at a desired position
+		template<typename WindowType, typename... ArgsT>
+		std::weak_ptr<WindowType> add(vec2 position, ArgsT&&... args){
+			static_assert(std::is_base_of<Window, WindowType>::value, "WindowType must derive from Window");
+			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
+			child->pos = position;
+			childwindows.emplace_back(child);
+			return child;
+		}
 
-		// release a childwindow, without destroying it
-		void releaseChildWindow(Window* window);
+		// remove and destroy a child window
+		void remove(std::weak_ptr<Window> window);
+
+		// release a child window, possibly to add to another window
+		std::shared_ptr<Window> release(std::weak_ptr<Window> window);
 
 		// bring the window in front of its siblings
 		void bringToFront();
@@ -277,30 +248,23 @@ namespace ui {
 		void clear();
 
 		// find the window at the given local coordinates
-		Window* findWindowAt(vec2 _pos);
+		std::weak_ptr<Window> findWindowAt(vec2 _pos);
 
 		// render the window
 		virtual void render(sf::RenderWindow& renderwindow);
 
 		// render the window's children, translating and clipping as needed
 		void renderChildWindows(sf::RenderWindow& renderwindow);
-
-		// register and begin a transition
-		void startTransition(double duration, std::function<void(double)> transitionFn, std::function<void()> onComplete = {});
-
+		
 		// get all children
-		const std::vector<Window*>& getChildWindows() const;
+		std::vector<std::weak_ptr<Window>> getChildWindows() const;
 
 		// get the parent window
-		Window* getParent() const;
+		std::weak_ptr<Window> getParent() const;
 
 	private:
-		Window* parent = nullptr; // TODO: make weak reference
-		std::vector<Window*> childwindows; // TODO: make vector of shared pointers
-
-		XAlignment xalign = XAlignment(Alignment::None, nullptr);
-		YAlignment yalign = YAlignment(Alignment::None, nullptr);
-		bool children_aligned = false;
+		std::weak_ptr<Window> parent; // TODO: make weak reference
+		std::vector<std::shared_ptr<Window>> childwindows; // TODO: make vector of shared pointers
 
 		friend struct Context;
 	};

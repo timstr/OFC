@@ -11,6 +11,7 @@ namespace ui {
 
 		void beginTyping();
 		void endTyping();
+		bool typing() const;
 		void moveTo(vec2 pos);
 
 		//to be overridden and used to deal with submission of newly typed text

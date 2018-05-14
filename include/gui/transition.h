@@ -4,14 +4,13 @@
 
 namespace ui {
 
+	// TODO: remove 'target'
 	struct Transition {
-		Transition(Window* _target, double _duration, std::function<void(double)> _transitionFn, std::function<void()> _onComplete = {});
+		Transition(double _duration, std::function<void(double)> _transitionFn, std::function<void()> _onComplete = {});
 
 		void apply();
 
 		bool complete() const;
-
-		const Window* target;
 
 		private:
 		std::function<void(double)> transitionFn;
