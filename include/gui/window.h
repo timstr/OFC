@@ -115,9 +115,6 @@ namespace ui {
 		// limits rendering and input to within the bounding rectangle
 		bool clipping = false;
 
-		// brings the window in front of its siblings when clicked
-		bool bring_to_front = false;
-
 		// the top-left corner of the window
 		vec2 pos;
 
