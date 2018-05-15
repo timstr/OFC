@@ -40,6 +40,7 @@ struct TestWindow : ui::Window {
 	}
 
 	void onLeftRelease() override {
+		bringToFront();
 		std::cout << "Left released" << std::endl;
 		stopDrag();
 	}
@@ -79,14 +80,32 @@ struct TestWindow : ui::Window {
 		std::cout << "Scrolled (" << dx << ", " << dy << ')' << std::endl;
 	}
 
+	void onDrag() override {
+
+	}
+
+	void onHover() override {
+
+	}
+
+	void onHoverWithWindow(std::weak_ptr<Window> window) override {
+		std::cout << "Hovering with a window" << std::endl;
+	}
+
+	bool onDropWindow(std::weak_ptr<Window> window) override {
+		std::cout << "A window was dropped" << std::endl;
+		return true;
+	}
+
 	sf::Color bgcolor;
 };
 
 int main(int argc, char** argcv){
 
 	ui::init(500, 400, "Tim's GUI Test", 30);
-	
-	ui::root().add<TestWindow>();
+
+	ui::root().add<TestWindow>(vec2(10, 10));
+	ui::root().add<TestWindow>(vec2(120, 120));
 
 	ui::run();
 

@@ -85,7 +85,7 @@ namespace ui {
 	void Window::onHover(){
 
 	}
-	void Window::onHoverWithWindow(std::weak_ptr<Window> drag_window){
+	void Window::onHoverWithWindow(std::weak_ptr<Window> window){
 
 	}
 	bool Window::onDropWindow(std::weak_ptr<Window> window){
@@ -116,6 +116,9 @@ namespace ui {
 		if (auto win = window.lock()){
 			for (auto it = childwindows.begin(); it != childwindows.end(); ++it){
 				if (*it == win){
+					if ((*it)->inFocus()){
+						grabFocus();
+					}
 					childwindows.erase(it);
 					return;
 				}

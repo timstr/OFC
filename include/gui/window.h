@@ -175,7 +175,7 @@ namespace ui {
 		virtual void onHover();
 
 		// called when the mouse passes over the window with another window being dragged
-		virtual void onHoverWithWindow(std::weak_ptr<Window> drag_window);
+		virtual void onHoverWithWindow(std::weak_ptr<Window> window);
 
 		// called when a dragged window is released over the window
 		// TODO: rethink the following: shall return false if the parent's method is to be invoked

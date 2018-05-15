@@ -193,8 +193,9 @@ namespace ui {
 				dragging->onRightRelease();
 			}
 
+			// TODO: fix empty window being dropped, after call to stopDrag
 			std::shared_ptr<Window> hover_window = root().findWindowAt(pos).lock();
-			while (hover_window && !(hover_window->onDropWindow(dragging_window))){
+			while (hover_window && !(hover_window->onDropWindow(dragging))){
 				hover_window = hover_window->parent.lock();
 			}
 		} else if (auto curr = current_window.lock()){
