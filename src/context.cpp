@@ -54,7 +54,7 @@ namespace ui {
 				// populate new
 				std::shared_ptr<Window> nu = win;
 				while (nu){
-					oldpath.push_back(nu);
+					newpath.push_back(nu);
 					nu = nu->parent.lock();
 				}
 
