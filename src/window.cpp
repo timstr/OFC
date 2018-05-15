@@ -5,9 +5,11 @@
 namespace ui {
 
 	Window::~Window(){
-		childwindows.clear();
-		if (inFocus()){
-			getContext().focusTo(parent);
+		while (!childwindows.empty()){
+			if (childwindows.back()->inFocus()){
+				grabFocus();
+			}
+			childwindows.pop_back();
 		}
 	}
 	void Window::close(){
@@ -62,7 +64,7 @@ namespace ui {
 			return false;
 		}
 	}
-	void Window::onScroll(double delta_x, double delta_y){
+	void Window::onScroll(float delta_x, float delta_y){
 
 	}
 	void Window::startDrag(){
@@ -101,13 +103,13 @@ namespace ui {
 	void Window::grabFocus(){
 		getContext().focusTo(weak_from_this());
 	}
-	void Window::onKeyDown(sf::Keyboard::Key key){
+	void Window::onKeyDown(Key key){
 
 	}
-	void Window::onKeyUp(sf::Keyboard::Key key){
+	void Window::onKeyUp(Key key){
 
 	}
-	bool Window::keyDown(sf::Keyboard::Key key) const {
+	bool Window::keyDown(Key key) const {
 		return inFocus() && sf::Keyboard::isKeyPressed(key);
 	}
 	void Window::remove(std::weak_ptr<Window> window){

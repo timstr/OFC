@@ -1,4 +1,4 @@
-#include "gui/formsmodel.h"
+#include "gui/forms/formsmodel.h"
 
 
 namespace ui {

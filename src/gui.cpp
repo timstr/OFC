@@ -12,10 +12,10 @@ namespace ui {
 		static std::shared_ptr<Window> rootwin { std::make_shared<Window>() };
 		return *rootwin;
 	}
-	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler){
+	void addKeyboardCommand(Key trigger_key, std::function<void()> handler){
 		getContext().addKeyboardCommand(trigger_key, handler);
 	}
-	void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler){
+	void addKeyboardCommand(Key trigger_key, std::vector<Key> required_keys, std::function<void()> handler){
 		getContext().addKeyboardCommand(trigger_key, required_keys, handler);
 	}
 	void setQuitHandler(std::function<bool()> handler){
@@ -70,25 +70,25 @@ namespace ui {
 					case sf::Event::KeyPressed:
 						if (auto text_entry = getContext().getTextEntry().lock()){
 							switch (event.key.code){
-								case sf::Keyboard::BackSpace:
+								case Key::BackSpace:
 									text_entry->onBackspace();
 									break;
-								case sf::Keyboard::Delete:
+								case Key::Delete:
 									text_entry->onDelete();
 									break;
-								case sf::Keyboard::Left:
+								case Key::Left:
 									text_entry->onLeft();
 									break;
-								case sf::Keyboard::Right:
+								case Key::Right:
 									text_entry->onRight();
 									break;
-								case sf::Keyboard::Home:
+								case Key::Home:
 									text_entry->onHome();
 									break;
-								case sf::Keyboard::End:
+								case Key::End:
 									text_entry->onEnd();
 									break;
-								case sf::Keyboard::Return:
+								case Key::Return:
 									text_entry->onReturn(text_entry->getText());
 									break;
 								default:
@@ -119,10 +119,10 @@ namespace ui {
 						break;
 					case sf::Event::MouseWheelScrolled:
 						if (auto curr = getContext().getCurrentWindow().lock()){
-							if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
-								curr->onScroll(event.mouseWheelScroll.delta, 0.0);
+							if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel){
+								curr->onScroll(event.mouseWheelScroll.delta, 0.0f);
 							} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
-								curr->onScroll(0.0, event.mouseWheelScroll.delta);
+								curr->onScroll(0.0f, event.mouseWheelScroll.delta);
 							}
 						}
 						break;
@@ -151,7 +151,7 @@ namespace ui {
 
 			//highlight current window if alt is pressed
 			if (auto curr = getContext().getCurrentWindow().lock()){
-				if ((sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) || sf::Keyboard::isKeyPressed(sf::Keyboard::RAlt))){
+				if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))){
 					sf::RectangleShape rect(curr->size);
 					rect.setPosition(curr->rootPos());
 					rect.setFillColor(sf::Color(0));

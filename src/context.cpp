@@ -71,6 +71,7 @@ namespace ui {
 				for (auto it = newpath.rbegin(); it != newpath.rend(); ++it){
 					(*it)->onFocus();
 				}
+				current_window = win;
 			} else {
 				std::cerr << "Warning: The GUI Context's current window is invalid." << std::endl;
 			}
@@ -149,18 +150,18 @@ namespace ui {
 		click_button = button;
 		click_window = hitwin;
 	}
-	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler){
-		auto pair = std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>(trigger_key, {});
+	void Context::addKeyboardCommand(Key trigger_key, std::function<void()> handler){
+		auto pair = std::pair<Key, std::vector<Key>>(trigger_key, {});
 		commands[pair] = handler;
 	}
-	void Context::addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler){
-		auto pair = std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>(trigger_key, required_keys);
+	void Context::addKeyboardCommand(Key trigger_key, std::vector<Key> required_keys, std::function<void()> handler){
+		auto pair = std::pair<Key, std::vector<Key>>(trigger_key, required_keys);
 		commands[pair] = handler;
 	}
 	void Context::setQuitHandler(std::function<bool()> handler){
 		quit_handler = handler;
 	}
-	void Context::handleKeyPress(sf::Keyboard::Key key){
+	void Context::handleKeyPress(Key key){
 		auto it = commands.begin();
 		size_t max = 0;
 		auto current_it = commands.end();

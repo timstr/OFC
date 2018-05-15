@@ -3,7 +3,7 @@
 #include <type_traits>
 #include "formscontrol.h"
 #include "formsmodel.h"
-#include "helpers.h"
+#include "gui/helpers.h"
 
 #include "stringproperty.h"
 #include "floatproperty.h"

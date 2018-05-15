@@ -104,6 +104,8 @@ namespace ui {
 	
 	*/
 
+	using Key = sf::Keyboard::Key;
+
 	struct Window : std::enable_shared_from_this<Window> {
 
 		// prevents the window from receiving input
@@ -155,7 +157,7 @@ namespace ui {
 		bool rightMouseDown() const;
 
 		// called when the mouse is scrolled and the window is in focus
-		virtual void onScroll(double delta_x, double delta_y);
+		virtual void onScroll(float delta_x, float delta_y);
 
 		// begins the window being dragged by the mouse
 		void startDrag();
@@ -193,13 +195,13 @@ namespace ui {
 		void grabFocus();
 
 		// called when a key is pressed and the window is in focus
-		virtual void onKeyDown(sf::Keyboard::Key key);
+		virtual void onKeyDown(Key key);
 
 		// called when a key is released and the window is in focus
-		virtual void onKeyUp(sf::Keyboard::Key key);
+		virtual void onKeyUp(Key key);
 
 		// true if 'key' is currently being pressed and the window is in focus
-		bool keyDown(sf::Keyboard::Key key) const;
+		bool keyDown(Key key) const;
 
 		// add a child window
 		template<typename WindowType>
@@ -219,6 +221,7 @@ namespace ui {
 			static_assert(std::is_base_of<Window, WindowType>::value, "WindowType must derive from Window");
 			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
 			childwindows.emplace_back(child);
+			child->parent = weak_from_this();
 			return child;
 		}
 		
@@ -229,6 +232,7 @@ namespace ui {
 			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
 			child->pos = position;
 			childwindows.emplace_back(child);
+			child->parent = weak_from_this();
 			return child;
 		}
 

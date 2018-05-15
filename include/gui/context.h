@@ -15,11 +15,11 @@ namespace ui {
 		void addTransition(Transition transition);
 		void applyTransitions();
 
-		void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::function<void()> handler);
-		void addKeyboardCommand(sf::Keyboard::Key trigger_key, std::vector<sf::Keyboard::Key> required_keys, std::function<void()> handler);
+		void addKeyboardCommand(Key trigger_key, std::function<void()> handler);
+		void addKeyboardCommand(Key trigger_key, std::vector<Key> required_keys, std::function<void()> handler);
 		void setQuitHandler(std::function<bool()> handler);
 
-		void handleKeyPress(sf::Keyboard::Key key);
+		void handleKeyPress(Key key);
 		void handleMouseDown(sf::Mouse::Button button, vec2 pos);
 		void handleMouseUp(sf::Mouse::Button button, vec2 pos);
 		void handleDrag();
@@ -88,7 +88,7 @@ namespace ui {
 		sf::Clock clock;
 
 		// set of callback functions to be called during keystroke patterns
-		std::map<std::pair<sf::Keyboard::Key, std::vector<sf::Keyboard::Key>>, std::function<void()>> commands;
+		std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> commands;
 
 		// callback function to be called when program is being closed, program continues if false is returned
 		std::function<bool()> quit_handler;
