@@ -2,14 +2,19 @@
 #include <iostream>
 #include <random>
 
+#include "fontpath.h"
+
+
+
 std::random_device randdev;
 std::mt19937 randeng {randdev()};
 
 struct TestWindow : ui::Window {
-	TestWindow(){
+	TestWindow(std::string name){
 		std::cout << "Constructed" << std::endl;
 		size = {100, 100};
 		changeColor();
+		add<ui::Text>(name, getFont());
 	}
 	~TestWindow(){
 		std::cout << "Destroyed" << std::endl;
@@ -27,9 +32,11 @@ struct TestWindow : ui::Window {
 		sf::RectangleShape rect {size};
 		rect.setFillColor(bgcolor);
 		rw.draw(rect);
+		renderChildWindows(rw);
 	}
 
 	void onLeftClick(int clicks) override {
+		bringToFront();
 		if (clicks == 1){
 			std::cout << "Left-clicked once" << std::endl;
 			startDrag();
@@ -40,9 +47,9 @@ struct TestWindow : ui::Window {
 	}
 
 	void onLeftRelease() override {
-		bringToFront();
 		std::cout << "Left released" << std::endl;
 		stopDrag();
+		drop(localMousePos());
 	}
 
 	void onRightClick(int clicks) override {

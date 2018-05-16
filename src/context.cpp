@@ -36,6 +36,8 @@ namespace ui {
 					return;
 				}
 
+				current_window = win;
+
 				// stop typing now
 				if (!getTextEntry().expired()){
 					setTextEntry({});
@@ -71,7 +73,6 @@ namespace ui {
 				for (auto it = newpath.rbegin(); it != newpath.rend(); ++it){
 					(*it)->onFocus();
 				}
-				current_window = win;
 			} else {
 				std::cerr << "Warning: The GUI Context's current window is invalid." << std::endl;
 			}
@@ -192,12 +193,6 @@ namespace ui {
 			} else if (button == sf::Mouse::Right){
 				dragging->onRightRelease();
 			}
-
-			// TODO: fix empty window being dropped, after call to stopDrag
-			std::shared_ptr<Window> hover_window = root().findWindowAt(pos).lock();
-			while (hover_window && !(hover_window->onDropWindow(dragging))){
-				hover_window = hover_window->parent.lock();
-			}
 		} else if (auto curr = current_window.lock()){
 			if (button == sf::Mouse::Left){
 				curr->onLeftRelease();
@@ -214,10 +209,10 @@ namespace ui {
 	}
 	void Context::handleHover(){
 		vec2 position = (vec2)sf::Mouse::getPosition(getRenderWindow());
-		std::shared_ptr<Window> hover_window = root().findWindowAt(position).lock();
+		std::shared_ptr<Window> hover_window = root().findWindowAt(position, dragging_window).lock();
 		if (hover_window){
-			if (auto draggin = dragging_window.lock()){
-				hover_window->onHoverWithWindow(dragging_window);
+			if (auto dragging = dragging_window.lock()){
+				hover_window->onHoverWithWindow(dragging);
 			} else {
 				hover_window->onHover();
 			}

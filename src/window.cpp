@@ -74,7 +74,7 @@ namespace ui {
 	void Window::onDrag(){
 		
 	}
-	void Window::stopDrag() const {
+	void Window::stopDrag(){
 		if (dragging()){
 			getContext().setDraggingWindow({});
 		}
@@ -87,6 +87,17 @@ namespace ui {
 	}
 	void Window::onHoverWithWindow(std::weak_ptr<Window> window){
 
+	}
+	void Window::drop(vec2 local_pos){
+		vec2 pos = rootPos() + local_pos;
+		if (auto window = root().findWindowAt(pos, weak_from_this()).lock()){
+			auto self = weak_from_this();
+			do {
+				if (window->onDropWindow(self)){
+					return;
+				}
+			} while (window = window->parent.lock());
+		}
 	}
 	bool Window::onDropWindow(std::weak_ptr<Window> window){
 		return false;
@@ -152,7 +163,7 @@ namespace ui {
 	void Window::clear(){
 		childwindows.clear();
 	}
-	std::weak_ptr<Window> Window::findWindowAt(vec2 _pos){
+	std::weak_ptr<Window> Window::findWindowAt(vec2 _pos, std::weak_ptr<Window> exclude){
 		if (!visible || disabled){
 			return {};
 		}
@@ -161,13 +172,15 @@ namespace ui {
 			return {};
 		}
 
+		if (exclude.lock() == shared_from_this()){
+			return {};
+		}
+
 		std::weak_ptr<Window> window;
 		for (auto it = childwindows.begin(); it != childwindows.end(); ++it){
-			window = (*it)->findWindowAt(_pos - (*it)->pos);
+			window = (*it)->findWindowAt(_pos - (*it)->pos, exclude);
 			if (auto win = window.lock()){
-				if (!win->dragging()){
-					return win;
-				}
+				return win;
 			}
 		}
 

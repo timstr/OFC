@@ -60,7 +60,13 @@ target_link_libraries(tims_gui_forms tims_gui)
 
 # Testing below
 
-add_executable(tims_gui_test src/test.cpp)
+set(FONTS_PATH "${CMAKE_SOURCE_DIR}/test/fonts")
+configure_file(
+	"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h.in"
+	"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h"
+)
+
+add_executable(tims_gui_test test/test.cpp test/fontspath.h)
 
 target_link_libraries(tims_gui_test
 	PUBLIC tims_gui

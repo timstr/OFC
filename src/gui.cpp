@@ -62,7 +62,7 @@ namespace ui {
 					case sf::Event::TextEntered:
 						// TODO: this looks sketchy
 						if (auto text_entry = getContext().getTextEntry().lock()){
-							if (event.text.unicode != '\b'){
+							if (event.text.unicode >= 32 && event.text.unicode < 127){
 								text_entry->write(static_cast<char>(event.text.unicode));
 							}
 						}
@@ -132,24 +132,24 @@ namespace ui {
 			// cache current time
 			getContext().updateTime();
 
-			//drag what's being dragged
+			// drag what's being dragged
 			getContext().handleDrag();
 
 			//mouse-over what needs mousing over
 			getContext().handleHover();
 
-			//apply transitions
+			// apply transitions
 			getContext().applyTransitions();
 
-			//clear the screen
+			// clear the screen
 			getContext().getRenderWindow().clear();
 			getContext().resetView();
 
-			//render the root window, and all child windows it contains
+			// render the root window, and all child windows it contains
 			root().size = getScreenSize();
 			root().render(getContext().getRenderWindow());
 
-			//highlight current window if alt is pressed
+			// highlight current window if alt is pressed
 			if (auto curr = getContext().getCurrentWindow().lock()){
 				if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))){
 					sf::RectangleShape rect(curr->size);
@@ -163,7 +163,7 @@ namespace ui {
 
 			getContext().getRenderWindow().display();
 
-			//sleep only as long as needed
+			// sleep only as long as needed
 			long double now = getContext().getProgramTime();
 			double delay = getContext().getRenderDelay();
 			sf::sleep(sf::seconds(std::max(0.0f, (float)(getContext().getRenderDelay() - (now - prev_time)))));

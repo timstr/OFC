@@ -1,0 +1,3 @@
+#include <string>
+
+const std::string fonts_path = "@FONTS_PATH@";

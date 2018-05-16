@@ -14,18 +14,6 @@ namespace ui {
 	// TODO: automatic sizing based on child windows
 
 	/******* THOUGHTS ***********
-	- use shared pointers (and [const] references where possible) instead of raw pointers
-		-> this will make debugging much easier and children management much simpler
-		-> BEWARE: close() function is possibly in violation of this
-		-> all child windows shall be shared_ptr, and thus a parent window may be aware
-		   of its children being shared_ptrs and weak_ptrs. HOWEVER for safety's sake, a
-		   window should not be aware of itself being a shared_ptr (don't derive from
-		   std::enable_shared_from_this).
-	- general code cleanup
-		-> make methods const whenever possible
-		-> reconsider how arguments are passed
-		-> move semantics
-		-> general cleanup of logic and stuff
 	- allow more natural binding to data
 		-> add update() method that performs custom update and updates children?
 			What would that look like?
@@ -35,48 +23,7 @@ namespace ui {
 	-> keeping a well-typed reference to parent window to use it in handler functions
 	-> alignment is a bit messy
 	-> remove and add html-style block and inline elements?
-		   
-	|
-	|
-	*-->	- Every window shall have exclusive ownership of its child windows via a shared_ptr
-			- this shared_ptr shall be the *only* lasting shared_ptr to a child window, such that
-			  when a child window is removed from the parent, its resources are destroyed
-			- every other reference to this child shall be in the form of a weak_ptr or some convenient
-			  wrapper/alias
-	
-	Some thoughts:
-
-	using WindowRef<WindowType> = std::weak_ptr<WindowType>;
-
-	SomeWindow::someFunction(){
-		WindowRef<WidgetWin> interesting_window; // reference to some other window, whatever that may be
-
-		if (auto win = interesting_window.lock()){
-			win->makeMeHappy();
-		}
-	}
-
-	Window::close(){
-		if (auto p = parent.lock()){
-			p->remove(this); // remove last strong reference to this, so this should get destroyed
-		}
-		// vector of strong references to child window will be destroyed, and so will child windows
-	}
-
-	template<typename WindowType, typename... Args>
-	WindowRef<WindowType> Window::add(Args... args){
-		child_windows.emplace_back(std::maked_shared<WindowType>(...args));
-		return child_windows.back();
-	}
-
-	// some convenient overloads...?
-	void window::remove(WindowRef<T>); // to use with weak references
-	void window::remove(const Window&) // ?
-	void window::remove(Window const*) // to use with 'this'
-
-	--> usage: window->add<Widget>("steve", 96);
-
-
+		
 	New alignment:
 	enum class Window::AlignmentType {
 		block, inline, float
@@ -98,10 +45,6 @@ namespace ui {
 			- padding: space between contained elements and to own border
 	}
 
-
-
-
-	
 	*/
 
 	using Key = sf::Keyboard::Key;
@@ -166,7 +109,7 @@ namespace ui {
 		virtual void onDrag();
 
 		// stops the mouse dragging the window
-		void stopDrag() const;
+		void stopDrag();
 
 		// true if the window is currently being dragged by the mouse
 		bool dragging() const;
@@ -176,6 +119,9 @@ namespace ui {
 
 		// called when the mouse passes over the window with another window being dragged
 		virtual void onHoverWithWindow(std::weak_ptr<Window> window);
+
+		// drop the window (via the point local_pos, in local coordinates) onto the window below it
+		void drop(vec2 local_pos);
 
 		// called when a dragged window is released over the window
 		// TODO: rethink the following: shall return false if the parent's method is to be invoked
@@ -210,7 +156,7 @@ namespace ui {
 			if (auto p = child->parent.lock()){
 				p->release(child);
 			}
-			childwindows.push_back(child);
+			childwindows.insert(childwindows.begin(), child);
 			child->parent = weak_from_this();
 			return child;
 		}
@@ -220,7 +166,7 @@ namespace ui {
 		std::weak_ptr<WindowType> add(ArgsT&&... args){
 			static_assert(std::is_base_of<Window, WindowType>::value, "WindowType must derive from Window");
 			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
-			childwindows.emplace_back(child);
+			childwindows.insert(childwindows.begin(), child);
 			child->parent = weak_from_this();
 			return child;
 		}
@@ -231,7 +177,7 @@ namespace ui {
 			static_assert(std::is_base_of<Window, WindowType>::value, "WindowType must derive from Window");
 			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
 			child->pos = position;
-			childwindows.emplace_back(child);
+			childwindows.insert(childwindows.begin(), child);
 			child->parent = weak_from_this();
 			return child;
 		}
@@ -248,8 +194,8 @@ namespace ui {
 		// destroy all children
 		void clear();
 
-		// find the window at the given local coordinates
-		std::weak_ptr<Window> findWindowAt(vec2 _pos);
+		// find the window at the given local coordinates, optionally excluding a given window and all its children
+		std::weak_ptr<Window> findWindowAt(vec2 _pos, std::weak_ptr<Window> exclude = {});
 
 		// render the window
 		virtual void render(sf::RenderWindow& renderwindow);
