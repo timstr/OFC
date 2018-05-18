@@ -21,30 +21,16 @@ namespace ui {
 
 	- some common boilerplate that could use a design pattern:
 	-> keeping a well-typed reference to parent window to use it in handler functions
-	-> alignment is a bit messy
-	-> remove and add html-style block and inline elements?
-		
-	New alignment:
-	enum class Window::AlignmentType {
-		block, inline, float
-	};
-
-	AlignmentType Window::alignment
-
-	When windows are placed in an auto-aligning container:
-	-> consecutive inline elements are appended to the same row
-	-> block elements always go on a unique row
-
-	struct Divider : Window {
-		// like an HTML div, automatically aligns all child windows by their alignment type
-		// and resizes itself (?), with a padding option
-
-		Options:
-			- fixed or auto-size width/height
-			- align contents min/center/max, in x and y directions
-			- padding: space between contained elements and to own border
-	}
-
+	
+	display update process:
+	- throughout interactions, wasChanged() may be called to signal that a display update is needed
+	- downward pass:
+		starting from root, recurse through tree and if an element is found to have changed, call
+		update(1?) method on it before continuing recursion (since update method may change children)
+	- upward pass:
+		recurse to all leaves, and if a leaf has changed, call update(2?) method on all its ancestors
+	- update1 - children can be changed
+	- update2 - children cannot be changed
 	*/
 
 	using Key = sf::Keyboard::Key;

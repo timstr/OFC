@@ -234,6 +234,12 @@ int main(int argc, char** argcv){
 		div->setSize({xdist(randeng), ydist(randeng)});
 	});
 
+	ui::addKeyboardCommand(ui::Key::LShift, [&]{
+		vec2 size;
+		size = ui::getMousePos() - div->rootPos();
+		div->setSize(size);
+	});
+
 	ui::run();
 
 	return 0;
