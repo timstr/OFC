@@ -11,6 +11,7 @@ endif()
 
 set(headers
 	include/gui/context.h
+	include/gui/divider.h
 	include/gui/gui.h
 	include/gui/helpers.h
 	include/gui/stringhelpers.h

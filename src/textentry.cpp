@@ -45,7 +45,7 @@ namespace ui {
 
 	}
 	void TextEntry::render(sf::RenderWindow& renderwindow){
-		sf::RectangleShape rect(size);
+		sf::RectangleShape rect(getSize());
 		rect.setFillColor(background_color);
 		renderwindow.draw(rect);
 		renderwindow.draw(text);

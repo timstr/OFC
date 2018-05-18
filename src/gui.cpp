@@ -146,13 +146,13 @@ namespace ui {
 			getContext().resetView();
 
 			// render the root window, and all child windows it contains
-			root().size = getScreenSize();
+			root().setSize(getScreenSize());
 			root().render(getContext().getRenderWindow());
 
 			// highlight current window if alt is pressed
 			if (auto curr = getContext().getCurrentWindow().lock()){
 				if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))){
-					sf::RectangleShape rect(curr->size);
+					sf::RectangleShape rect(curr->getSize());
 					rect.setPosition(curr->rootPos());
 					rect.setFillColor(sf::Color(0));
 					rect.setOutlineColor(sf::Color(0xFFFF0080));

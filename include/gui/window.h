@@ -10,8 +10,8 @@ typedef sf::Vector2f vec2;
 
 namespace ui {
 
-	// TODO: improve, take inspiration from React and other UI's
-	// TODO: automatic sizing based on child windows
+	// TODO: fix delayed divider update by adding functions to check changes to window tree and call
+	// onChange up/down tree
 
 	/******* THOUGHTS ***********
 	- allow more natural binding to data
@@ -50,21 +50,40 @@ namespace ui {
 	using Key = sf::Keyboard::Key;
 
 	struct Window : std::enable_shared_from_this<Window> {
+		// default constructor
+		Window();
+
+		// TODO: wrap the following in getters and setters, call onChange if necessary
 
 		// prevents the window from receiving input
-		bool disabled = false;
+		bool disabled;
 
 		// prevents the window from rendering
-		bool visible = true;
+		bool visible;
 
 		// limits rendering and input to within the bounding rectangle
-		bool clipping = false;
+		bool clipping;
 
-		// the top-left corner of the window
-		vec2 pos;
+		enum class DisplayStyle {
+			Free,
+			Inline,
+			Block
+			// TODO: add float left/center/right and top/middle/bottom?
+		};
 
-		// the width and height of the window
-		vec2 size;
+		DisplayStyle display_style;
+
+		// get the position (top-left corner of the window)
+		vec2 getPos() const;
+
+		// set the position (top-left corner of the window)
+		void setPos(vec2 _pos);
+
+		// get the width and height of the window
+		vec2 getSize() const;
+
+		// set the size
+		void setSize(vec2 size);
 
 		// virtual destructor for safe polymorphic destruction
 		virtual ~Window();
@@ -156,8 +175,9 @@ namespace ui {
 			if (auto p = child->parent.lock()){
 				p->release(child);
 			}
-			childwindows.insert(childwindows.begin(), child);
+			childwindows.push_back(child);
 			child->parent = weak_from_this();
+			wasChanged();
 			return child;
 		}
 
@@ -166,8 +186,9 @@ namespace ui {
 		std::weak_ptr<WindowType> add(ArgsT&&... args){
 			static_assert(std::is_base_of<Window, WindowType>::value, "WindowType must derive from Window");
 			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
-			childwindows.insert(childwindows.begin(), child);
+			childwindows.push_back(child);
 			child->parent = weak_from_this();
+			wasChanged();
 			return child;
 		}
 		
@@ -177,8 +198,9 @@ namespace ui {
 			static_assert(std::is_base_of<Window, WindowType>::value, "WindowType must derive from Window");
 			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
 			child->pos = position;
-			childwindows.insert(childwindows.begin(), child);
+			childwindows.push_back(child);
 			child->parent = weak_from_this();
+			wasChanged();
 			return child;
 		}
 
@@ -193,6 +215,12 @@ namespace ui {
 
 		// destroy all children
 		void clear();
+
+		// makes onChange() be called just before rendering
+		void wasChanged();
+
+		// called when a child is removed or added, when the window is resized, etc
+		virtual void onChange();
 
 		// find the window at the given local coordinates, optionally excluding a given window and all its children
 		std::weak_ptr<Window> findWindowAt(vec2 _pos, std::weak_ptr<Window> exclude = {});
@@ -210,6 +238,11 @@ namespace ui {
 		std::weak_ptr<Window> getParent() const;
 
 	private:
+		vec2 pos;
+		vec2 size;
+
+		bool changed;
+
 		std::weak_ptr<Window> parent; // TODO: make weak reference
 		std::vector<std::shared_ptr<Window>> childwindows; // TODO: make vector of shared pointers
 

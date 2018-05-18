@@ -3,7 +3,38 @@
 #include <set>
 
 namespace ui {
+	namespace {
+		const float epsilon = 0.0001f;
+	}
 
+	Window::Window() :
+		pos({0.0f, 0.0f}),
+		size({100.0f, 100.0f}),
+		disabled(false),
+		visible(true),
+		clipping(false),
+		display_style(DisplayStyle::Free) {
+
+	}
+	vec2 Window::getPos() const {
+		return pos;
+	}
+	void Window::setPos(vec2 _pos){
+		if (abs(pos.x - _pos.x) + abs(pos.y - _pos.y) > epsilon){
+			pos = _pos;
+			//wasChanged();
+		}
+	}
+	vec2 Window::getSize() const {
+		return size;
+	}
+	void Window::setSize(vec2 _size){
+		_size = vec2(std::max(_size.x, 0.0f), std::max(_size.y, 0.0f));;
+		if (abs(size.x - _size.x) + abs(size.y != _size.y) > epsilon){
+			size = _size;
+			wasChanged();
+		}
+	}
 	Window::~Window(){
 		while (!childwindows.empty()){
 			if (childwindows.back()->inFocus()){
@@ -131,6 +162,7 @@ namespace ui {
 						grabFocus();
 					}
 					childwindows.erase(it);
+					wasChanged();
 					return;
 				}
 			}
@@ -142,6 +174,7 @@ namespace ui {
 				if (*it == win){
 					std::shared_ptr<Window> child = *it;
 					childwindows.erase(it);
+					wasChanged();
 					return child;
 				}
 			}
@@ -162,6 +195,13 @@ namespace ui {
 	}
 	void Window::clear(){
 		childwindows.clear();
+		wasChanged();
+	}
+	void Window::wasChanged(){
+		changed = true;
+	}
+	void Window::onChange(){
+
 	}
 	std::weak_ptr<Window> Window::findWindowAt(vec2 _pos, std::weak_ptr<Window> exclude){
 		if (!visible || disabled){
@@ -200,8 +240,13 @@ namespace ui {
 		renderChildWindows(renderwindow);
 	}
 	void Window::renderChildWindows(sf::RenderWindow& renderwindow){
-		for (auto it = childwindows.rbegin(); it != childwindows.rend(); ++it){
+		for (auto it = childwindows.begin(); it != childwindows.end(); ++it){
 			const std::shared_ptr<Window>& child = *it;
+			if (child->changed){
+				child->changed = false;
+				child->onChange();
+				onChange();
+			}
 			if (child->visible){
 				if (child->clipping){
 					getContext().translateView(child->pos);
