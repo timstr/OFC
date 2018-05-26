@@ -62,6 +62,7 @@ namespace ui {
 			newsize.x = bounds.width + bounds.left;
 		}
 		setSize(newsize);
+		setMinSize(newsize);
 	}
 
 }

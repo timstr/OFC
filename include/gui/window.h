@@ -10,8 +10,7 @@ typedef sf::Vector2f vec2;
 
 namespace ui {
 
-	// TODO: fix delayed divider update by adding functions to check changes to window tree and call
-	// onChange up/down tree
+	// TODO: call renderChildWindows automatically and make private
 
 	/******* THOUGHTS ***********
 	- allow more natural binding to data
@@ -22,22 +21,24 @@ namespace ui {
 	- some common boilerplate that could use a design pattern:
 	-> keeping a well-typed reference to parent window to use it in handler functions
 	
-	display update process:
-	- throughout interactions, wasChanged() may be called to signal that a display update is needed
-	- downward pass:
-		starting from root, recurse through tree and if an element is found to have changed, call
-		update(1?) method on it before continuing recursion (since update method may change children)
-	- upward pass:
-		recurse to all leaves, and if a leaf has changed, call update(2?) method on all its ancestors
-	- update1 - children can be changed
-	- update2 - children cannot be changed
+
 	*/
 
 	using Key = sf::Keyboard::Key;
 
+	// TODO: rename to Element
 	struct Window : std::enable_shared_from_this<Window> {
+
+		enum class DisplayStyle {
+			Free,
+			Inline,
+			Block,
+			InlineBlock
+			// TODO: add float left/center/right and top/middle/bottom?
+		};
+
 		// default constructor
-		Window();
+		Window(DisplayStyle _display_style);
 
 		// TODO: wrap the following in getters and setters, call onChange if necessary
 
@@ -50,14 +51,7 @@ namespace ui {
 		// limits rendering and input to within the bounding rectangle
 		bool clipping;
 
-		enum class DisplayStyle {
-			Free,
-			Inline,
-			Block
-			// TODO: add float left/center/right and top/middle/bottom?
-		};
-
-		DisplayStyle display_style;
+		const DisplayStyle display_style;
 
 		// get the position (top-left corner of the window)
 		vec2 getPos() const;
@@ -70,6 +64,7 @@ namespace ui {
 
 		// set the size
 		void setSize(vec2 size);
+		void setMinSize(vec2 size);
 
 		// virtual destructor for safe polymorphic destruction
 		virtual ~Window();
@@ -163,7 +158,7 @@ namespace ui {
 			}
 			childwindows.push_back(child);
 			child->parent = weak_from_this();
-			wasChanged();
+			makeDirty();
 			return child;
 		}
 
@@ -174,7 +169,7 @@ namespace ui {
 			std::shared_ptr<WindowType> child = std::make_shared<WindowType>(std::forward<ArgsT>(args)...);
 			childwindows.push_back(child);
 			child->parent = weak_from_this();
-			wasChanged();
+			makeDirty();
 			return child;
 		}
 		
@@ -186,7 +181,7 @@ namespace ui {
 			child->pos = position;
 			childwindows.push_back(child);
 			child->parent = weak_from_this();
-			wasChanged();
+			makeDirty();
 			return child;
 		}
 
@@ -201,12 +196,6 @@ namespace ui {
 
 		// destroy all children
 		void clear();
-
-		// makes onChange() be called just before rendering
-		void wasChanged();
-
-		// called when a child is removed or added, when the window is resized, etc
-		virtual void onChange();
 
 		// find the window at the given local coordinates, optionally excluding a given window and all its children
 		std::weak_ptr<Window> findWindowAt(vec2 _pos, std::weak_ptr<Window> exclude = {});
@@ -226,13 +215,47 @@ namespace ui {
 	private:
 		vec2 pos;
 		vec2 size;
+		vec2 min_size;
 
-		bool changed;
+
+		// TODO: add makeDirty() method and replace calls to wasChanged()
+		void makeDirty();
+		bool isDirty() const;
+		bool childrenDirty() const;
+		void makeClean();
+
+		bool dirty;
+
+		// TODO: make private again
+	public:
+		// returns true if a change is needed
+		bool update(float width_avail);
+	private:
+
+		// position and arrange children. Returns the actual size used
+		vec2 Window::arrangeChildren(float width_avail);
 
 		std::weak_ptr<Window> parent; // TODO: make weak reference
 		std::vector<std::shared_ptr<Window>> childwindows; // TODO: make vector of shared pointers
 
 		friend struct Context;
+		friend void run();
+	};
+
+	struct FreeElement : Window {
+		FreeElement();
+	};
+
+	struct InlineElement : Window {
+		InlineElement();
+	};
+
+	struct BlockElement : Window {
+		BlockElement();
+	};
+
+	struct InlineBlockElement : Window {
+		InlineBlockElement();
 	};
 
 } // namespace ui

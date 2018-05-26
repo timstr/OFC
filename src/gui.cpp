@@ -9,7 +9,7 @@
 namespace ui {
 	
 	Window& root(){
-		static std::shared_ptr<Window> rootwin { std::make_shared<Window>() };
+		static std::shared_ptr<Window> rootwin { std::make_shared<FreeElement>() };
 		return *rootwin;
 	}
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler){
@@ -144,6 +144,10 @@ namespace ui {
 			// clear the screen
 			getContext().getRenderWindow().clear();
 			getContext().resetView();
+
+			// update windows
+			// TODO: uncomment
+			// root().update(root().getSize().x);
 
 			// render the root window, and all child windows it contains
 			root().setSize(getScreenSize());

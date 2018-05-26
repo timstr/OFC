@@ -7,13 +7,15 @@ namespace ui {
 		const float epsilon = 0.0001f;
 	}
 
-	Window::Window() :
+	Window::Window(DisplayStyle _display_style) :
+		display_style(_display_style),
 		pos({0.0f, 0.0f}),
 		size({100.0f, 100.0f}),
+		min_size({0.0f, 0.0f}),
 		disabled(false),
 		visible(true),
 		clipping(false),
-		display_style(DisplayStyle::Free) {
+		dirty(true) {
 
 	}
 	vec2 Window::getPos() const {
@@ -22,7 +24,7 @@ namespace ui {
 	void Window::setPos(vec2 _pos){
 		if (abs(pos.x - _pos.x) + abs(pos.y - _pos.y) > epsilon){
 			pos = _pos;
-			//wasChanged();
+			// makeDirty();
 		}
 	}
 	vec2 Window::getSize() const {
@@ -32,8 +34,11 @@ namespace ui {
 		_size = vec2(std::max(_size.x, 0.0f), std::max(_size.y, 0.0f));;
 		if (abs(size.x - _size.x) + abs(size.y != _size.y) > epsilon){
 			size = _size;
-			wasChanged();
+			// makeDirty();
 		}
+	}
+	void Window::setMinSize(vec2 size){
+		min_size = vec2(std::max(size.x, 0.0f), std::max(size.y, 0.0f));
 	}
 	Window::~Window(){
 		while (!childwindows.empty()){
@@ -162,7 +167,7 @@ namespace ui {
 						grabFocus();
 					}
 					childwindows.erase(it);
-					wasChanged();
+					makeDirty();
 					return;
 				}
 			}
@@ -174,7 +179,7 @@ namespace ui {
 				if (*it == win){
 					std::shared_ptr<Window> child = *it;
 					childwindows.erase(it);
-					wasChanged();
+					makeDirty();
 					return child;
 				}
 			}
@@ -195,13 +200,7 @@ namespace ui {
 	}
 	void Window::clear(){
 		childwindows.clear();
-		wasChanged();
-	}
-	void Window::wasChanged(){
-		changed = true;
-	}
-	void Window::onChange(){
-
+		makeDirty();
 	}
 	std::weak_ptr<Window> Window::findWindowAt(vec2 _pos, std::weak_ptr<Window> exclude){
 		if (!visible || disabled){
@@ -242,11 +241,6 @@ namespace ui {
 	void Window::renderChildWindows(sf::RenderWindow& renderwindow){
 		for (auto it = childwindows.begin(); it != childwindows.end(); ++it){
 			const std::shared_ptr<Window>& child = *it;
-			if (child->changed){
-				child->changed = false;
-				child->onChange();
-				onChange();
-			}
 			if (child->visible){
 				if (child->clipping){
 					getContext().translateView(child->pos);
@@ -279,6 +273,134 @@ namespace ui {
 	}
 	std::weak_ptr<Window> Window::getParent() const {
 		return parent;
+	}
+
+	void Window::makeDirty(){
+		dirty = true;
+	}
+
+	bool Window::isDirty() const {
+		return dirty;
+	}
+
+	bool Window::childrenDirty() const {
+		for (const auto& child : childwindows){
+			if (child->isDirty()){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void Window::makeClean(){
+		dirty = false;
+	}
+
+	bool Window::update(float width_avail){
+		// TODO: uncomment
+		/*if (!isDirty()){
+			for (auto child = childwindows.begin(); !isDirty() && child != childwindows.end(); ++child){
+				if ((*child)->update((*child)->size.x)){
+					makeDirty();
+				}
+			}
+			if (!isDirty()){
+				return false;
+			}
+		}*/
+
+		makeClean();
+		// calculate own width and arrange children
+		if (display_style == DisplayStyle::Free){
+			arrangeChildren(size.x);
+			return false;
+		} else {
+			vec2 newsize = arrangeChildren(width_avail);
+			if (display_style == DisplayStyle::Block){
+				newsize.x = width_avail;
+			}
+			size = vec2(
+				std::max(newsize.x, min_size.x),
+				std::max(newsize.y, min_size.y)
+			);
+			float diff = abs(newsize.x - size.x) + abs(newsize.y - size.y);
+			return diff > epsilon;
+		}
+	}
+
+	vec2 Window::arrangeChildren(float width_avail){
+		// TODO: make member
+		const float padding = 5.0f;
+
+		vec2 contentsize = {0, 0};
+		float ypos = padding;
+		float next_ypos = ypos;
+		float xpos = padding;
+
+		for (const auto& window : childwindows){
+			switch (window->display_style){
+				case DisplayStyle::Block:
+					// block elements appear on a new line and may take up the full
+					// width available and as much height as needed
+					{
+						xpos = padding;
+						window->setPos({xpos, next_ypos});
+						float avail = width_avail - 2.0f * padding;
+						window->update(avail);
+						ypos = next_ypos + window->getSize().y + padding;
+						next_ypos = ypos;
+					}
+					break;
+				case DisplayStyle::Inline:
+				case DisplayStyle::InlineBlock:
+					// inline elements appear inline and will take up only as much space as needed
+					// inline-block elements appear inline but may take up any desired amount of space
+					{
+						window->setPos({xpos, ypos});
+						float avail = width_avail - padding - xpos;
+						window->update(avail);
+						// if the window exceeds the end of the line, put it on a new line and rearrange
+						if (xpos + window->getSize().x + padding > width_avail){
+							xpos = padding;
+							ypos = next_ypos;
+							avail = width_avail - 2.0f * padding;
+							window->setPos({xpos, ypos});
+							window->update(avail);
+						}
+						xpos += window->size.x + padding;
+						next_ypos = std::max(next_ypos, ypos + window->getSize().y + padding);
+					}
+					break;
+				case DisplayStyle::Free:
+					// free elements do not appear as flow elements but are positioned
+					// relative to their parent at their x/y position (like the classic ui)
+					
+					// TODO:
+					break;
+			}
+			contentsize = vec2(
+				std::max(contentsize.x, window->pos.x + window->size.x + padding),
+				std::max(contentsize.y, window->pos.y + window->size.y + padding)
+			);
+		}
+
+		return contentsize;
+	}
+
+	FreeElement::FreeElement() : Window(DisplayStyle::Free) {
+
+	}
+
+	InlineElement::InlineElement() : Window(DisplayStyle::Inline) {
+
+	}
+
+	BlockElement::BlockElement() : Window(DisplayStyle::Block) {
+
+	}
+
+	InlineBlockElement::InlineBlockElement() : Window(DisplayStyle::InlineBlock) {
+
 	}
 
 }

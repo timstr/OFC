@@ -7,7 +7,7 @@ namespace ui {
 	namespace forms {
 
 		// Control is a user interface element for manipulating a model's property
-		struct Control : ui::Window {
+		struct Control : ui::InlineBlockElement {
 			Control();
 
 			virtual void submit() = 0;

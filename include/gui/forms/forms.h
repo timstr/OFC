@@ -20,7 +20,7 @@ namespace ui {
 		// tab navigation, space/enter toggling, automatic alignment and sizing
 		// TODO: add cancel button
 
-		struct Form : Window {
+		struct Form : BlockElement {
 			Form(Model _model, const sf::Font& font);
 
 			void onSubmit(const std::function<void(Model)>& _on_submit);
