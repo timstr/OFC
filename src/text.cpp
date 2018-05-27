@@ -3,18 +3,14 @@
 namespace ui {
 
 	Text::Text(std::string _text, const sf::Font& _font, sf::Color color, int charsize)
-		: text(_text, _font, charsize) {
-		text.setFillColor(color);
-		updateSize();
-		disabled = true;
-		background_color = sf::Color(0x0);
+		: Text(std::wstring{_text.begin(), _text.end()}, _font, color, charsize) {
 	}
 	
 	Text::Text(std::wstring _text, const sf::Font& _font, sf::Color color, int charsize)
 		: text(_text, _font, charsize) {
 		text.setFillColor(color);
 		updateSize();
-		disabled = true;
+		disable();
 		background_color = sf::Color(0x0);
 	}
 	

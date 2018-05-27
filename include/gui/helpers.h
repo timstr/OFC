@@ -6,9 +6,6 @@
 namespace ui {
 	namespace helpers {
 
-		// TODO:
-		// slider
-
 		struct Button : Element {
 			// TODO
 		};

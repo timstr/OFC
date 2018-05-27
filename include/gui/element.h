@@ -11,14 +11,10 @@ typedef sf::Vector2f vec2;
 namespace ui {
 
 	/******* THOUGHTS ***********
-	- allow more natural binding to data
-		-> add update() method that performs custom update and updates children?
-			What would that look like?
-
-
 	- some common boilerplate that could use a design pattern:
-	-> keeping a well-typed reference to parent element to use it in handler functions
-	
+		- keeping a well-typed reference to parent element to use it in handler functions
+		-> only really is a nuisance in buttons and text fields and sliders and so on,
+		   all of which can be replaced with reusable widgets that use lambda callbacks
 	*/
 
 	using Key = sf::Keyboard::Key;
@@ -35,18 +31,23 @@ namespace ui {
 		// default constructor
 		Element(DisplayStyle _display_style);
 
-		// TODO: wrap the following in getters and setters, call onChange if necessary
+		// prevent the element from receiving input
+		void disable();
 
-		// prevents the element from receiving input
-		bool disabled;
+		// allow the element the receive input
+		void enable();
 
-		// prevents the element from rendering
-		bool visible;
+		// returns true if the element can receive input
+		bool isEnabled() const;
+
+		// set the visibility of the element
+		void setVisible(bool is_visible);
+
+		// returns true if the element is visible
+		bool isVisible() const;
 
 		// limits rendering and input to within the bounding rectangle
-		bool clipping;
-
-		const DisplayStyle display_style;
+		void setClipping(bool _clipping);
 
 		// get the position (top-left corner of the element)
 		vec2 getPos() const;
@@ -122,7 +123,7 @@ namespace ui {
 		void drop(vec2 local_pos);
 
 		// called when a dragged element is released over the element
-		// TODO: rethink the following: shall return false if the parent's method is to be invoked
+		// shall return false if the parent's method is to be invoked
 		virtual bool onDrop(std::weak_ptr<Element> element);
 
 		// called when the element gains focus
@@ -197,6 +198,11 @@ namespace ui {
 		float getPadding() const;
 
 	private:
+
+		const DisplayStyle display_style;
+		bool disabled;
+		bool visible;
+		bool clipping;
 		vec2 pos;
 		vec2 size;
 		vec2 min_size;

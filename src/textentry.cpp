@@ -12,7 +12,7 @@ namespace ui {
 	TextEntry::TextEntry(std::string str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color)
 		: Text(str, font, _text_color, charsize) {
 		setBackGroundColor(_bg_color);
-		disabled = false;
+		enable();
 	}
 	
 	void TextEntry::beginTyping(){

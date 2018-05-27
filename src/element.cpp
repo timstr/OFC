@@ -20,6 +20,30 @@ namespace ui {
 		padding(5.0f) {
 
 	}
+
+	void Element::disable(){
+		disabled = true;
+	}
+
+	void Element::enable(){
+		disabled = false;
+	}
+
+	bool Element::isEnabled() const {
+		return !disabled;
+	}
+
+	void Element::setVisible(bool is_visible){
+		visible = is_visible;
+	}
+
+	bool Element::isVisible() const {
+		return visible;
+	}
+
+	void Element::setClipping(bool _clipping){
+		clipping = _clipping;
+	}
 	
 	vec2 Element::getPos() const {
 		return pos;
