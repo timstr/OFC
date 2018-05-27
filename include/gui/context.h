@@ -1,6 +1,6 @@
 #pragma once
 
-#include "window.h"
+#include "element.h"
 #include "transition.h"
 #include "textentry.h"
 #include <map>
@@ -42,10 +42,10 @@ namespace ui {
 		void updateTime();
 		double getProgramTime() const;
 
-		std::weak_ptr<Window> getDraggingWindow();
-		void setDraggingWindow(std::weak_ptr<Window> window, vec2 offset = vec2(0, 0));
-		void focusTo(std::weak_ptr<Window> window);
-		std::weak_ptr<Window> getCurrentWindow();
+		std::weak_ptr<Element> getDraggingElement();
+		void setDraggingElement(std::weak_ptr<Element> element, vec2 offset = vec2(0, 0));
+		void focusTo(std::weak_ptr<Element> element);
+		std::weak_ptr<Element> getCurrentElement();
 		std::weak_ptr<TextEntry> getTextEntry();
 		void setTextEntry(std::weak_ptr<TextEntry> textentry);
 
@@ -62,19 +62,19 @@ namespace ui {
 		// the renderwindow to which all ui elements are drawn
 		sf::RenderWindow renderwindow;
 
-		// the window currently being dragged
-		std::weak_ptr<Window> dragging_window;
+		// the element currently being dragged
+		std::weak_ptr<Element> dragging_element;
 		// the mouse's relative position while dragging
 		vec2 drag_offset;
 
-		// the window currently in focus
-		std::weak_ptr<Window> current_window;
+		// the element currently in focus
+		std::weak_ptr<Element> current_element;
 
 		// the text entry currently being typed into
 		std::weak_ptr<TextEntry> text_entry;
 
-		// the window that was last clicked
-		std::weak_ptr<Window> click_window;
+		// the element that was last clicked
+		std::weak_ptr<Element> clicked_element;
 		// maximum time between clicks of a double-click, in seconds
 		const float doubleclicktime;
 		// time of last click

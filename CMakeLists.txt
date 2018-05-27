@@ -17,7 +17,7 @@ set(headers
 	include/gui/text.h
 	include/gui/textentry.h
 	include/gui/transition.h
-	include/gui/window.h
+	include/gui/element.h
 )
 
 set(forms_headers
@@ -38,7 +38,7 @@ set(srcs
 	src/text.cpp
 	src/textentry.cpp
 	src/transition.cpp
-	src/window.cpp
+	src/element.cpp
 )
 
 set(forms_srcs

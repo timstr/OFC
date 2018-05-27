@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gui/window.h"
+#include "gui/element.h"
 
 namespace ui {
 

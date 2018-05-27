@@ -9,15 +9,15 @@ namespace ui {
 		// TODO:
 		// slider
 
-		struct Button : Window {
+		struct Button : Element {
 			// TODO
 		};
 		
-		struct PullDownMenu : Window {
+		struct PullDownMenu : Element {
 			// TODO
 		};
 
-		struct Slider : Window {
+		struct Slider : Element {
 			// TODO
 		};
 

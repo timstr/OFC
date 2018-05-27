@@ -1,23 +1,22 @@
 #pragma once
 
-#include "window.h"
+#include "element.h"
 
 namespace ui {
 
-	// TODO: remove 'target'
 	struct Transition {
-		Transition(double _duration, std::function<void(double)> _transitionFn, std::function<void()> _onComplete = {});
+		Transition(float _duration, std::function<void(float)> _transitionFn, std::function<void()> _onComplete = {});
 
 		void apply();
 
 		bool complete() const;
 
 		private:
-		std::function<void(double)> transitionFn;
+		std::function<void(float)> transitionFn;
 		std::function<void()> onComplete;
 		bool completed;
-		double duration;
-		long double timestamp;
+		float duration;
+		double timestamp;
 	};
 
 }

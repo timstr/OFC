@@ -1,22 +1,22 @@
 #pragma once
 
 #include <SFML/Main.hpp>
-#include "window.h"
+#include "element.h"
 #include "text.h"
 #include "textentry.h"
 #include "context.h"
 
 namespace ui {
 
-	Window& root();
+	Element& root();
 	
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler);
 	void addKeyboardCommand(Key trigger_key, std::vector<Key> required_keys, std::function<void()> handler);
 	void setQuitHandler(std::function<bool()> handler);
 
-	void startTransition(double duration, std::function<void(double)> transitionFn, std::function<void()> onComplete = {});
+	void startTransition(float duration, std::function<void(float)> transitionFn, std::function<void()> onComplete = {});
 
-	long double getProgramTime();
+	double getProgramTime();
 
 	vec2 getScreenSize();
 

@@ -3,13 +3,14 @@
 
 namespace ui {
 
-	Transition::Transition(double _duration, std::function<void(double)> _transitionFn, std::function<void()> _onComplete)
+	Transition::Transition(float _duration, std::function<void(float)> _transitionFn, std::function<void()> _onComplete)
 		: duration(_duration), transitionFn(_transitionFn), onComplete(_onComplete), timestamp(getProgramTime()), completed(false) {
 
 	}
+	
 	void Transition::apply(){
 		double progress = (getProgramTime() - timestamp) / duration;
-		if (progress > 1){
+		if (progress >= 1.0){
 			transitionFn(1.0);
 			if (onComplete){
 				onComplete();
@@ -19,6 +20,7 @@ namespace ui {
 			transitionFn(progress);
 		}
 	}
+	
 	bool Transition::complete() const {
 		return completed;
 	}

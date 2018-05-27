@@ -8,44 +8,55 @@
 
 namespace ui {
 	
-	Window& root(){
-		static std::shared_ptr<Window> rootwin { std::make_shared<FreeElement>() };
-		return *rootwin;
+	Element& root(){
+		static std::shared_ptr<Element> root { std::make_shared<FreeElement>() };
+		return *root;
 	}
+	
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler){
 		getContext().addKeyboardCommand(trigger_key, handler);
 	}
+	
 	void addKeyboardCommand(Key trigger_key, std::vector<Key> required_keys, std::function<void()> handler){
 		getContext().addKeyboardCommand(trigger_key, required_keys, handler);
 	}
+	
 	void setQuitHandler(std::function<bool()> handler){
 		getContext().setQuitHandler(handler);
 	}
-	void startTransition(double duration, std::function<void(double)> transitionFn, std::function<void()> onComplete){
+	
+	void startTransition(float duration, std::function<void(float)> transitionFn, std::function<void()> onComplete){
 		getContext().addTransition(Transition(duration, transitionFn, onComplete));
 	}
-	long double getProgramTime(){
+	
+	double getProgramTime(){
 		return getContext().getProgramTime();
 	}
+	
 	vec2 getScreenSize(){
 		sf::Vector2u size = getContext().getRenderWindow().getSize();
 		return vec2((float)size.x, (float)size.y);
 	}
+	
 	vec2 getMousePos(){
 		return vec2(sf::Mouse::getPosition(getContext().getRenderWindow()));
 	}
+	
 	Context & getContext(){
 		static Context context;
 		return context;
 	}
+	
 	void init(unsigned width, unsigned height, std::string title, int target_fps){
 		getContext().init(width, height, title, 1.0 / target_fps);
 	}
+	
 	void quit(bool force){
 		getContext().handleQuit(force);
 	}
+	
 	void run(){
-		long double prev_time = getContext().getProgramTime();
+		double prev_time = getContext().getProgramTime();
 		while (getContext().getRenderWindow().isOpen() && !getContext().hasQuit()){
 			sf::Event event;
 			while (getContext().getRenderWindow().pollEvent(event)){
@@ -57,10 +68,9 @@ namespace ui {
 						getContext().resize(event.size.width, event.size.height);
 						break;
 					case sf::Event::LostFocus:
-						getContext().setDraggingWindow({});
+						getContext().setDraggingElement({});
 						break;
 					case sf::Event::TextEntered:
-						// TODO: this looks sketchy
 						if (auto text_entry = getContext().getTextEntry().lock()){
 							if (event.text.unicode >= 32 && event.text.unicode < 127){
 								text_entry->write(static_cast<char>(event.text.unicode));
@@ -101,7 +111,7 @@ namespace ui {
 						
 						break;
 					case sf::Event::KeyReleased:
-						if (auto curr = getContext().getCurrentWindow().lock()){
+						if (auto curr = getContext().getCurrentElement().lock()){
 							curr->onKeyUp(event.key.code);
 						}
 						break;
@@ -118,7 +128,7 @@ namespace ui {
 														(float)event.mouseButton.y));
 						break;
 					case sf::Event::MouseWheelScrolled:
-						if (auto curr = getContext().getCurrentWindow().lock()){
+						if (auto curr = getContext().getCurrentElement().lock()){
 							if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel){
 								curr->onScroll(event.mouseWheelScroll.delta, 0.0f);
 							} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
@@ -141,20 +151,19 @@ namespace ui {
 			// apply transitions
 			getContext().applyTransitions();
 
+			// update elements
+			root().update(root().getSize().x);
+
 			// clear the screen
 			getContext().getRenderWindow().clear();
 			getContext().resetView();
 
-			// update windows
-			// TODO: uncomment
-			// root().update(root().getSize().x);
-
-			// render the root window, and all child windows it contains
+			// render the root element, and all children it contains
 			root().setSize(getScreenSize());
-			root().render(getContext().getRenderWindow());
+			root().renderChildren(getContext().getRenderWindow());
 
-			// highlight current window if alt is pressed
-			if (auto curr = getContext().getCurrentWindow().lock()){
+			// highlight current element if alt is pressed
+			if (auto curr = getContext().getCurrentElement().lock()){
 				if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))){
 					sf::RectangleShape rect(curr->getSize());
 					rect.setPosition(curr->rootPos());
@@ -168,7 +177,7 @@ namespace ui {
 			getContext().getRenderWindow().display();
 
 			// sleep only as long as needed
-			long double now = getContext().getProgramTime();
+			double now = getContext().getProgramTime();
 			double delay = getContext().getRenderDelay();
 			sf::sleep(sf::seconds(std::max(0.0f, (float)(getContext().getRenderDelay() - (now - prev_time)))));
 			prev_time = now;

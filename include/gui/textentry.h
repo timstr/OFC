@@ -4,7 +4,6 @@
 
 namespace ui {
 
-	// TODO: pressing escape shouldn't type a blank character
 	struct TextEntry : Text {
 		TextEntry(const sf::Font& font, int charsize = 15);
 		TextEntry(std::string str, const sf::Font& font, int charsize = 15, sf::Color _text_color = sf::Color(0xFF), sf::Color _bg_color = sf::Color(0xFFFFFFFF));
