@@ -17,7 +17,8 @@ namespace ui {
 		clipping(false),
 		dirty(true),
 		layout_index(0),
-		padding(5.0f) {
+		padding(10.0f),
+		margin(5.0f) {
 
 	}
 
@@ -34,6 +35,9 @@ namespace ui {
 	}
 
 	void Element::setVisible(bool is_visible){
+		if (visible != is_visible && display_style != DisplayStyle::Free){
+			makeDirty();
+		}
 		visible = is_visible;
 	}
 
@@ -68,11 +72,10 @@ namespace ui {
 		}
 	}
 	
-	void Element::setMinSize(vec2 size){
-		min_size = vec2(std::max(size.x, 0.0f), std::max(size.y, 0.0f));
-		if (min_size.x > size.x || min_size.y > size.y){
-			makeDirty();
-		}
+	void Element::setMinSize(vec2 _min_size){
+		_min_size = vec2(std::max(_min_size.x, 0.0f), std::max(_min_size.y, 0.0f));
+		min_size = _min_size;
+		makeDirty();
 	}
 	
 	Element::~Element(){
@@ -156,8 +159,10 @@ namespace ui {
 	}
 	
 	void Element::startDrag(){
-		grabFocus();
-		getContext().setDraggingElement(weak_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
+		if (display_style == DisplayStyle::Free){
+			grabFocus();
+			getContext().setDraggingElement(weak_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
+		}
 	}
 	
 	void Element::onDrag(){
@@ -302,13 +307,36 @@ namespace ui {
 		return {};
 	}
 	
-	void Element::render(sf::RenderWindow& renderwindow){
-		sf::RectangleShape rectshape;
-		rectshape.setSize(size);
-		rectshape.setFillColor(sf::Color((((uint32_t)std::hash<Element*>{}(this)) & 0xFFFFFF00) | 0x80));
-		rectshape.setOutlineColor(sf::Color(0xFF));
-		rectshape.setOutlineThickness(1);
-		renderwindow.draw(rectshape);
+	void Element::render(sf::RenderWindow& rw){
+
+		sf::RectangleShape rect;
+		rect.setOutlineColor(sf::Color(0xFF));
+		rect.setOutlineThickness(1);
+
+		// margin
+		rect.setPosition({-margin + 1.0f, -margin + 1.0f});
+		rect.setSize(size + vec2(2.0f * margin - 2.0f, 2.0f * margin - 2.0f));
+		rect.setFillColor(sf::Color(0xf9cc9dff));
+		if (rect.getSize().x > 0 && rect.getSize().y > 0){
+			rw.draw(rect);
+		}
+
+		// padding
+		rect.setPosition({1.0f, 1.0f});
+		rect.setSize(size - vec2(2.0f, 2.0f));
+		rect.setFillColor(sf::Color(0xc3d08bff));
+		if (rect.getSize().x > 0 && rect.getSize().y > 0){
+			rw.draw(rect);
+		}
+
+		// content
+		rect.setPosition({padding + 1.0f, padding + 1.0f});
+		rect.setSize(size - vec2(2.0f * padding + 2.0f, 2.0f * padding + 2.0f));
+		//rect.setFillColor(sf::Color((((uint32_t)std::hash<Element*>{}(this)) & 0xFFFFFF00) | 0x80));
+		rect.setFillColor(sf::Color(0x8cb6c0ff));
+		if (rect.getSize().x > 0 && rect.getSize().y > 0){
+			rw.draw(rect);
+		}
 	}
 	
 	void Element::renderChildren(sf::RenderWindow& renderwindow){
@@ -382,6 +410,18 @@ namespace ui {
 		return padding;
 	}
 
+	void Element::setMargin(float _margin){
+		_margin = std::max(_margin, 0.0f);
+		if (abs(margin - _margin) > epsilon){
+			margin = _margin;
+			makeDirty();
+		}
+	}
+
+	float Element::getMargin() const {
+		return margin;
+	}
+
 	void Element::adopt(std::shared_ptr<Element> child){
 		children.push_back(child);
 		child->parent = weak_from_this();
@@ -430,24 +470,25 @@ namespace ui {
 			arrangeChildren(size.x);
 			return false;
 		} else {
+			vec2 oldsize = size;
 			vec2 newsize = arrangeChildren(width_avail);
 			if (display_style == DisplayStyle::Block){
-				newsize.x = width_avail;
+				newsize.x = std::max(width_avail, newsize.x);
 			}
 			size = vec2(
 				std::max(newsize.x, min_size.x),
 				std::max(newsize.y, min_size.y)
 			);
-			float diff = abs(newsize.x - size.x) + abs(newsize.y - size.y);
+			float diff = abs(newsize.x - oldsize.x) + abs(newsize.y - oldsize.y);
 			return diff > epsilon;
 		}
 	}
 
 	vec2 Element::arrangeChildren(float width_avail){
 		vec2 contentsize = {0, 0};
+		float xpos = padding;
 		float ypos = padding;
 		float next_ypos = ypos;
-		float xpos = padding;
 
 		std::vector<std::shared_ptr<Element>> sorted = children;
 
@@ -457,16 +498,20 @@ namespace ui {
 		std::sort(sorted.begin(), sorted.end(), comp);
 
 		for (const auto& element : sorted){
+			if (!element->isVisible()){
+				continue;
+			}
 			switch (element->display_style){
 				case DisplayStyle::Block:
 					// block elements appear on a new line and may take up the full
 					// width available and as much height as needed
 					{
 						xpos = padding;
-						element->setPos({xpos, next_ypos});
-						float avail = width_avail - 2.0f * padding;
+						ypos = next_ypos + element->margin;
+						element->setPos({xpos + element->margin, ypos});
+						float avail = width_avail - 2.0f * (padding + element->margin);
 						element->update(avail);
-						ypos = next_ypos + element->getSize().y + padding;
+						ypos = next_ypos + element->getSize().y + 2.0f * element->margin;
 						next_ypos = ypos;
 					}
 					break;
@@ -474,19 +519,19 @@ namespace ui {
 					// inline elements appear inline and will take up only as much space as needed
 					// inline-block elements appear inline but may take up any desired amount of space
 					{
-						element->setPos({xpos, ypos});
-						float avail = width_avail - padding - xpos;
+						element->setPos({xpos + element->margin, ypos + element->margin});
+						float avail = width_avail - (element->margin + padding + xpos);
 						element->update(avail);
 						// if the element exceeds the end of the line, put it on a new line and rearrange
-						if (xpos + element->getSize().x + padding > width_avail){
+						if (xpos + element->getSize().x + element->margin + padding > width_avail){
 							xpos = padding;
 							ypos = next_ypos;
-							avail = width_avail - 2.0f * padding;
-							element->setPos({xpos, ypos});
+							avail = width_avail - 2.0f * (padding + element->margin);
+							element->setPos({xpos + element->margin, ypos + element->margin});
 							element->update(avail);
 						}
-						xpos += element->size.x + padding;
-						next_ypos = std::max(next_ypos, ypos + element->getSize().y + padding);
+						xpos += element->size.x + 2.0f * element->margin;
+						next_ypos = std::max(next_ypos, ypos + element->getSize().y + 2.0f * element->margin);
 					}
 					break;
 				case DisplayStyle::Free:

@@ -191,11 +191,17 @@ namespace ui {
 		// get the parent element
 		std::weak_ptr<Element> getParent() const;
 
-		// set the padding between child elements and borders
+		// set the padding; spacing between content and border
 		void setPadding(float _padding);
 
-		// get the padding between child elements and borders
+		// get the padding; spacing between content and border
 		float getPadding() const;
+
+		// set the margin; spacing between other self and other elements
+		void setMargin(float _margin);
+
+		// get the margin; spacing between other self and other elements
+		float getMargin() const;
 
 	private:
 
@@ -208,6 +214,7 @@ namespace ui {
 		vec2 min_size;
 		int layout_index;
 		float padding;
+		float margin;
 
 		void adopt(std::shared_ptr<Element> child);
 
