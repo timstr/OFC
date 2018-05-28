@@ -4,6 +4,16 @@
 
 namespace ui {
 
+	template<typename ...Args>
+	void propagate(std::shared_ptr<Element> element, bool (Element::* function)(Args...), Args... args){
+		while (element) {
+			if (((*element).*function)(args...)){
+				return;
+			}
+			element = element->getParent().lock();
+		}
+	}
+
 	Context::Context() : doubleclicktime(0.25f), quit(false) {
 	
 	}
@@ -14,7 +24,7 @@ namespace ui {
 		settings.antialiasingLevel = 8;
 		getRenderWindow().create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
 		resetView();
-		current_element = root().weak_from_this();
+		current_element = root().shared_from_this();
 		clock.restart();
 	}
 	
@@ -33,33 +43,33 @@ namespace ui {
 		}
 	}
 	
-	void Context::focusTo(std::weak_ptr<Element> element){
-		if (auto elem = element.lock()){
-			if (auto curr = current_element.lock()){
+	void Context::focusTo(std::shared_ptr<Element> element){
+		if (element){
+			if (current_element){
 				// if the element is already in focus, no work to do here
-				if (elem == curr){
+				if (element == current_element){
 					return;
 				}
 
-				current_element = elem;
+				current_element = element;
 
 				// stop typing now
-				if (!getTextEntry().expired()){
-					setTextEntry({});
+				if (!getTextEntry()){
+					setTextEntry(nullptr);
 				}
 
 				// paths to old and new focused element
 				std::vector<std::shared_ptr<Element>> oldpath, newpath;
 
 				// populate old
-				std::shared_ptr<Element> old = curr;
+				std::shared_ptr<Element> old = current_element;
 				while (old){
 					oldpath.push_back(old);
 					old = old->parent.lock();
 				}
 
 				// populate new
-				std::shared_ptr<Element> nu = elem;
+				std::shared_ptr<Element> nu = element;
 				while (nu){
 					newpath.push_back(nu);
 					nu = nu->parent.lock();
@@ -91,65 +101,35 @@ namespace ui {
 	}
 	
 	void Context::handleMouseDown(sf::Mouse::Button button, vec2 pos){
-		std::shared_ptr<Element> hit_element = root().findElementAt(pos).lock();
+		std::shared_ptr<Element> hit_element = root().findElementAt(pos);
 
 		if (!hit_element){
 			return;
 		}
 
-		if ((clock.getElapsedTime() - click_timestamp).asSeconds() <= doubleclicktime){
-			std::shared_ptr<Element> last_clicked = clicked_element.lock();
+		// if the mouse has been clicked recently, with the same button, on the same element:
+		if (((clock.getElapsedTime() - click_timestamp).asSeconds() <= doubleclicktime)
+			&& (click_button == button)
+			&& (clicked_element && (hit_element == clicked_element))){
 
-			// if the mouse has been clicked recently:
-			if (click_button == button){
-				// if the mouse was clicked with the same button:
-				if (last_clicked && (hit_element == last_clicked)){
-					// if the click hit the same element again:
-
-					// double click that element
-					if (button == sf::Mouse::Left){
-						hit_element->onLeftClick(2);
-					} else if (button == sf::Mouse::Right){
-						hit_element->onRightClick(2);
-					}
-
-					// don't let it be double clicked again until after it gets single clicked again
-					// achieved by faking an old timestamp
-					click_timestamp = clock.getElapsedTime() - sf::seconds(doubleclicktime);
-				} else {
-					// if the click hit a different element:
-
-					focusTo(hit_element);
-					// single-click the first element, then this one
-					if (button == sf::Mouse::Left){
-						hit_element->onLeftClick(1);
-					} else if (button == sf::Mouse::Right){
-						hit_element->onRightClick(1);
-					}
-					click_timestamp = clock.getElapsedTime();
-				}
-			} else {
-				// if the mouse was clicked with a different button:
-
-				focusTo(hit_element);
-
-				// single-click the current element
-				if (button == sf::Mouse::Left){
-					hit_element->onLeftClick(1);
-				} else if (button == sf::Mouse::Right){
-					hit_element->onRightClick(1);
-				}
-
-				click_timestamp = clock.getElapsedTime();
+			// double click that element
+			if (button == sf::Mouse::Left){
+				propagate(hit_element, &Element::onLeftClick, 2);
+			} else if (button == sf::Mouse::Right){
+				propagate(hit_element, &Element::onRightClick, 2);
 			}
+
+			// don't let it be double clicked again until after it gets single clicked again
+			// achieved by faking an old timestamp
+			click_timestamp = clock.getElapsedTime() - sf::seconds(doubleclicktime);
 		} else {
-			// if the mouse hasn't been clicked recently:
+			// otherwise, single click
 
 			focusTo(hit_element);
 			if (button == sf::Mouse::Left){
-				hit_element->onLeftClick(1);
+				propagate(hit_element, &Element::onLeftClick, 1);
 			} else if (button == sf::Mouse::Right){
-				hit_element->onRightClick(1);
+				propagate(hit_element, &Element::onRightClick, 1);
 			}
 
 			click_timestamp = clock.getElapsedTime();
@@ -193,42 +173,43 @@ namespace ui {
 
 		if (current_it != commands.end()){
 			current_it->second();
-		} else if (auto curr = current_element.lock()){
-			curr->onKeyDown(key);
+		} else {
+			propagate(current_element, &Element::onKeyDown, key);
 		}
+	}
+
+	void Context::handleKeyRelease(Key key){
+		propagate(current_element, &Element::onKeyUp, key);
 	}
 	
 	void Context::handleMouseUp(sf::Mouse::Button button, vec2 pos){
-		if (auto dragging = dragging_element.lock()){
-			if (button == sf::Mouse::Left){
-				dragging->onLeftRelease();
-			} else if (button == sf::Mouse::Right){
-				dragging->onRightRelease();
-			}
-		} else if (auto curr = current_element.lock()){
-			if (button == sf::Mouse::Left){
-				curr->onLeftRelease();
-			} else if (button == sf::Mouse::Right){
-				curr->onRightRelease();
-			}
+		if (button == sf::Mouse::Left){
+			propagate(current_element, &Element::onLeftRelease);
+		} else if (button == sf::Mouse::Right){
+			propagate(current_element, &Element::onRightRelease);
 		}
+	}
+
+	void Context::handleScroll(vec2 pos, float delta_x, float delta_y){
+		auto hit_element = root().findElementAt(pos);
+		propagate(hit_element, &Element::onScroll, delta_x, delta_y);
 	}
 	
 	void Context::handleDrag(){
-		if (auto dragging = dragging_element.lock()){
-			dragging->pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
-			dragging->onDrag();
+		if (dragging_element){
+			dragging_element->pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
+			dragging_element->onDrag();
 		}
 	}
 	
 	void Context::handleHover(){
 		vec2 position = (vec2)sf::Mouse::getPosition(getRenderWindow());
-		std::shared_ptr<Element> hover_element = root().findElementAt(position, dragging_element).lock();
+		std::shared_ptr<Element> hover_element = root().findElementAt(position, dragging_element);
 		if (hover_element){
-			if (auto dragging = dragging_element.lock()){
-				hover_element->onHoverWith(dragging);
+			if (dragging_element){
+				propagate(hover_element, &Element::onHoverWith, dragging_element);
 			} else {
-				hover_element->onHover();
+				propagate(hover_element, &Element::onHover);
 			}
 		}
 	}
@@ -298,24 +279,24 @@ namespace ui {
 		return program_time;
 	}
 	
-	std::weak_ptr<Element> Context::getDraggingElement(){
+	std::shared_ptr<Element> Context::getDraggingElement(){
 		return dragging_element;
 	}
 	
-	void Context::setDraggingElement(std::weak_ptr<Element> element, vec2 offset){
+	void Context::setDraggingElement(std::shared_ptr<Element> element, vec2 offset){
 		dragging_element = element;
 		drag_offset = offset;
 	}
 	
-	std::weak_ptr<Element> Context::getCurrentElement(){
+	std::shared_ptr<Element> Context::getCurrentElement(){
 		return current_element;
 	}
 	
-	std::weak_ptr<TextEntry> Context::getTextEntry(){
+	std::shared_ptr<TextEntry> Context::getTextEntry(){
 		return text_entry;
 	}
 	
-	void Context::setTextEntry(std::weak_ptr<TextEntry> textentry){
+	void Context::setTextEntry(std::shared_ptr<TextEntry> textentry){
 		text_entry = textentry;
 	}
 	

@@ -71,14 +71,14 @@ namespace ui {
 						getContext().setDraggingElement({});
 						break;
 					case sf::Event::TextEntered:
-						if (auto text_entry = getContext().getTextEntry().lock()){
+						if (auto text_entry = getContext().getTextEntry()){
 							if (event.text.unicode >= 32 && event.text.unicode < 127){
 								text_entry->write(static_cast<char>(event.text.unicode));
 							}
 						}
 						break;
 					case sf::Event::KeyPressed:
-						if (auto text_entry = getContext().getTextEntry().lock()){
+						if (auto text_entry = getContext().getTextEntry()){
 							switch (event.key.code){
 								case Key::BackSpace:
 									text_entry->onBackspace();
@@ -111,9 +111,7 @@ namespace ui {
 						
 						break;
 					case sf::Event::KeyReleased:
-						if (auto curr = getContext().getCurrentElement().lock()){
-							curr->onKeyUp(event.key.code);
-						}
+						getContext().handleKeyRelease(event.key.code);
 						break;
 					case sf::Event::MouseButtonPressed:
 					{
@@ -128,13 +126,17 @@ namespace ui {
 														(float)event.mouseButton.y));
 						break;
 					case sf::Event::MouseWheelScrolled:
-						if (auto curr = getContext().getCurrentElement().lock()){
-							if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel){
-								curr->onScroll(event.mouseWheelScroll.delta, 0.0f);
-							} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
-								curr->onScroll(0.0f, event.mouseWheelScroll.delta);
-							}
+					{
+						vec2 pos = {
+							(float)event.mouseWheelScroll.x,
+							(float)event.mouseWheelScroll.y
+						};
+						if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel){
+							getContext().handleScroll(pos, event.mouseWheelScroll.delta, 0.0f);
+						} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
+							getContext().handleScroll(pos, 0.0f, event.mouseWheelScroll.delta);
 						}
+					}
 						break;
 				}
 			}
@@ -163,7 +165,7 @@ namespace ui {
 			root().renderChildren(getContext().getRenderWindow());
 
 			// highlight current element if alt is pressed
-			if (auto curr = getContext().getCurrentElement().lock()){
+			if (auto curr = getContext().getCurrentElement()){
 				if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))){
 					sf::RectangleShape rect(curr->getSize());
 					rect.setPosition(curr->rootPos());

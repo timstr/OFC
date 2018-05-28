@@ -19,7 +19,7 @@ namespace ui {
 
 		void render(sf::RenderWindow& renderwindow) override;
 
-		void onLeftClick(int clicks) override;
+		bool onLeftClick(int clicks) override;
 		void onFocus() override;
 
 		private:

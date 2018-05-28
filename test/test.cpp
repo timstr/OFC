@@ -1,4 +1,5 @@
 #include "gui/gui.h"
+#include "gui/helpers.h"
 #include <iostream>
 #include <random>
 #include <sstream>
@@ -47,7 +48,7 @@ struct TestElement : ui::InlineElement {
 		InlineElement::render(rw);
 	}
 
-	void onLeftClick(int clicks) override {
+	bool onLeftClick(int clicks) override {
 		bringToFront();
 		if (clicks == 1){
 			std::cout << name << " was left-clicked once" << std::endl;
@@ -70,24 +71,28 @@ struct TestElement : ui::InlineElement {
 			std::cout << name << " was left-clicked twice" << std::endl;
 			changeColor();
 		}
+		return true;
 	}
 
-	void onLeftRelease() override {
+	bool onLeftRelease() override {
 		std::cout << name << " was left released" << std::endl;
 		stopDrag();
 		drop(localMousePos());
+		return true;
 	}
 
-	void onRightClick(int clicks) override {
+	bool onRightClick(int clicks) override {
 		if (clicks == 1){
 			std::cout << name << " was right-clicked once" << std::endl;
 		} else if (clicks == 2){
 			std::cout << name << " was right-clicked twice" << std::endl;
 		}
+		return true;
 	}
 
-	void onRightRelease() override {
+	bool onRightRelease() override {
 		std::cout << name << " was right released" << std::endl;
+		return true;
 	}
 
 	void onFocus() override {
@@ -98,36 +103,39 @@ struct TestElement : ui::InlineElement {
 		std::cout << name << " lost focus" << std::endl;
 	}
 
-	void onKeyDown(ui::Key key) override {
+	bool onKeyDown(ui::Key key) override {
 		std::cout << name << " - [" << key << "] was pressed" << std::endl;
 		if (key == ui::Key::Escape){
 			close();
 		}
+		return true;
 	}
 
-	void onKeyUp(ui::Key key) override {
+	bool onKeyUp(ui::Key key) override {
 		std::cout << name << " - [" << key << "] was released" << std::endl;
+		return true;
 	}
 
-	void onScroll(float dx, float dy) override {
+	bool onScroll(float dx, float dy) override {
 		std::cout << name << " was scrolled (" << dx << ", " << dy << ')' << std::endl;
+		return true;
 	}
 
 	void onDrag() override {
 
 	}
 
-	void onHover() override {
-
+	bool onHover() override {
+		return true;
 	}
 
-	void onHoverWith(std::weak_ptr<Element> element) override {
-		
+	bool onHoverWith(std::shared_ptr<Element> element) override {
+		return true;
 	}
 
-	bool onDrop(std::weak_ptr<Element> element) override {
-		if (auto elem = element.lock()){
-			if (auto w = std::dynamic_pointer_cast<TestElement, Element>(elem)){
+	bool onDrop(std::shared_ptr<Element> element) override {
+		if (element){
+			if (auto w = std::dynamic_pointer_cast<TestElement, Element>(element)){
 				std::cout << w->name << " was dropped";
 			} else {
 				std::cout << "An element was dropped";
@@ -201,8 +209,12 @@ int main(int argc, char** argcv){
 	pops->add<TestElement>("Greg");
 	pops->add<TestElement>("Donny");
 
-	block->add<ui::BlockElement>();
+	block->add<ui::LineBreak>(10.0f);
+
 	block->add<TestElement>("Jorgan");
+
+	block->add<ui::LineBreak>(15.0f);
+
 	block->add<TestElement>("Allen");;
 	block->add<TestElement>("Percy");
 	block->add<TestElement>("Collin");

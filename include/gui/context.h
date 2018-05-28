@@ -20,8 +20,10 @@ namespace ui {
 		void setQuitHandler(std::function<bool()> handler);
 
 		void handleKeyPress(Key key);
+		void handleKeyRelease(Key key);
 		void handleMouseDown(sf::Mouse::Button button, vec2 pos);
 		void handleMouseUp(sf::Mouse::Button button, vec2 pos);
+		void handleScroll(vec2 pos, float delta_x, float delta_y);
 		void handleDrag();
 		void handleHover();
 		void handleQuit(bool force);
@@ -42,12 +44,12 @@ namespace ui {
 		void updateTime();
 		double getProgramTime() const;
 
-		std::weak_ptr<Element> getDraggingElement();
-		void setDraggingElement(std::weak_ptr<Element> element, vec2 offset = vec2(0, 0));
-		void focusTo(std::weak_ptr<Element> element);
-		std::weak_ptr<Element> getCurrentElement();
-		std::weak_ptr<TextEntry> getTextEntry();
-		void setTextEntry(std::weak_ptr<TextEntry> textentry);
+		std::shared_ptr<Element> getDraggingElement();
+		void setDraggingElement(std::shared_ptr<Element> element, vec2 offset = vec2(0, 0));
+		void focusTo(std::shared_ptr<Element> element);
+		std::shared_ptr<Element> getCurrentElement();
+		std::shared_ptr<TextEntry> getTextEntry();
+		void setTextEntry(std::shared_ptr<TextEntry> textentry);
 
 		private:
 
@@ -63,18 +65,18 @@ namespace ui {
 		sf::RenderWindow renderwindow;
 
 		// the element currently being dragged
-		std::weak_ptr<Element> dragging_element;
+		std::shared_ptr<Element> dragging_element;
 		// the mouse's relative position while dragging
 		vec2 drag_offset;
 
 		// the element currently in focus
-		std::weak_ptr<Element> current_element;
+		std::shared_ptr<Element> current_element;
 
 		// the text entry currently being typed into
-		std::weak_ptr<TextEntry> text_entry;
+		std::shared_ptr<TextEntry> text_entry;
 
 		// the element that was last clicked
-		std::weak_ptr<Element> clicked_element;
+		std::shared_ptr<Element> clicked_element;
 		// maximum time between clicks of a double-click, in seconds
 		const float doubleclicktime;
 		// time of last click

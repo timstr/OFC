@@ -93,19 +93,20 @@ namespace ui {
 	}
 	
 	Element::~Element(){
+		
+	}
+	
+	void Element::close(){
+		onClose();
 		while (!children.empty()){
 			if (children.back()->inFocus()){
 				grabFocus();
 			}
 			children.pop_back();
 		}
-	}
-	
-	void Element::close(){
 		if (auto p = parent.lock()){
-			p->remove(weak_from_this());
+			p->remove(shared_from_this());
 		}
-		onClose();
 	}
 
 	void Element::onClose(){
@@ -136,20 +137,20 @@ namespace ui {
 		return pos;
 	}
 	
-	void Element::onLeftClick(int clicks){
-
+	bool Element::onLeftClick(int clicks){
+		return false;
 	}
 	
-	void Element::onLeftRelease(){
-
+	bool Element::onLeftRelease(){
+		return false;
 	}
 	
-	void Element::onRightClick(int clicks){
-
+	bool Element::onRightClick(int clicks){
+		return false;
 	}
 	
-	void Element::onRightRelease(){
-
+	bool Element::onRightRelease(){
+		return false;
 	}
 	
 	bool Element::leftMouseDown() const {
@@ -168,14 +169,14 @@ namespace ui {
 		}
 	}
 	
-	void Element::onScroll(float delta_x, float delta_y){
-
+	bool Element::onScroll(float delta_x, float delta_y){
+		return false;
 	}
 	
 	void Element::startDrag(){
 		if (display_style == DisplayStyle::Free){
 			grabFocus();
-			getContext().setDraggingElement(weak_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
+			getContext().setDraggingElement(shared_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
 		}
 	}
 	
@@ -190,21 +191,21 @@ namespace ui {
 	}
 	
 	bool Element::dragging() const {
-		return (getContext().getDraggingElement().lock() == shared_from_this());
+		return (getContext().getDraggingElement() == shared_from_this());
 	}
 	
-	void Element::onHover(){
-
+	bool Element::onHover(){
+		return false;
 	}
 	
-	void Element::onHoverWith(std::weak_ptr<Element> element){
-
+	bool Element::onHoverWith(std::shared_ptr<Element> element){
+		return false;
 	}
 	
 	void Element::drop(vec2 local_pos){
 		vec2 pos = rootPos() + local_pos;
-		if (auto element = root().findElementAt(pos, weak_from_this()).lock()){
-			auto self = weak_from_this();
+		if (auto element = root().findElementAt(pos, shared_from_this())){
+			auto self = shared_from_this();
 			do {
 				if (element->onDrop(self)){
 					return;
@@ -213,7 +214,7 @@ namespace ui {
 		}
 	}
 	
-	bool Element::onDrop(std::weak_ptr<Element> element){
+	bool Element::onDrop(std::shared_ptr<Element> element){
 		return false;
 	}
 	
@@ -222,7 +223,7 @@ namespace ui {
 	}
 	
 	bool Element::inFocus() const {
-		return (getContext().getCurrentElement().lock() == shared_from_this());
+		return (getContext().getCurrentElement() == shared_from_this());
 	}
 	
 	void Element::onLoseFocus(){
@@ -230,29 +231,30 @@ namespace ui {
 	}
 	
 	void Element::grabFocus(){
-		getContext().focusTo(weak_from_this());
+		getContext().focusTo(shared_from_this());
 	}
 	
-	void Element::onKeyDown(Key key){
-
+	bool Element::onKeyDown(Key key){
+		return false;
 	}
 	
-	void Element::onKeyUp(Key key){
-
+	bool Element::onKeyUp(Key key){
+		return false;
 	}
 	
 	bool Element::keyDown(Key key) const {
 		return inFocus() && sf::Keyboard::isKeyPressed(key);
 	}
 	
-	void Element::remove(std::weak_ptr<Element> element){
-		if (auto elem = element.lock()){
+	void Element::remove(std::shared_ptr<Element> element){
+		if (element){
 			for (auto it = children.begin(); it != children.end(); ++it){
-				if (*it == elem){
-					if ((*it)->inFocus()){
+				if (*it == element){
+					if (element->inFocus()){
 						grabFocus();
 					}
 					children.erase(it);
+					element->parent = {};
 					organizeLayoutIndices();
 					makeDirty();
 					return;
@@ -261,14 +263,14 @@ namespace ui {
 		}
 	}
 	
-	std::shared_ptr<Element> Element::release(std::weak_ptr<Element> element){
-		if (auto elem = element.lock()){
+	std::shared_ptr<Element> Element::release(std::shared_ptr<Element> element){
+		if (element){
 			for (auto it = children.begin(); it != children.end(); ++it){
-				if (*it == elem){
-					std::shared_ptr<Element> child = *it;
+				if (*it == element){
 					children.erase(it);
+					element->parent = {};
 					makeDirty();
-					return child;
+					return element;
 				}
 			}
 		}
@@ -293,32 +295,32 @@ namespace ui {
 		makeDirty();
 	}
 	
-	std::weak_ptr<Element> Element::findElementAt(vec2 _pos, std::weak_ptr<Element> exclude){
+	std::shared_ptr<Element> Element::findElementAt(vec2 _pos, std::shared_ptr<Element> exclude){
 		if (!visible || disabled){
-			return {};
+			return nullptr;
 		}
 
 		if (clipping && ((_pos.x < 0.0f) || (_pos.x > size.x) || (_pos.y < 0.0) || (_pos.y > size.y))){
-			return {};
+			return nullptr;
 		}
 
-		if (exclude.lock() == shared_from_this()){
-			return {};
+		if (exclude == shared_from_this()){
+			return nullptr;
 		}
 
-		std::weak_ptr<Element> element;
+		std::shared_ptr<Element> element;
 		for (auto it = children.rbegin(); it != children.rend(); ++it){
 			element = (*it)->findElementAt(_pos - (*it)->pos, exclude);
-			if (auto elem = element.lock()){
-				return elem;
+			if (element){
+				return element;
 			}
 		}
 
 		if (this->hit(_pos)){
-			return weak_from_this();
+			return shared_from_this();
 		}
 
-		return {};
+		return nullptr;
 	}
 	
 	void Element::render(sf::RenderWindow& rw){
@@ -413,13 +415,8 @@ namespace ui {
 		}
 	}
 	
-	std::vector<std::weak_ptr<Element>> Element::getChildren() const {
-		std::vector<std::weak_ptr<Element>> ret;
-		ret.reserve(children.size());
-		for (auto it = children.begin(); it != children.end(); ++it){
-			ret.push_back(*it);
-		}
-		return ret;
+	const std::vector<std::shared_ptr<Element>>& Element::getChildren() const {
+		return children;
 	}
 	
 	std::weak_ptr<Element> Element::getParent() const {

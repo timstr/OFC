@@ -21,12 +21,16 @@ namespace ui {
 
 	struct Element : std::enable_shared_from_this<Element> {
 
+	private:
+
 		enum class DisplayStyle {
 			Free,
 			Inline,
 			Block
 			// TODO: add float left/center/right and top/middle/bottom?
 		};
+
+	public:
 
 		// default constructor
 		Element(DisplayStyle _display_style);
@@ -69,7 +73,7 @@ namespace ui {
 		// clears and removes the element from its parent
 		void close();
 
-		// called when the element is closed, to be used for releasing resources reliably
+		// called when the element is closed; to be used for releasing resources reliably
 		virtual void onClose();
 
 		// true if a test point (in local space) intercepts the element
@@ -82,16 +86,20 @@ namespace ui {
 		vec2 rootPos() const;
 
 		// called when the element is clicked on with the left mouse button
-		virtual void onLeftClick(int clicks);
+		// if false is returned, call will propagate to the parent
+		virtual bool onLeftClick(int clicks);
 
 		// called when the left mouse button is released
-		virtual void onLeftRelease();
+		// if false is returned, call will propagate to the parent
+		virtual bool onLeftRelease();
 
 		// called when the element is clicked on with the right mouse button
-		virtual void onRightClick(int clicks);
+		// if false is returned, call will propagate to the parent
+		virtual bool onRightClick(int clicks);
 
 		// called when the right mouse button is released
-		virtual void onRightRelease();
+		// if false is returned, call will propagate to the parent
+		virtual bool onRightRelease();
 
 		// true if the left mouse button is down and the element is in focus
 		bool leftMouseDown() const;
@@ -100,7 +108,8 @@ namespace ui {
 		bool rightMouseDown() const;
 
 		// called when the mouse is scrolled and the element is in focus
-		virtual void onScroll(float delta_x, float delta_y);
+		// if false is returned, call will propagate to the parent
+		virtual bool onScroll(float delta_x, float delta_y);
 
 		// begins the element being dragged by the mouse
 		void startDrag();
@@ -115,17 +124,20 @@ namespace ui {
 		bool dragging() const;
 
 		// called when the mouse passes over the element
-		virtual void onHover();
+		// if false is returned, call will propagate to the parent
+		virtual bool onHover();
 
 		// called when the mouse passes over the element with another element being dragged
-		virtual void onHoverWith(std::weak_ptr<Element> element);
+		// if false is returned, call will propagate to the parent
+		virtual bool onHoverWith(std::shared_ptr<Element> element);
 
 		// drop the element (via the point local_pos, in local coordinates) onto the element below it
 		void drop(vec2 local_pos);
 
 		// called when a dragged element is released over the element
 		// shall return false if the parent's method is to be invoked
-		virtual bool onDrop(std::weak_ptr<Element> element);
+		// if false is returned, call will propagate to the parent
+		virtual bool onDrop(std::shared_ptr<Element> element);
 
 		// called when the element gains focus
 		virtual void onFocus();
@@ -140,17 +152,19 @@ namespace ui {
 		void grabFocus();
 
 		// called when a key is pressed and the element is in focus
-		virtual void onKeyDown(Key key);
+		// if false is returned, call will propagate to the parent
+		virtual bool onKeyDown(Key key);
 
 		// called when a key is released and the element is in focus
-		virtual void onKeyUp(Key key);
+		// if false is returned, call will propagate to the parent
+		virtual bool onKeyUp(Key key);
 
 		// true if 'key' is currently being pressed and the element is in focus
 		bool keyDown(Key key) const;
 
 		// add a child element
 		template<typename ElementType>
-		std::weak_ptr<ElementType> add(std::shared_ptr<ElementType> child){
+		std::shared_ptr<ElementType> add(std::shared_ptr<ElementType> child){
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
 			if (auto p = child->parent.lock()){
 				p->release(child);
@@ -161,7 +175,7 @@ namespace ui {
 
 		// add a child element
 		template<typename ElementType, typename... ArgsT>
-		std::weak_ptr<ElementType> add(ArgsT&&... args){
+		std::shared_ptr<ElementType> add(ArgsT&&... args){
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
 			std::shared_ptr<ElementType> child = std::make_shared<ElementType>(std::forward<ArgsT>(args)...);
 			adopt(child);
@@ -169,10 +183,10 @@ namespace ui {
 		}
 
 		// remove and destroy a child element
-		void remove(std::weak_ptr<Element> element);
+		void remove(std::shared_ptr<Element> element);
 
 		// release a child element, possibly to add to another element
-		std::shared_ptr<Element> release(std::weak_ptr<Element> element);
+		std::shared_ptr<Element> release(std::shared_ptr<Element> element);
 
 		// bring the element in front of its siblings
 		void bringToFront();
@@ -181,13 +195,13 @@ namespace ui {
 		void clear();
 
 		// find the element at the given local coordinates, optionally excluding a given element and all its children
-		std::weak_ptr<Element> findElementAt(vec2 _pos, std::weak_ptr<Element> exclude = {});
+		std::shared_ptr<Element> findElementAt(vec2 _pos, std::shared_ptr<Element> exclude = {});
 
 		// render the element
 		virtual void render(sf::RenderWindow& renderwindow);
 		
 		// get all children
-		std::vector<std::weak_ptr<Element>> getChildren() const;
+		const std::vector<std::shared_ptr<Element>>& getChildren() const;
 
 		// get the parent element
 		std::weak_ptr<Element> getParent() const;
@@ -247,6 +261,9 @@ namespace ui {
 
 		friend struct Context;
 		friend void run();
+		friend struct FreeElement;
+		friend struct InlineElement;
+		friend struct BlockElement;
 	};
 
 	struct FreeElement : Element {

@@ -28,7 +28,7 @@ namespace ui {
 	}
 	
 	bool TextEntry::typing() const {
-		return (getContext().getTextEntry().lock() == shared_from_this());
+		return (getContext().getTextEntry() == shared_from_this());
 	}
 	
 	void TextEntry::moveTo(vec2 pos){
@@ -70,9 +70,10 @@ namespace ui {
 		}
 	}
 	
-	void TextEntry::onLeftClick(int clicks){
+	bool TextEntry::onLeftClick(int clicks){
 		beginTyping();
 		moveTo(localMousePos());
+		return true;
 	}
 	
 	void TextEntry::onFocus(){
