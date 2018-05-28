@@ -18,7 +18,8 @@ namespace ui {
 		dirty(true),
 		layout_index(0),
 		padding(10.0f),
-		margin(5.0f) {
+		margin(5.0f),
+		update_timestamp(getProgramTime()) {
 
 	}
 
@@ -310,8 +311,8 @@ namespace ui {
 	void Element::render(sf::RenderWindow& rw){
 
 		sf::RectangleShape rect;
-		rect.setOutlineColor(sf::Color(0xFF));
-		rect.setOutlineThickness(1);
+		rect.setOutlineColor(sf::Color(0x80));
+		rect.setOutlineThickness(1.5f);
 
 		// margin
 		rect.setPosition({-margin + 1.0f, -margin + 1.0f});
@@ -322,6 +323,7 @@ namespace ui {
 		}
 
 		// padding
+		rect.setOutlineColor(sf::Color(0xFF));
 		rect.setPosition({1.0f, 1.0f});
 		rect.setSize(size - vec2(2.0f, 2.0f));
 		rect.setFillColor(sf::Color(0xc3d08bff));
@@ -330,13 +332,25 @@ namespace ui {
 		}
 
 		// content
+		rect.setOutlineColor(sf::Color(0x80));
 		rect.setPosition({padding + 1.0f, padding + 1.0f});
 		rect.setSize(size - vec2(2.0f * padding + 2.0f, 2.0f * padding + 2.0f));
-		//rect.setFillColor(sf::Color((((uint32_t)std::hash<Element*>{}(this)) & 0xFFFFFF00) | 0x80));
 		rect.setFillColor(sf::Color(0x8cb6c0ff));
 		if (rect.getSize().x > 0 && rect.getSize().y > 0){
 			rw.draw(rect);
 		}
+
+		// update flash
+		rect.setOutlineThickness(0);
+		uint8_t alpha = (uint8_t)(255.0f * exp(3.0f * (update_timestamp - getProgramTime())));
+		rect.setFillColor(sf::Color(0xFF, 0xFF, 0xFF, alpha));
+		rect.setPosition({1.0f, 1.0f});
+		rect.setSize(size - vec2(2.0f, 2.0f));
+		if (rect.getSize().x > 0 && rect.getSize().y > 0){
+			rw.draw(rect);
+		}
+
+		//rect.setFillColor(sf::Color((((uint32_t)std::hash<Element*>{}(this)) & 0xFFFFFF00) | 0x80));
 	}
 	
 	void Element::renderChildren(sf::RenderWindow& renderwindow){
@@ -465,6 +479,9 @@ namespace ui {
 
 		// at this point, this element is dirty
 		makeClean();
+
+		update_timestamp = getProgramTime();
+
 		// calculate own width and arrange children
 		if (display_style == DisplayStyle::Free){
 			arrangeChildren(size.x);
@@ -479,7 +496,10 @@ namespace ui {
 				std::max(newsize.x, min_size.x),
 				std::max(newsize.y, min_size.y)
 			);
-			float diff = abs(newsize.x - oldsize.x) + abs(newsize.y - oldsize.y);
+			if (size.x > width_avail){
+				arrangeChildren(size.x);
+			}
+			float diff = abs(size.x - oldsize.x) + abs(size.y - oldsize.y);
 			return diff > epsilon;
 		}
 	}
@@ -523,7 +543,7 @@ namespace ui {
 						float avail = width_avail - (element->margin + padding + xpos);
 						element->update(avail);
 						// if the element exceeds the end of the line, put it on a new line and rearrange
-						if (xpos + element->getSize().x + element->margin + padding > width_avail){
+						if (xpos + element->getSize().x + 2.0f * element->margin + padding > width_avail){
 							xpos = padding;
 							ypos = next_ypos;
 							avail = width_avail - 2.0f * (padding + element->margin);
@@ -543,8 +563,8 @@ namespace ui {
 			}
 			if (element->display_style != DisplayStyle::Free){
 				contentsize = vec2(
-					std::max(contentsize.x, element->pos.x + element->size.x + padding),
-					std::max(contentsize.y, element->pos.y + element->size.y + padding)
+					std::max(contentsize.x, element->pos.x + element->size.x + element->margin + padding),
+					std::max(contentsize.y, element->pos.y + element->size.y + element->margin + padding)
 				);
 			}
 		}

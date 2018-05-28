@@ -19,10 +19,8 @@ sf::Font& getFont(){
 }
 
 struct TestElement : ui::InlineElement {
-	TestElement(vec2 position, std::string name) : name(name) {
+	TestElement(std::string name) : name(name) {
 		std::cout << name << " was constructed" << std::endl;
-		setSize({100, 100});
-		setPos(position);
 		changeColor();
 		add<ui::Text>(name, getFont());
 	}
@@ -195,18 +193,23 @@ int main(int argc, char** argcv){
 
 	auto block = std::make_shared<ui::BlockElement>();
 	block->setMinSize({0, 100});
-	block->add<TestElement>(vec2(10, 10), "Hector");
-	block->add<TestElement>(vec2(20, 20), "Brent");
-	block->add<TestElement>(vec2(30, 30), "Greg");
-	block->add<TestElement>(vec2(40, 40), "Donny");
+	auto pops = std::make_shared<TestElement>("Pops");
+	pops->setMinSize({500, 300});
+	block->add(pops);
+	pops->add<TestElement>("Hector");
+	pops->add<TestElement>("Brent");
+	pops->add<TestElement>("Greg");
+	pops->add<TestElement>("Donny");
+
 	block->add<ui::BlockElement>();
-	block->add<TestElement>(vec2(50, 50), "Jorgan");
-	block->add<TestElement>(vec2(60, 60), "Allen");;
-	block->add<TestElement>(vec2(70, 70), "Percy");
-	block->add<TestElement>(vec2(80, 80), "Collin");
-	block->add<TestElement>(vec2(90, 90), "Geoffrey");
-	block->add<TestElement>(vec2(100, 100), "Hank");
-	block->add<TestElement>(vec2(110, 110), "Brody");
+	block->add<TestElement>("Jorgan");
+	block->add<TestElement>("Allen");;
+	block->add<TestElement>("Percy");
+	block->add<TestElement>("Collin");
+	block->add<TestElement>("Geoffrey");
+	block->add<TestElement>("Hank");
+	block->add<TestElement>("Brody");
+
 
 	std::wstringstream ss;
 	ss.str(L"Lorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.");

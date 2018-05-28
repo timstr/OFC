@@ -216,6 +216,9 @@ namespace ui {
 		float padding;
 		float margin;
 
+		// TODO: testing, remove
+		double update_timestamp;
+
 		void adopt(std::shared_ptr<Element> child);
 
 		void makeDirty();

@@ -11,6 +11,7 @@ namespace ui {
 		text.setFillColor(color);
 		updateSize();
 		disable();
+		setMargin((float)charsize / 7.5f);
 		background_color = sf::Color(0x0);
 	}
 	
