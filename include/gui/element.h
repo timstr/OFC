@@ -58,9 +58,10 @@ namespace ui {
 		// get the width and height of the element
 		vec2 getSize() const;
 
-		// set the size
-		void setSize(vec2 size);
-		void setMinSize(vec2 size);
+		// set the size. Choosing force = true will set both the min and max size
+		void setSize(vec2 _size, bool force = false);
+		void setMinSize(vec2 _min_size);
+		void setMaxSize(vec2 _max_size);
 
 		// virtual destructor for safe polymorphic destruction
 		virtual ~Element();
@@ -212,6 +213,8 @@ namespace ui {
 		vec2 pos;
 		vec2 size;
 		vec2 min_size;
+		vec2 max_size;
+		vec2 old_total_size;
 		int layout_index;
 		float padding;
 		float margin;

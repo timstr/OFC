@@ -9,7 +9,7 @@ namespace ui {
 	}
 	
 	void Transition::apply(){
-		double progress = (getProgramTime() - timestamp) / duration;
+		float progress = (float)(getProgramTime() - timestamp) / duration;
 		if (progress >= 1.0){
 			transitionFn(1.0);
 			if (onComplete){

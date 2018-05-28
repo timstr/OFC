@@ -62,7 +62,7 @@ struct TestElement : ui::InlineElement {
 			float newpadding = mdist(randeng);
 			ui::startTransition(1.0, [=](float t){
 				float x = 0.5f - 0.5f * cos(t * 3.141592654f);
-				self->setMinSize(oldsize * (1.0f - x) + newsize * x);
+				self->setSize(oldsize * (1.0f - x) + newsize * x);
 				self->setMargin(oldmargin * (1.0f - x) + newmargin * x);
 				self->setPadding(oldpadding * (1.0f - x) + newpadding * x);
 			});

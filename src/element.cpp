@@ -12,6 +12,8 @@ namespace ui {
 		pos({0.0f, 0.0f}),
 		size({100.0f, 100.0f}),
 		min_size({0.0f, 0.0f}),
+		max_size({10000.0f, 10000.f}),
+		old_total_size({0.0f, 0.0f}),
 		disabled(false),
 		visible(true),
 		clipping(false),
@@ -65,10 +67,15 @@ namespace ui {
 		return size;
 	}
 	
-	void Element::setSize(vec2 _size){
+	void Element::setSize(vec2 _size, bool force){
 		_size = vec2(std::max(_size.x, 0.0f), std::max(_size.y, 0.0f));
 		if (abs(size.x - _size.x) + abs(size.y - _size.y) > epsilon){
 			size = _size;
+			makeDirty();
+		}
+		if (force){
+			min_size = _size;
+			max_size = _size;
 			makeDirty();
 		}
 	}
@@ -76,6 +83,12 @@ namespace ui {
 	void Element::setMinSize(vec2 _min_size){
 		_min_size = vec2(std::max(_min_size.x, 0.0f), std::max(_min_size.y, 0.0f));
 		min_size = _min_size;
+		makeDirty();
+	}
+
+	void Element::setMaxSize(vec2 _max_size){
+		_max_size = vec2(std::max(_max_size.x, 0.0f), std::max(_max_size.y, 0.0f));
+		max_size = _max_size;
 		makeDirty();
 	}
 	
@@ -457,7 +470,7 @@ namespace ui {
 	}
 
 	bool Element::update(float width_avail){
-		width_avail = std::max(width_avail, min_size.x);
+		width_avail = std::min(std::max(width_avail, min_size.x), max_size.x);
 
 		if (display_style == DisplayStyle::Block){
 			setSize({
@@ -487,19 +500,20 @@ namespace ui {
 			arrangeChildren(size.x);
 			return false;
 		} else {
-			vec2 oldsize = size;
 			vec2 newsize = arrangeChildren(width_avail);
 			if (display_style == DisplayStyle::Block){
 				newsize.x = std::max(width_avail, newsize.x);
 			}
 			size = vec2(
-				std::max(newsize.x, min_size.x),
-				std::max(newsize.y, min_size.y)
+				std::min(std::max(newsize.x, min_size.x), max_size.x),
+				std::min(std::max(newsize.y, min_size.y), max_size.y)
 			);
 			if (size.x > width_avail){
 				arrangeChildren(size.x);
 			}
-			float diff = abs(size.x - oldsize.x) + abs(size.y - oldsize.y);
+			vec2 new_total_size = size + vec2(2.0f * margin, 2.0f * margin);
+			float diff = abs(old_total_size.x - new_total_size.x) + abs(old_total_size.y - new_total_size.y);
+			old_total_size = new_total_size;
 			return diff > epsilon;
 		}
 	}
