@@ -202,9 +202,20 @@ namespace ui {
 		}
 	}
 	
-	void Context::handleHover(){
-		vec2 position = (vec2)sf::Mouse::getPosition(getRenderWindow());
-		std::shared_ptr<Element> hover_element = root().findElementAt(position, dragging_element);
+	void Context::handleHover(vec2 pos){
+		auto element = root().findElementAt(pos, dragging_element);
+
+		if (element != hover_element){
+			// if the mouse is moved onto a new element
+			if (hover_element){
+				propagate(hover_element, &Element::onMouseOut);
+			}
+			hover_element = element;
+			if (hover_element){
+				propagate(hover_element, &Element::onMouseOver);
+			}
+		}
+		
 		if (hover_element){
 			if (dragging_element){
 				propagate(hover_element, &Element::onHoverWith, dragging_element);

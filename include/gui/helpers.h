@@ -19,7 +19,8 @@ namespace ui {
 	struct CallbackButton : InlineElement {
 		CallbackButton(std::string _label, sf::Font& font, std::function<void()> _callback = {})
 			: label(add<Text>(_label, font)),
-			callback(_callback) {
+			callback(_callback),
+			bgcolor(sf::Color(0xBBBBBBFF)) {
 
 		}
 
@@ -35,6 +36,11 @@ namespace ui {
 			if (clicks == 1 && callback){
 				callback();
 			}
+			bgcolor = sf::Color(0x888888FF);
+			return true;
+		}
+		bool onLeftRelease() override {
+			bgcolor = sf::Color(0xDDDDDDFF);
 			return true;
 		}
 
@@ -47,16 +53,27 @@ namespace ui {
 
 		void render(sf::RenderWindow& rw) override {
 			sf::RectangleShape rect{getSize()};
-			rect.setFillColor(sf::Color(0xBBBBBBFF));
+			rect.setFillColor(bgcolor);
 			rect.setOutlineThickness(1.0f);
 			rect.setOutlineColor(sf::Color(0xFF));
 			rw.draw(rect);
+		}
+
+		bool onMouseOver() override {
+			bgcolor = sf::Color(0xDDDDDDFF);
+			return false;
+		}
+
+		bool onMouseOut() override {
+			bgcolor = sf::Color(0xBBBBBBFF);
+			return false;
 		}
 
 	private:
 
 		std::function<void()> callback;
 		std::shared_ptr<Text> label;
+		sf::Color bgcolor;
 	};
 		
 	struct PullDownMenu : InlineElement {

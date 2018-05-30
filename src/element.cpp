@@ -192,6 +192,14 @@ namespace ui {
 	bool Element::dragging() const {
 		return (getContext().getDraggingElement() == shared_from_this());
 	}
+
+	bool Element::onMouseOver(){
+		return false;
+	}
+
+	bool Element::onMouseOut(){
+		return false;
+	}
 	
 	bool Element::onHover(){
 		return false;

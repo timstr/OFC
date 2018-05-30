@@ -125,11 +125,19 @@ namespace ui {
 		// true if the element is currently being dragged by the mouse
 		bool dragging() const;
 
-		// called when the mouse passes over the element
+		// called when the mouse moves onto the element
+		// if false is returned, call will propagate to the parent
+		virtual bool onMouseOver();
+
+		// called when the mouse moves off of the element
+		// if false is returned, call will propagate to the parent
+		virtual bool onMouseOut();
+
+		// called when the mouse is over the element
 		// if false is returned, call will propagate to the parent
 		virtual bool onHover();
 
-		// called when the mouse passes over the element with another element being dragged
+		// called when the mouse is over the element with another element being dragged
 		// if false is returned, call will propagate to the parent
 		virtual bool onHoverWith(std::shared_ptr<Element> element);
 

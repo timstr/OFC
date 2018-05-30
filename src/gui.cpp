@@ -148,7 +148,7 @@ namespace ui {
 			getContext().handleDrag();
 
 			//mouse-over what needs mousing over
-			getContext().handleHover();
+			getContext().handleHover(getMousePos());
 
 			// apply transitions
 			getContext().applyTransitions();

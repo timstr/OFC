@@ -25,7 +25,7 @@ namespace ui {
 		void handleMouseUp(sf::Mouse::Button button, vec2 pos);
 		void handleScroll(vec2 pos, float delta_x, float delta_y);
 		void handleDrag();
-		void handleHover();
+		void handleHover(vec2 pos);
 		void handleQuit(bool force);
 
 		bool hasQuit();
@@ -66,8 +66,12 @@ namespace ui {
 
 		// the element currently being dragged
 		std::shared_ptr<Element> dragging_element;
+
 		// the mouse's relative position while dragging
 		vec2 drag_offset;
+
+		// the element currently being hovered over
+		std::shared_ptr<Element> hover_element;
 
 		// the element currently in focus
 		std::shared_ptr<Element> current_element;
