@@ -21,16 +21,12 @@ namespace ui {
 
 	struct Element : std::enable_shared_from_this<Element> {
 
-	private:
-
 		enum class DisplayStyle {
 			Free,
 			Inline,
 			Block
 			// TODO: add float left/center/right and top/middle/bottom?
 		};
-
-	public:
 
 		// default constructor
 		Element(DisplayStyle _display_style);
@@ -50,7 +46,7 @@ namespace ui {
 		// returns true if the element is visible
 		bool isVisible() const;
 
-		// limits rendering and input to within the bounding rectangle
+		// when true, limits rendering and input to within the bounding rectangle
 		void setClipping(bool _clipping);
 
 		// get the position (top-left corner of the element)
@@ -233,9 +229,6 @@ namespace ui {
 		float padding;
 		float margin;
 
-		// TODO: testing, remove
-		double update_timestamp;
-
 		void adopt(std::shared_ptr<Element> child);
 
 		void makeDirty();
@@ -261,9 +254,6 @@ namespace ui {
 
 		friend struct Context;
 		friend void run();
-		friend struct FreeElement;
-		friend struct InlineElement;
-		friend struct BlockElement;
 	};
 
 	struct FreeElement : Element {

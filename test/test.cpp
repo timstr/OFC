@@ -1,5 +1,8 @@
 #include "gui/gui.h"
 #include "gui/helpers.h"
+
+#include "gui/roundrectangle.h"
+
 #include <iostream>
 #include <random>
 #include <sstream>
@@ -19,7 +22,7 @@ sf::Font& getFont(){
 	return font;
 }
 
-struct TestElement : ui::InlineElement {
+struct TestElement : ui::FreeElement {
 	TestElement(std::string name) : name(name) {
 		std::cout << name << " was constructed" << std::endl;
 		changeColor();
@@ -45,28 +48,22 @@ struct TestElement : ui::InlineElement {
 		//sf::RectangleShape rect {getSize()};
 		//rect.setFillColor(bgcolor);
 		//rw.draw(rect);
-		InlineElement::render(rw);
+
+		ui::RoundedRectangle rect;
+		rect.setSize(getSize());
+		rect.setRadius(getPadding());
+		rect.setFillColor(bgcolor);
+		rect.setOutlineColor(sf::Color(0xFF));
+		rect.setOutlineThickness(1.0f);
+		rw.draw(rect);
+
+		//Element::render(rw);
 	}
 
 	bool onLeftClick(int clicks) override {
 		bringToFront();
 		if (clicks == 1){
-			std::cout << name << " was left-clicked once" << std::endl;
-			std::uniform_real_distribution<float> sdist {20, 200};
-			std::uniform_real_distribution<float> mdist {0, 20};
-			auto self = shared_from_this();
-			vec2 oldsize = getSize();
-			vec2 newsize = {sdist(randeng), sdist(randeng)};
-			float oldmargin = getMargin();
-			float newmargin = mdist(randeng);
-			float oldpadding = getPadding();
-			float newpadding = mdist(randeng);
-			ui::startTransition(1.0, [=](float t){
-				float x = 0.5f - 0.5f * cos(t * 3.141592654f);
-				self->setSize(oldsize * (1.0f - x) + newsize * x);
-				self->setMargin(oldmargin * (1.0f - x) + newmargin * x);
-				self->setPadding(oldpadding * (1.0f - x) + newpadding * x);
-			});
+			startDrag();
 		} else if (clicks == 2){
 			std::cout << name << " was left-clicked twice" << std::endl;
 			changeColor();
@@ -84,6 +81,22 @@ struct TestElement : ui::InlineElement {
 	bool onRightClick(int clicks) override {
 		if (clicks == 1){
 			std::cout << name << " was right-clicked once" << std::endl;
+			std::cout << name << " was left-clicked once" << std::endl;
+			std::uniform_real_distribution<float> sdist {20, 200};
+			std::uniform_real_distribution<float> mdist {0, 20};
+			auto self = shared_from_this();
+			vec2 oldsize = getSize();
+			vec2 newsize = {sdist(randeng), sdist(randeng)};
+			float oldmargin = getMargin();
+			float newmargin = mdist(randeng);
+			float oldpadding = getPadding();
+			float newpadding = mdist(randeng);
+			ui::startTransition(1.0, [=](float t){
+				float x = 0.5f - 0.5f * cos(t * 3.141592654f);
+				self->setSize(oldsize * (1.0f - x) + newsize * x);
+				self->setMargin(oldmargin * (1.0f - x) + newmargin * x);
+				self->setPadding(oldpadding * (1.0f - x) + newpadding * x);
+			});
 		} else if (clicks == 2){
 			std::cout << name << " was right-clicked twice" << std::endl;
 		}
@@ -201,6 +214,7 @@ int main(int argc, char** argcv){
 
 	auto block = std::make_shared<ui::BlockElement>();
 	block->setMinSize({0, 100});
+	block->setClipping(true);
 	auto pops = std::make_shared<TestElement>("Pops");
 	pops->setMinSize({500, 300});
 	block->add(pops);

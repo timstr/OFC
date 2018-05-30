@@ -20,8 +20,7 @@ namespace ui {
 		dirty(true),
 		layout_index(0),
 		padding(10.0f),
-		margin(5.0f),
-		update_timestamp(getProgramTime()) {
+		margin(5.0f) {
 
 	}
 
@@ -324,48 +323,13 @@ namespace ui {
 	}
 	
 	void Element::render(sf::RenderWindow& rw){
-
 		sf::RectangleShape rect;
-		rect.setOutlineColor(sf::Color(0x80));
-		rect.setOutlineThickness(1.5f);
-
-		// margin
-		rect.setPosition({-margin + 1.0f, -margin + 1.0f});
-		rect.setSize(size + vec2(2.0f * margin - 2.0f, 2.0f * margin - 2.0f));
-		rect.setFillColor(sf::Color(0xf9cc9dff));
-		if (rect.getSize().x > 0 && rect.getSize().y > 0){
-			rw.draw(rect);
-		}
-
-		// padding
 		rect.setOutlineColor(sf::Color(0xFF));
+		rect.setOutlineThickness(1.0f);
+		rect.setSize(getSize() - vec2(2.0f, 2.0f));
 		rect.setPosition({1.0f, 1.0f});
-		rect.setSize(size - vec2(2.0f, 2.0f));
-		rect.setFillColor(sf::Color(0xc3d08bff));
-		if (rect.getSize().x > 0 && rect.getSize().y > 0){
-			rw.draw(rect);
-		}
-
-		// content
-		rect.setOutlineColor(sf::Color(0x80));
-		rect.setPosition({padding + 1.0f, padding + 1.0f});
-		rect.setSize(size - vec2(2.0f * padding + 2.0f, 2.0f * padding + 2.0f));
-		rect.setFillColor(sf::Color(0x8cb6c0ff));
-		if (rect.getSize().x > 0 && rect.getSize().y > 0){
-			rw.draw(rect);
-		}
-
-		// update flash
-		rect.setOutlineThickness(0);
-		uint8_t alpha = (uint8_t)(255.0f * exp(3.0f * (update_timestamp - getProgramTime())));
-		rect.setFillColor(sf::Color(0xFF, 0xFF, 0xFF, alpha));
-		rect.setPosition({1.0f, 1.0f});
-		rect.setSize(size - vec2(2.0f, 2.0f));
-		if (rect.getSize().x > 0 && rect.getSize().y > 0){
-			rw.draw(rect);
-		}
-
-		//rect.setFillColor(sf::Color((((uint32_t)std::hash<Element*>{}(this)) & 0xFFFFFF00) | 0x80));
+		rect.setFillColor(sf::Color(0xFFFFFFFF));
+		rw.draw(rect);
 	}
 	
 	void Element::renderChildren(sf::RenderWindow& renderwindow){
@@ -489,8 +453,6 @@ namespace ui {
 
 		// at this point, this element is dirty
 		makeClean();
-
-		update_timestamp = getProgramTime();
 
 		// calculate own width and arrange children
 		if (display_style == DisplayStyle::Free){

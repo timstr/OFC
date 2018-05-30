@@ -5,7 +5,6 @@
 
 namespace ui {
 
-	// TODO: test
 	struct LineBreak final : BlockElement {
 		LineBreak(float height = 0.0f){
 			setMargin(height * 0.5f);

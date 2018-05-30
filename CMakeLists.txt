@@ -13,6 +13,7 @@ set(headers
 	include/gui/context.h
 	include/gui/gui.h
 	include/gui/helpers.h
+	include/gui/roundrectangle.h
 	include/gui/stringhelpers.h
 	include/gui/text.h
 	include/gui/textentry.h
