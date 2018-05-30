@@ -456,7 +456,11 @@ namespace ui {
 
 		// calculate own width and arrange children
 		if (display_style == DisplayStyle::Free){
-			arrangeChildren(size.x);
+			vec2 contentsize = arrangeChildren(size.x);
+			size = vec2(
+				std::min(std::max({size.x, contentsize.x, min_size.x}), max_size.x),
+				std::min(std::max({size.y, contentsize.y, min_size.y}), max_size.y)
+			);
 			return false;
 		} else {
 			vec2 newsize = arrangeChildren(width_avail);

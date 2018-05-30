@@ -16,15 +16,54 @@ namespace ui {
 		}
 	};
 
-	struct Button : Element {
-		// TODO
+	struct CallbackButton : InlineElement {
+		CallbackButton(std::string _label, sf::Font& font, std::function<void()> _callback = {})
+			: label(add<Text>(_label, font)),
+			callback(_callback) {
+
+		}
+
+		void setCallback(std::function<void()> _callback){
+			callback = _callback;
+		}
+
+		void setCaption(std::string _label){
+			label->setText(_label);
+		}
+
+		bool onLeftClick(int clicks) override {
+			if (clicks == 1 && callback){
+				callback();
+			}
+			return true;
+		}
+
+		bool onKeyDown(ui::Key key) override {
+			if (key == ui::Key::Return && callback){
+				callback();
+			}
+			return true;
+		}
+
+		void render(sf::RenderWindow& rw) override {
+			sf::RectangleShape rect{getSize()};
+			rect.setFillColor(sf::Color(0xBBBBBBFF));
+			rect.setOutlineThickness(1.0f);
+			rect.setOutlineColor(sf::Color(0xFF));
+			rw.draw(rect);
+		}
+
+	private:
+
+		std::function<void()> callback;
+		std::shared_ptr<Text> label;
 	};
 		
-	struct PullDownMenu : Element {
+	struct PullDownMenu : InlineElement {
 		// TODO
 	};
 
-	struct Slider : Element {
+	struct Slider : InlineElement {
 		// TODO
 	};
 

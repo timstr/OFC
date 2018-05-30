@@ -27,6 +27,9 @@ struct TestElement : ui::FreeElement {
 		std::cout << name << " was constructed" << std::endl;
 		changeColor();
 		add<ui::Text>(name, getFont());
+		add<ui::CallbackButton>("Change Colour", getFont(), [this]{
+			changeColor();
+		});
 	}
 	~TestElement(){
 		std::cout << name << " was destroyed" << std::endl;
@@ -45,10 +48,6 @@ struct TestElement : ui::FreeElement {
 	}
 
 	void render(sf::RenderWindow& rw){
-		//sf::RectangleShape rect {getSize()};
-		//rect.setFillColor(bgcolor);
-		//rw.draw(rect);
-
 		ui::RoundedRectangle rect;
 		rect.setSize(getSize());
 		rect.setRadius(getPadding());
@@ -56,8 +55,6 @@ struct TestElement : ui::FreeElement {
 		rect.setOutlineColor(sf::Color(0xFF));
 		rect.setOutlineThickness(1.0f);
 		rw.draw(rect);
-
-		//Element::render(rw);
 	}
 
 	bool onLeftClick(int clicks) override {
@@ -81,8 +78,7 @@ struct TestElement : ui::FreeElement {
 	bool onRightClick(int clicks) override {
 		if (clicks == 1){
 			std::cout << name << " was right-clicked once" << std::endl;
-			std::cout << name << " was left-clicked once" << std::endl;
-			std::uniform_real_distribution<float> sdist {20, 200};
+			std::uniform_real_distribution<float> sdist {20, 300};
 			std::uniform_real_distribution<float> mdist {0, 20};
 			auto self = shared_from_this();
 			vec2 oldsize = getSize();
@@ -214,7 +210,6 @@ int main(int argc, char** argcv){
 
 	auto block = std::make_shared<ui::BlockElement>();
 	block->setMinSize({0, 100});
-	block->setClipping(true);
 	auto pops = std::make_shared<TestElement>("Pops");
 	pops->setMinSize({500, 300});
 	block->add(pops);

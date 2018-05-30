@@ -31,6 +31,21 @@ namespace ui {
 		// default constructor
 		Element(DisplayStyle _display_style);
 
+		// virtual destructor for safe polymorphic destruction
+		virtual ~Element();
+
+		// clears and removes the element from its parent
+		void close();
+
+		// called when the element is closed; to be used for releasing resources reliably
+		virtual void onClose();
+
+		template<typename ElementType>
+		std::shared_ptr<ElementType> getThisAs(){
+			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from ui::Element");
+			return std::dynamic_pointer_cast<ElementType, Element>(shared_from_this());
+		}
+
 		// prevent the element from receiving input
 		void disable();
 
@@ -62,15 +77,6 @@ namespace ui {
 		void setSize(vec2 _size, bool force = false);
 		void setMinSize(vec2 _min_size);
 		void setMaxSize(vec2 _max_size);
-
-		// virtual destructor for safe polymorphic destruction
-		virtual ~Element();
-
-		// clears and removes the element from its parent
-		void close();
-
-		// called when the element is closed; to be used for releasing resources reliably
-		virtual void onClose();
 
 		// true if a test point (in local space) intercepts the element
 		virtual bool hit(vec2 testpos) const;
