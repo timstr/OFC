@@ -207,12 +207,33 @@ namespace ui {
 
 		if (element != hover_element){
 			// if the mouse is moved onto a new element
-			if (hover_element){
-				propagate(hover_element, &Element::onMouseOut);
-			}
+			
+			std::vector<std::shared_ptr<Element>> oldpath, newpath;
+			auto oldelem = hover_element;
+			auto newelem = element;
 			hover_element = element;
-			if (hover_element){
-				propagate(hover_element, &Element::onMouseOver);
+
+			while (oldelem){
+				oldpath.push_back(oldelem);
+				oldelem = oldelem->parent.lock();
+			}
+
+			while (newelem){
+				newpath.push_back(newelem);
+				newelem = newelem->parent.lock();
+			}
+
+			while (!oldpath.empty() && !newpath.empty() && oldpath.back() == newpath.back()){
+				oldpath.pop_back();
+				newpath.pop_back();
+			}
+
+			for (auto it = oldpath.begin(); it != oldpath.end(); ++it){
+				(*it)->onMouseOut();
+			}
+
+			for (auto it = newpath.rbegin(); it != newpath.rend(); ++it){
+				(*it)->onMouseOver();
 			}
 		}
 		

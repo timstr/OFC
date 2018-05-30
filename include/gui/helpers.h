@@ -59,14 +59,37 @@ namespace ui {
 			rw.draw(rect);
 		}
 
-		bool onMouseOver() override {
-			bgcolor = sf::Color(0xDDDDDDFF);
-			return false;
+		void onMouseOver() override {
+			//bgcolor = sf::Color(0xDDDDDDFF);
+
+			auto self = getThisAs<CallbackButton>();
+			auto oldcolor = bgcolor;
+			auto newcolor = sf::Color(0xDDDDDDFF);
+			startTransition(0.15f, [=](float t){
+				auto color = sf::Color(
+					oldcolor.r * (1.0f - t) + newcolor.r * t,
+					oldcolor.g * (1.0f - t) + newcolor.g * t,
+					oldcolor.b * (1.0f - t) + newcolor.b * t,
+					255
+				);
+				self->bgcolor = color;
+			});
 		}
 
-		bool onMouseOut() override {
-			bgcolor = sf::Color(0xBBBBBBFF);
-			return false;
+		void onMouseOut() override {
+
+			auto self = getThisAs<CallbackButton>();
+			auto oldcolor = bgcolor;
+			auto newcolor = sf::Color(0xBBBBBBFF);
+			startTransition(0.15f, [=](float t){
+				auto color = sf::Color(
+					oldcolor.r * (1.0f - t) + newcolor.r * t,
+					oldcolor.g * (1.0f - t) + newcolor.g * t,
+					oldcolor.b * (1.0f - t) + newcolor.b * t,
+					255
+				);
+				self->bgcolor = color;
+			});
 		}
 
 	private:
