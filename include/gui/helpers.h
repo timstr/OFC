@@ -143,6 +143,7 @@ namespace ui {
 						this->onSelect(option);
 					}
 					this->list->setVisible(false);
+					this->grabFocus();
 				});
 			}
 		}

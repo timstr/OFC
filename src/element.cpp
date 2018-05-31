@@ -130,7 +130,7 @@ namespace ui {
 		vec2 pos = {0, 0};
 		std::shared_ptr<const Element> element = shared_from_this();
 		while (element){
-			pos += element->pos; // TODO: rootPos() is not working correctly, as shown by pressing alt when focused on 'change colour' button
+			pos += element->pos;
 			element = element->parent.lock();
 		}
 		return pos;
@@ -471,6 +471,14 @@ namespace ui {
 
 		// at this point, this element is dirty
 		makeClean();
+
+		// TODO: the following is a work-around for weak_from_this() returning an empty
+		// weak pointer in the constructor. A better solution should be found to avoid
+		// surprises, such as calling close() on a child in the constructor (which would
+		// not remove it from the children vector)
+		for (auto const& child : children){
+			child->parent = weak_from_this();
+		}
 
 		// calculate own width and arrange children
 		if (display_style == DisplayStyle::Free){

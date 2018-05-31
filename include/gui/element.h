@@ -177,9 +177,6 @@ namespace ui {
 		template<typename ElementType>
 		std::shared_ptr<ElementType> add(std::shared_ptr<ElementType> child){
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
-			if (auto p = child->parent.lock()){
-				p->release(child);
-			}
 			adopt(child);
 			return child;
 		}

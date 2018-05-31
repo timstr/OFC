@@ -4,8 +4,8 @@
 
 namespace ui {
 
-	template<typename ...Args>
-	void propagate(std::shared_ptr<Element> element, bool (Element::* function)(Args...), Args... args){
+	template<typename ...ArgsT>
+	void propagate(std::shared_ptr<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args){
 		while (element) {
 			if (((*element).*function)(args...)){
 				return;

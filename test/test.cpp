@@ -27,6 +27,7 @@ struct TestElement : ui::FreeElement {
 		std::cout << name << " was constructed" << std::endl;
 		changeColor();
 		label = add<ui::Text>(name, getFont());
+		add<ui::LineBreak>();
 		add<ui::CallbackButton>("Change Colour", getFont(), [this]{
 			changeColor();
 		});
