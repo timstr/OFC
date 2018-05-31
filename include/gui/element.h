@@ -131,6 +131,9 @@ namespace ui {
 		// called when the mouse moves off of the element and its children
 		virtual void onMouseOut();
 
+		// true if the mouse is currently over top of the element
+		bool hovering() const;
+
 		// called when the mouse is over the element
 		// if false is returned, call will propagate to the parent
 		virtual bool onHover();

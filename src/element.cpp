@@ -19,7 +19,7 @@ namespace ui {
 		clipping(false),
 		dirty(true),
 		layout_index(0),
-		padding(10.0f),
+		padding(5.0f),
 		margin(5.0f) {
 
 	}
@@ -130,7 +130,7 @@ namespace ui {
 		vec2 pos = {0, 0};
 		std::shared_ptr<const Element> element = shared_from_this();
 		while (element){
-			pos += element->pos;
+			pos += element->pos; // TODO: rootPos() is not working correctly, as shown by pressing alt when focused on 'change colour' button
 			element = element->parent.lock();
 		}
 		return pos;
@@ -190,7 +190,7 @@ namespace ui {
 	}
 	
 	bool Element::dragging() const {
-		return (getContext().getDraggingElement() == shared_from_this());
+		return (getContext().getDraggingElement().get() == this);
 	}
 
 	void Element::onMouseOver(){
@@ -199,6 +199,10 @@ namespace ui {
 
 	void Element::onMouseOut(){
 
+	}
+
+	bool Element::hovering() const {
+		return getContext().getHoverElement().get() == this;
 	}
 	
 	bool Element::onHover(){
@@ -230,7 +234,7 @@ namespace ui {
 	}
 	
 	bool Element::inFocus() const {
-		return (getContext().getCurrentElement() == shared_from_this());
+		return (getContext().getCurrentElement().get() == this);
 	}
 	
 	void Element::onLoseFocus(){
@@ -311,7 +315,7 @@ namespace ui {
 			return nullptr;
 		}
 
-		if (exclude == shared_from_this()){
+		if (exclude.get() == this){
 			return nullptr;
 		}
 
@@ -419,6 +423,12 @@ namespace ui {
 	}
 
 	void Element::adopt(std::shared_ptr<Element> child){
+		if (auto p = child->parent.lock()){
+			if (p.get() == this){
+				return;
+			}
+			p->release(child);
+		}
 		children.push_back(child);
 		child->parent = weak_from_this();
 		child->layout_index = getNextLayoutIndex();

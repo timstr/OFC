@@ -42,7 +42,7 @@ namespace ui {
 		return vec2(sf::Mouse::getPosition(getContext().getRenderWindow()));
 	}
 	
-	Context & getContext(){
+	Context& getContext(){
 		static Context context;
 		return context;
 	}

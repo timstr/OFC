@@ -48,6 +48,7 @@ namespace ui {
 		void setDraggingElement(std::shared_ptr<Element> element, vec2 offset = vec2(0, 0));
 		void focusTo(std::shared_ptr<Element> element);
 		std::shared_ptr<Element> getCurrentElement();
+		std::shared_ptr<Element> getHoverElement();
 		std::shared_ptr<TextEntry> getTextEntry();
 		void setTextEntry(std::shared_ptr<TextEntry> textentry);
 

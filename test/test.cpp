@@ -26,9 +26,12 @@ struct TestElement : ui::FreeElement {
 	TestElement(std::string name) : name(name) {
 		std::cout << name << " was constructed" << std::endl;
 		changeColor();
-		add<ui::Text>(name, getFont());
+		label = add<ui::Text>(name, getFont());
 		add<ui::CallbackButton>("Change Colour", getFont(), [this]{
 			changeColor();
+		});
+		add<ui::PullDownMenu>(std::vector<std::string>{"Bread", "Butter", "Apricots", "Orphans", "Oregonians", "Orifices", "Mankind"}, getFont(), [this](std::string s){
+			this->label->setText(s);
 		});
 	}
 	~TestElement(){
@@ -158,6 +161,7 @@ struct TestElement : ui::FreeElement {
 
 	sf::Color bgcolor;
 	const std::string name;
+	std::shared_ptr<ui::Text> label;
 };
 
 struct BlueMan : ui::InlineElement {

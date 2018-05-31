@@ -17,11 +17,34 @@ namespace ui {
 	};
 
 	struct CallbackButton : InlineElement {
+	private:
+		enum class State {
+			Normal,
+			Hover,
+			Active
+		};
+
+	public:
+
 		CallbackButton(std::string _label, sf::Font& font, std::function<void()> _callback = {})
 			: label(add<Text>(_label, font)),
 			callback(_callback),
-			bgcolor(sf::Color(0xBBBBBBFF)) {
+			normal_color(0xBBBBBBFF),
+			hover_color(0xDDDDDDFF),
+			active_color(0x888888FF),
+			bgcolor(normal_color),
+			state(State::Normal) {
 
+		}
+
+		void setNormalColor(sf::Color color){
+			normal_color = color;
+		}
+		void setHoverColor(sf::Color color){
+			hover_color = color;
+		}
+		void setActiveColor(sf::Color color){
+			active_color = color;
 		}
 
 		void setCallback(std::function<void()> _callback){
@@ -33,20 +56,27 @@ namespace ui {
 		}
 
 		bool onLeftClick(int clicks) override {
-			if (clicks == 1 && callback){
+			if (callback){
 				callback();
+				fadeColor(active_color, hover_color, 0.15f);
 			}
-			bgcolor = sf::Color(0x888888FF);
 			return true;
 		}
 		bool onLeftRelease() override {
-			bgcolor = sf::Color(0xDDDDDDFF);
+			if (hovering()){
+				state = State::Hover;
+			} else {
+				fadeColor(bgcolor, normal_color, 0.15f);
+				state = State::Normal;
+			}
+
 			return true;
 		}
 
 		bool onKeyDown(ui::Key key) override {
 			if (key == ui::Key::Return && callback){
 				callback();
+				fadeColor(active_color, hovering() ? hover_color : normal_color, 0.15f);
 			}
 			return true;
 		}
@@ -60,36 +90,17 @@ namespace ui {
 		}
 
 		void onMouseOver() override {
-			//bgcolor = sf::Color(0xDDDDDDFF);
-
-			auto self = getThisAs<CallbackButton>();
-			auto oldcolor = bgcolor;
-			auto newcolor = sf::Color(0xDDDDDDFF);
-			startTransition(0.15f, [=](float t){
-				auto color = sf::Color(
-					oldcolor.r * (1.0f - t) + newcolor.r * t,
-					oldcolor.g * (1.0f - t) + newcolor.g * t,
-					oldcolor.b * (1.0f - t) + newcolor.b * t,
-					255
-				);
-				self->bgcolor = color;
-			});
+			if (state == State::Normal){
+				state = State::Hover;
+				fadeColor(bgcolor, hover_color, 0.15f);
+				
+			}
 		}
-
 		void onMouseOut() override {
-
-			auto self = getThisAs<CallbackButton>();
-			auto oldcolor = bgcolor;
-			auto newcolor = sf::Color(0xBBBBBBFF);
-			startTransition(0.15f, [=](float t){
-				auto color = sf::Color(
-					oldcolor.r * (1.0f - t) + newcolor.r * t,
-					oldcolor.g * (1.0f - t) + newcolor.g * t,
-					oldcolor.b * (1.0f - t) + newcolor.b * t,
-					255
-				);
-				self->bgcolor = color;
-			});
+			if (state == State::Hover){
+				state = State::Normal;
+				fadeColor(bgcolor, normal_color, 0.15f);
+			}
 		}
 
 	private:
@@ -97,10 +108,114 @@ namespace ui {
 		std::function<void()> callback;
 		std::shared_ptr<Text> label;
 		sf::Color bgcolor;
+		sf::Color normal_color, hover_color, active_color;
+		State state;
+
+		void fadeColor(sf::Color from, sf::Color to, float seconds){
+			auto self = getThisAs<CallbackButton>();
+			startTransition(seconds, [=](float t){
+				auto color = sf::Color(
+					(uint8_t)(from.r * (1.0f - t) + to.r * t),
+					(uint8_t)(from.g * (1.0f - t) + to.g * t),
+					(uint8_t)(from.b * (1.0f - t) + to.b * t),
+					255
+				);
+				self->bgcolor = color;
+			});
+		}
 	};
 		
+
 	struct PullDownMenu : InlineElement {
-		// TODO
+		PullDownMenu(std::vector<std::string> options, sf::Font& font, std::function<void(std::string)> _onSelect)
+			: collapsed(true), onSelect(_onSelect) {
+			setMinSize({0.0f, 20.0f});
+
+			caption = add<Text>(options.empty() ? "" : options.front(), font);
+			
+			list = add<FreeElement>();
+			list->setPadding(0.0f);
+			list->setVisible(false);
+			for (const auto& option : options){
+				list->add<ListItem>(option, font, [this,option]{
+					this->caption->setText(option);
+					if (this->onSelect){
+						this->onSelect(option);
+					}
+					this->list->setVisible(false);
+				});
+			}
+		}
+
+		bool onLeftClick(int clicks) override {
+			list->setVisible(true);
+			return true;
+		}
+
+		void onLoseFocus() override {
+			list->setVisible(false);
+		}
+
+		void render(sf::RenderWindow& rw) override {
+			sf::RectangleShape rect {getSize()};
+			rect.setFillColor(sf::Color(0xBBBBBBFF));
+			rect.setOutlineColor(sf::Color(0xFF));
+			rect.setOutlineThickness(1.0f);
+			rw.draw(rect);
+		}
+
+	private:
+
+		struct ListItem : BlockElement {
+			ListItem(std::string _text, sf::Font& _font, std::function<void()> _callback) : callback(_callback), bgcolor(0xBBBBBBFF) {
+				add<Text>(_text, _font);
+				setMinSize({0.0f, 20.0f});
+				setMargin(0.0f);
+			}
+
+			void onMouseOver() override {
+				fadeColor(bgcolor, sf::Color(0xDDDDDDFF), 0.15f);
+			}
+			void onMouseOut() override {
+				fadeColor(bgcolor, sf::Color(0xBBBBBBFF), 0.15f);
+			}
+
+			bool onLeftClick(int clicks) override {
+				if (callback){
+					callback();
+				}
+				return true;
+			}
+
+			void render(sf::RenderWindow& rw) override {
+				sf::RectangleShape rect {getSize()};
+				rect.setFillColor(bgcolor);
+				rect.setOutlineColor(sf::Color(0xFF));
+				rect.setOutlineThickness(1.0f);
+				rw.draw(rect);
+			}
+
+			void fadeColor(sf::Color from, sf::Color to, float seconds){
+				auto self = getThisAs<ListItem>();
+				startTransition(seconds, [=](float t){
+					auto color = sf::Color(
+						(uint8_t)(from.r * (1.0f - t) + to.r * t),
+						(uint8_t)(from.g * (1.0f - t) + to.g * t),
+						(uint8_t)(from.b * (1.0f - t) + to.b * t),
+						255
+					);
+					self->bgcolor = color;
+				});
+			}
+
+			sf::Color bgcolor;
+			const std::function<void()> callback;
+		};
+
+		bool collapsed;
+		std::shared_ptr<Text> caption;
+		std::shared_ptr<FreeElement> list;
+		std::function<void(std::string)> onSelect;
 	};
 
 	struct Slider : InlineElement {

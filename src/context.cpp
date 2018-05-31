@@ -14,7 +14,7 @@ namespace ui {
 		}
 	}
 
-	Context::Context() : doubleclicktime(0.25f), quit(false) {
+	Context::Context() : doubleclicktime(0.25f), quit(false), current_element(root().shared_from_this()) {
 	
 	}
 	
@@ -24,7 +24,6 @@ namespace ui {
 		settings.antialiasingLevel = 8;
 		getRenderWindow().create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
 		resetView();
-		current_element = root().shared_from_this();
 		clock.restart();
 	}
 	
@@ -50,8 +49,6 @@ namespace ui {
 				if (element == current_element){
 					return;
 				}
-
-				current_element = element;
 
 				// stop typing now
 				if (!getTextEntry()){
@@ -80,6 +77,9 @@ namespace ui {
 					oldpath.pop_back();
 					newpath.pop_back();
 				}
+
+				// prevent redundent calls
+				current_element = element;
 
 				// call handlers in order
 				for (auto it = oldpath.begin(); it != oldpath.end(); ++it){
@@ -322,6 +322,10 @@ namespace ui {
 	
 	std::shared_ptr<Element> Context::getCurrentElement(){
 		return current_element;
+	}
+
+	std::shared_ptr<Element> Context::getHoverElement(){
+		return hover_element;
 	}
 	
 	std::shared_ptr<TextEntry> Context::getTextEntry(){
