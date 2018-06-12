@@ -149,9 +149,9 @@ struct TestElement : ui::FreeElement {
 	bool onDrop(std::shared_ptr<Element> element) override {
 		if (element){
 			if (auto w = std::dynamic_pointer_cast<TestElement, Element>(element)){
-				std::cout << w->name << " was dropped";
+				std::cout << w->name;
 			} else {
-				std::cout << "An element was dropped";
+				std::cout << "An element";
 			}
 		} else {
 			std::cout << "Mystery???";
@@ -203,47 +203,45 @@ int main(int argc, char** argcv){
 
 	ui::init(1000, 800, "Tim's GUI Test", 30);
 
-	auto b = std::make_shared<ui::BlockElement>();
-	ui::root().add(b);
-	for (int i = 0; i < 5; ++i){
-		auto newb = std::make_shared<ui::BlockElement>();
-		b->add<ui::Text>("Block " + std::to_string(i + 1), getFont());
-		b->add(newb);
-		b->add<ui::Text>("Block " + std::to_string(i + 1), getFont());
-		b = newb;
+	{
+		auto b = ui::root().add<ui::BlockElement>();
+		for (int i = 0; i < 5; ++i){
+			b->add<ui::Text>("Block " + std::to_string(i + 1), getFont());
+			auto newb = b->add<ui::BlockElement>();
+			b->add<ui::Text>("Block " + std::to_string(i + 1), getFont());
+			b = newb;
+		}
+
+		auto block = ui::root().add<ui::BlockElement>();
+		block->setMinSize({0, 100});
+		auto pops = block->add<TestElement>("Pops");
+		pops->setMinSize({500, 300});
+		pops->add<TestElement>("Hector");
+		pops->add<TestElement>("Brent");
+		pops->add<TestElement>("Greg");
+		pops->add<TestElement>("Donny");
+
+		block->add<ui::LineBreak>(10.0f);
+
+		block->add<TestElement>("Jorgan");
+
+		block->add<ui::LineBreak>(15.0f);
+
+		block->add<TestElement>("Allen");;
+		block->add<TestElement>("Percy");
+		block->add<TestElement>("Collin");
+		block->add<TestElement>("Geoffrey");
+		block->add<TestElement>("Hank");
+		block->add<TestElement>("Brody");
+
+
+		std::wstringstream ss;
+		ss.str(L"Lorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.");
+		std::wstring word;
+		while (ss >> word){
+			block->add<ui::Text>(word, getFont());
+		}
 	}
-
-	auto block = std::make_shared<ui::BlockElement>();
-	block->setMinSize({0, 100});
-	auto pops = std::make_shared<TestElement>("Pops");
-	pops->setMinSize({500, 300});
-	block->add(pops);
-	pops->add<TestElement>("Hector");
-	pops->add<TestElement>("Brent");
-	pops->add<TestElement>("Greg");
-	pops->add<TestElement>("Donny");
-
-	block->add<ui::LineBreak>(10.0f);
-
-	block->add<TestElement>("Jorgan");
-
-	block->add<ui::LineBreak>(15.0f);
-
-	block->add<TestElement>("Allen");;
-	block->add<TestElement>("Percy");
-	block->add<TestElement>("Collin");
-	block->add<TestElement>("Geoffrey");
-	block->add<TestElement>("Hank");
-	block->add<TestElement>("Brody");
-
-
-	std::wstringstream ss;
-	ss.str(L"Lorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.");
-	std::wstring word;
-	while (ss >> word){
-		block->add<ui::Text>(word, getFont());
-	}
-	ui::root().add(block);
 
 	ui::run();
 

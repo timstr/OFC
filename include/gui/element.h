@@ -174,18 +174,14 @@ namespace ui {
 		bool keyDown(Key key) const;
 
 		// add a child element
-		template<typename ElementType>
-		std::shared_ptr<ElementType> add(std::shared_ptr<ElementType> child){
-			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
-			adopt(child);
-			return child;
-		}
-
-		// add a child element
 		template<typename ElementType, typename... ArgsT>
 		std::shared_ptr<ElementType> add(ArgsT&&... args){
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
-			std::shared_ptr<ElementType> child = std::make_shared<ElementType>(std::forward<ArgsT>(args)...);
+			// This may look strange, but the child creates the first shared_ptr to itself
+			// (so that shared_from_this is valid in the constructor) and this is how that is dealt with.
+			auto rawchild = new ElementType(std::forward<ArgsT>(args)...);
+			std::shared_ptr<ElementType> child = rawchild->getThisAs<ElementType>();
+			//std::shared_ptr<ElementType> child = std::make_shared<ElementType>(std::forward<ArgsT>(args)...);
 			adopt(child);
 			return child;
 		}
@@ -227,6 +223,8 @@ namespace ui {
 		float getMargin() const;
 
 	private:
+
+		std::shared_ptr<Element> shared_this;
 
 		const DisplayStyle display_style;
 		bool disabled;

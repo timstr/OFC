@@ -9,8 +9,8 @@
 namespace ui {
 	
 	Element& root(){
-		static std::shared_ptr<Element> root { std::make_shared<FreeElement>() };
-		return *root;
+		static Element* root { new FreeElement() };
+		return *root->shared_from_this();
 	}
 	
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler){

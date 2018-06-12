@@ -93,7 +93,6 @@ namespace ui {
 			if (state == State::Normal){
 				state = State::Hover;
 				fadeColor(bgcolor, hover_color, 0.15f);
-				
 			}
 		}
 		void onMouseOut() override {
@@ -150,6 +149,10 @@ namespace ui {
 
 		bool onLeftClick(int clicks) override {
 			list->setVisible(true);
+			return true;
+		}
+
+		bool onLeftRelease() override {
 			return true;
 		}
 

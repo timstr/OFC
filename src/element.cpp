@@ -8,6 +8,7 @@ namespace ui {
 	}
 
 	Element::Element(DisplayStyle _display_style) :
+		shared_this(this),
 		display_style(_display_style),
 		pos({0.0f, 0.0f}),
 		size({100.0f, 100.0f}),
@@ -106,6 +107,7 @@ namespace ui {
 		if (auto p = parent.lock()){
 			p->remove(shared_from_this());
 		}
+		shared_this = nullptr;
 	}
 
 	void Element::onClose(){
@@ -215,8 +217,8 @@ namespace ui {
 	
 	void Element::drop(vec2 local_pos){
 		vec2 pos = rootPos() + local_pos;
-		if (auto element = root().findElementAt(pos, shared_from_this())){
-			auto self = shared_from_this();
+		auto self = shared_from_this();
+		if (auto element = root().findElementAt(pos, self)){
 			do {
 				if (element->onDrop(self)){
 					return;
@@ -471,14 +473,6 @@ namespace ui {
 
 		// at this point, this element is dirty
 		makeClean();
-
-		// TODO: the following is a work-around for weak_from_this() returning an empty
-		// weak pointer in the constructor. A better solution should be found to avoid
-		// surprises, such as calling close() on a child in the constructor (which would
-		// not remove it from the children vector)
-		for (auto const& child : children){
-			child->parent = weak_from_this();
-		}
 
 		// calculate own width and arrange children
 		if (display_style == DisplayStyle::Free){
