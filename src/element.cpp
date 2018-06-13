@@ -102,7 +102,7 @@ namespace ui {
 			if (children.back()->inFocus()){
 				grabFocus();
 			}
-			children.pop_back();
+			children.back()->close();
 		}
 		if (auto p = parent.lock()){
 			p->remove(shared_this);

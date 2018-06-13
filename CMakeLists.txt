@@ -19,6 +19,12 @@ set(headers
 	include/gui/textentry.h
 	include/gui/transition.h
 	include/gui/element.h
+	include/gui/helpers/CallbackButton.h
+	include/gui/helpers/linebreak.h
+	include/gui/helpers/NumberTextEntry.h
+	include/gui/helpers/PullDownMenu.h
+	include/gui/helpers/Slider.h
+	include/gui/helpers/TextEntryHelper.h
 )
 
 set(forms_headers

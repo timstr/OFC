@@ -31,8 +31,35 @@ struct TestElement : ui::FreeElement {
 		add<ui::CallbackButton>("Change Colour", getFont(), [this]{
 			changeColor();
 		});
-		add<ui::PullDownMenu>(std::vector<std::string>{"Bread", "Butter", "Apricots", "Orphans", "Oregonians", "Orifices", "Mankind"}, getFont(), [this](std::string s){
+		add<ui::PullDownMenu<std::string>>(std::vector<std::string>{"Bread", "Butter", "Apricots", "Orphans", "Oregonians", "Orifices", "Mankind"},
+										   getFont(),
+										   [this](const std::string& s){
 			this->label->setText(s);
+		});
+		std::vector<std::pair<sf::Color, std::string>> color_options {
+			{sf::Color(0xcf302dff), "red"},
+			{sf::Color(0x990f04ff), "cherry"},
+			{sf::Color(0xe2252bff), "rose"},
+			{sf::Color(0x600f0cff), "jam"},
+			{sf::Color(0x600f0cff), "merlot"},
+			{sf::Color(0x5f0a03ff), "garnet"},
+			{sf::Color(0xb80f0aff), "crimson"},
+			{sf::Color(0x900604ff), "ruby"},
+			{sf::Color(0x920c09ff), "scarlet"},
+			{sf::Color(0x4c0805ff), "wine"},
+			{sf::Color(0x7e2811ff), "brick"},
+			{sf::Color(0xa91b0dff), "apple"},
+			{sf::Color(0x420d09ff), "mahogany"},
+			{sf::Color(0x720d05ff), "blood"},
+			{sf::Color(0x5e1915ff), "sangria"},
+			{sf::Color(0x7a1913ff), "berry"},
+			{sf::Color(0x670c09ff), "currant"},
+			{sf::Color(0xbc5449ff), "blush"},
+			{sf::Color(0xd31505ff), "candy"},
+			{sf::Color(0x9c1003ff), "lipstick"}
+		};
+		add<ui::PullDownMenu<sf::Color>>(color_options, getFont(), [this](const sf::Color& color){
+			this->bgcolor = color;
 		});
 	}
 	~TestElement(){
