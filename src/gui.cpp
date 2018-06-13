@@ -10,7 +10,7 @@ namespace ui {
 	
 	Element& root(){
 		static Element* root { new FreeElement() };
-		return *root->shared_from_this();
+		return *root->shared_this;
 	}
 	
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler){

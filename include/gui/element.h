@@ -43,7 +43,7 @@ namespace ui {
 		template<typename ElementType>
 		std::shared_ptr<ElementType> getThisAs(){
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from ui::Element");
-			return std::dynamic_pointer_cast<ElementType, Element>(shared_from_this());
+			return std::dynamic_pointer_cast<ElementType, Element>(shared_this);
 		}
 
 		// prevent the element from receiving input
@@ -181,7 +181,6 @@ namespace ui {
 			// (so that shared_from_this is valid in the constructor) and this is how that is dealt with.
 			auto rawchild = new ElementType(std::forward<ArgsT>(args)...);
 			std::shared_ptr<ElementType> child = rawchild->getThisAs<ElementType>();
-			//std::shared_ptr<ElementType> child = std::make_shared<ElementType>(std::forward<ArgsT>(args)...);
 			adopt(child);
 			return child;
 		}
@@ -264,6 +263,7 @@ namespace ui {
 
 		friend struct Context;
 		friend void run();
+		friend Element& root();
 	};
 
 	struct FreeElement : Element {

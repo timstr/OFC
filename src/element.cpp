@@ -105,7 +105,7 @@ namespace ui {
 			children.pop_back();
 		}
 		if (auto p = parent.lock()){
-			p->remove(shared_from_this());
+			p->remove(shared_this);
 		}
 		shared_this = nullptr;
 	}
@@ -120,7 +120,7 @@ namespace ui {
 	
 	vec2 Element::localMousePos() const {
 		vec2 pos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
-		std::shared_ptr<const Element> element = shared_from_this();
+		std::shared_ptr<const Element> element = shared_this;
 		while (element){
 			pos -= element->pos;
 			element = element->parent.lock();
@@ -130,7 +130,7 @@ namespace ui {
 	
 	vec2 Element::rootPos() const {
 		vec2 pos = {0, 0};
-		std::shared_ptr<const Element> element = shared_from_this();
+		std::shared_ptr<const Element> element = shared_this;
 		while (element){
 			pos += element->pos;
 			element = element->parent.lock();
@@ -177,7 +177,7 @@ namespace ui {
 	void Element::startDrag(){
 		if (display_style == DisplayStyle::Free){
 			grabFocus();
-			getContext().setDraggingElement(shared_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
+			getContext().setDraggingElement(shared_this, (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
 		}
 	}
 	
@@ -217,10 +217,9 @@ namespace ui {
 	
 	void Element::drop(vec2 local_pos){
 		vec2 pos = rootPos() + local_pos;
-		auto self = shared_from_this();
-		if (auto element = root().findElementAt(pos, self)){
+		if (auto element = root().findElementAt(pos, shared_this)){
 			do {
-				if (element->onDrop(self)){
+				if (element->onDrop(shared_this)){
 					return;
 				}
 			} while (element = element->parent.lock());
@@ -244,7 +243,7 @@ namespace ui {
 	}
 	
 	void Element::grabFocus(){
-		getContext().focusTo(shared_from_this());
+		getContext().focusTo(shared_this);
 	}
 	
 	bool Element::onKeyDown(Key key){
@@ -292,11 +291,10 @@ namespace ui {
 	
 	void Element::bringToFront(){
 		if (auto p = parent.lock()){
-			auto self = shared_from_this();
 			for (auto it = p->children.begin(); it != p->children.end(); ++it){
-				if (*it == self){
+				if ((*it).get() == this){
 					p->children.erase(it);
-					p->children.push_back(self);
+					p->children.push_back(shared_this);
 					return;
 				}
 			}
@@ -330,7 +328,7 @@ namespace ui {
 		}
 
 		if (this->hit(_pos)){
-			return shared_from_this();
+			return shared_this;
 		}
 
 		return nullptr;
@@ -432,7 +430,7 @@ namespace ui {
 			p->release(child);
 		}
 		children.push_back(child);
-		child->parent = weak_from_this();
+		child->parent = shared_this;
 		child->layout_index = getNextLayoutIndex();
 		organizeLayoutIndices();
 		makeDirty();

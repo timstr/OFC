@@ -14,7 +14,7 @@ namespace ui {
 		}
 	}
 
-	Context::Context() : doubleclicktime(0.25f), quit(false), current_element(root().shared_from_this()) {
+	Context::Context() : doubleclicktime(0.25f), quit(false), current_element(root().shared_this) {
 	
 	}
 	
