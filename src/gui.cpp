@@ -9,8 +9,16 @@
 namespace ui {
 	
 	Element& root(){
-		static Element* root { new FreeElement() };
-		return *root->shared_this;
+		static bool initialized = false;
+		static std::shared_ptr<Element> root;
+		if (!initialized){
+			Element* rawroot = new FreeElement();
+			root = rawroot->shared_from_this();
+			root->setMargin(0.0f);
+			root->setPadding(0.0f);
+			initialized = true;
+		}
+		return *root;
 	}
 	
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler){
@@ -68,7 +76,7 @@ namespace ui {
 						getContext().resize(event.size.width, event.size.height);
 						break;
 					case sf::Event::LostFocus:
-						getContext().setDraggingElement({});
+						getContext().setDraggingElement(nullptr);
 						break;
 					case sf::Event::TextEntered:
 						if (auto text_entry = getContext().getTextEntry()){

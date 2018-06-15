@@ -9,7 +9,8 @@ namespace ui {
 		Text(std::wstring _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), int charsize = 15);
 
 		void setText(std::string _text);
-		std::string getText();
+		void setText(std::wstring _text);
+		std::wstring getText();
 		void clearText();
 
 		void setCharacterSize(unsigned int size);

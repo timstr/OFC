@@ -14,14 +14,18 @@ namespace ui {
 		setMargin((float)charsize / 7.5f);
 		background_color = sf::Color(0x0);
 	}
-	
+
 	void Text::setText(std::string _text){
 		text.setString(_text);
 		updateSize();
 	}
+	void Text::setText(std::wstring _text){
+		text.setString(_text);
+		updateSize();
+	}
 	
-	std::string Text::getText(){
-		return text.getString().toAnsiString();
+	std::wstring Text::getText(){
+		return text.getString();
 	}
 	
 	void Text::clearText(){

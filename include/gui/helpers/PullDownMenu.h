@@ -33,6 +33,7 @@ namespace ui {
 		}
 
 		bool onLeftClick(int clicks) override {
+			bringToFront();
 			list->setVisible(true);
 			return true;
 		}

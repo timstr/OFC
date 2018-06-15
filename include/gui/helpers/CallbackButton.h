@@ -28,11 +28,20 @@ namespace ui {
 		void setNormalColor(sf::Color color){
 			normal_color = color;
 		}
+		sf::Color getNormalColor() const {
+			return normal_color;
+		}
 		void setHoverColor(sf::Color color){
 			hover_color = color;
 		}
+		sf::Color getHoverColor(sf::Color color) const {
+			return hover_color;
+		}
 		void setActiveColor(sf::Color color){
 			active_color = color;
+		}
+		sf::Color getActiveColor() const {
+			return active_color;
 		}
 
 		void setCallback(std::function<void()> _callback){

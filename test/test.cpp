@@ -22,12 +22,11 @@ sf::Font& getFont(){
 	return font;
 }
 
-struct TestElement : ui::FreeElement {
+struct TestElement : ui::InlineElement {
 	TestElement(std::string name) : name(name) {
 		std::cout << name << " was constructed" << std::endl;
 		changeColor();
 		label = add<ui::Text>(name, getFont());
-		add<ui::LineBreak>();
 		add<ui::CallbackButton>("Change Colour", getFont(), [this]{
 			changeColor();
 		});
@@ -61,6 +60,22 @@ struct TestElement : ui::FreeElement {
 		add<ui::PullDownMenu<sf::Color>>(color_options, getFont(), [this](const sf::Color& color){
 			this->bgcolor = color;
 		});
+
+		add<ui::TextEntryHelper>("", getFont(), [this](const std::wstring& text){
+			this->label->setText(text);
+		});
+
+		float val = 0.5f;
+		float min = 0.0f;
+		float max = 1.0f;
+		auto numbrocont = add<ui::InlineElement>();
+		numbrocont->setSize({100.0f, 35.0f}, true);
+		auto numbro = numbrocont->add<ui::Text>(std::to_string(val), getFont());
+		auto onChange = [numbro](float v){
+			numbro->setText(std::to_string(v));
+		};
+		add<ui::NumberTextEntry>(val, min, max, getFont(), onChange);
+		add<ui::Slider>(val, min, max, getFont(), onChange);
 	}
 	~TestElement(){
 		std::cout << name << " was destroyed" << std::endl;
@@ -91,6 +106,7 @@ struct TestElement : ui::FreeElement {
 	bool onLeftClick(int clicks) override {
 		bringToFront();
 		if (clicks == 1){
+			setDisplayStyle(DisplayStyle::Free);
 			startDrag();
 		} else if (clicks == 2){
 			std::cout << name << " was left-clicked twice" << std::endl;
@@ -101,8 +117,11 @@ struct TestElement : ui::FreeElement {
 
 	bool onLeftRelease() override {
 		std::cout << name << " was left released" << std::endl;
-		stopDrag();
-		drop(localMousePos());
+		if (dragging()){
+			stopDrag();
+			setDisplayStyle(DisplayStyle::Inline);
+			drop(localMousePos());
+		}
 		return true;
 	}
 
@@ -176,6 +195,7 @@ struct TestElement : ui::FreeElement {
 	bool onDrop(std::shared_ptr<Element> element) override {
 		if (element){
 			if (auto w = std::dynamic_pointer_cast<TestElement, Element>(element)){
+				adopt(w);
 				std::cout << w->name;
 			} else {
 				std::cout << "An element";
@@ -260,7 +280,6 @@ int main(int argc, char** argcv){
 		block->add<TestElement>("Geoffrey");
 		block->add<TestElement>("Hank");
 		block->add<TestElement>("Brody");
-
 
 		std::wstringstream ss;
 		ss.str(L"Lorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.");

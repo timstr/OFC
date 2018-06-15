@@ -3,31 +3,31 @@
 #include <limits>
 
 namespace {
-	std::stringstream stream;
+	std::wstringstream stream;
 }
 
-std::string toString(float x){
-	stream.str("");
+std::wstring toString(float x){
+	stream.str(L"");
 	stream.clear();
 	stream << x;
 	return stream.str();
 }
 
-std::string toString(double x){
-	stream.str("");
+std::wstring toString(double x){
+	stream.str(L"");
 	stream.clear();
 	stream << x;
 	return stream.str();
 }
 
-std::string toString(int x){
-	stream.str("");
+std::wstring toString(int x){
+	stream.str(L"");
 	stream.clear();
 	stream << x;
 	return stream.str();
 }
 
-float stringToFloat(const std::string& str){
+float stringToFloat(const std::wstring& str){
 	stream.str(str);
 	stream.clear();
 	float x;
@@ -39,7 +39,7 @@ float stringToFloat(const std::string& str){
 	}
 }
 
-double stringToDouble(const std::string& str){
+double stringToDouble(const std::wstring& str){
 	stream.str(str);
 	stream.clear();
 	double x;
@@ -51,7 +51,7 @@ double stringToDouble(const std::string& str){
 	}
 }
 
-int stringToInt(const std::string& str, int default_value){
+int stringToInt(const std::wstring& str, int default_value){
 	stream.str(str);
 	stream.clear();
 	int x;
@@ -63,7 +63,7 @@ int stringToInt(const std::string& str, int default_value){
 	}
 }
 
-bool stringIsInt(const std::string& str){
+bool stringIsInt(const std::wstring& str){
 	stream.str(str);
 	stream.clear();
 	int x;

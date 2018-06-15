@@ -8,8 +8,13 @@ namespace ui {
 		: Text("", font, sf::Color(0xFF), charsize) {
 
 	}
-	
+
 	TextEntry::TextEntry(std::string str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color)
+		: Text(str, font, _text_color, charsize) {
+		setBackGroundColor(_bg_color);
+		enable();
+	}
+	TextEntry::TextEntry(std::wstring str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color)
 		: Text(str, font, _text_color, charsize) {
 		setBackGroundColor(_bg_color);
 		enable();
@@ -23,7 +28,7 @@ namespace ui {
 	
 	void TextEntry::endTyping(){
 		if (typing()){
-			getContext().setTextEntry({});
+			getContext().setTextEntry(nullptr);
 		}
 	}
 	
@@ -44,11 +49,11 @@ namespace ui {
 		updateSize();
 	}
 	
-	void TextEntry::onReturn(std::string entered_text){
+	void TextEntry::onReturn(std::wstring entered_text){
 
 	}
 	
-	void TextEntry::onType(std::string full_text){
+	void TextEntry::onType(std::wstring full_text){
 
 	}
 	

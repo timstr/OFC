@@ -91,6 +91,19 @@ namespace ui {
 		max_size = _max_size;
 		makeDirty();
 	}
+
+	void Element::setDisplayStyle(DisplayStyle style){
+		if (display_style != style){
+			display_style = style;
+			if (auto par = parent.lock()){
+				par->makeDirty();
+			}
+		}
+	}
+
+	Element::DisplayStyle Element::getDisplayStyle() const {
+		return display_style;
+	}
 	
 	Element::~Element(){
 		
@@ -187,7 +200,7 @@ namespace ui {
 	
 	void Element::stopDrag(){
 		if (dragging()){
-			getContext().setDraggingElement({});
+			getContext().setDraggingElement(nullptr);
 		}
 	}
 	
@@ -258,6 +271,20 @@ namespace ui {
 		return inFocus() && sf::Keyboard::isKeyPressed(key);
 	}
 	
+	void Element::adopt(std::shared_ptr<Element> child){
+		if (auto p = child->parent.lock()){
+			if (p.get() == this){
+				return;
+			}
+			p->release(child);
+		}
+		children.push_back(child);
+		child->parent = shared_this;
+		child->layout_index = getNextLayoutIndex();
+		organizeLayoutIndices();
+		makeDirty();
+	}
+
 	void Element::remove(std::shared_ptr<Element> element){
 		if (element){
 			for (auto it = children.begin(); it != children.end(); ++it){
@@ -420,20 +447,6 @@ namespace ui {
 
 	float Element::getMargin() const {
 		return margin;
-	}
-
-	void Element::adopt(std::shared_ptr<Element> child){
-		if (auto p = child->parent.lock()){
-			if (p.get() == this){
-				return;
-			}
-			p->release(child);
-		}
-		children.push_back(child);
-		child->parent = shared_this;
-		child->layout_index = getNextLayoutIndex();
-		organizeLayoutIndices();
-		makeDirty();
 	}
 
 	void Element::makeDirty(){

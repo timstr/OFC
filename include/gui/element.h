@@ -21,6 +21,7 @@ namespace ui {
 
 	struct Element : std::enable_shared_from_this<Element> {
 
+		// An element's display style 
 		enum class DisplayStyle {
 			Free,
 			Inline,
@@ -77,6 +78,12 @@ namespace ui {
 		void setSize(vec2 _size, bool force = false);
 		void setMinSize(vec2 _min_size);
 		void setMaxSize(vec2 _max_size);
+
+		// set the display style
+		void setDisplayStyle(DisplayStyle style);
+
+		// get the display style
+		DisplayStyle getDisplayStyle() const;
 
 		// true if a test point (in local space) intercepts the element
 		virtual bool hit(vec2 testpos) const;
@@ -173,7 +180,7 @@ namespace ui {
 		// true if 'key' is currently being pressed and the element is in focus
 		bool keyDown(Key key) const;
 
-		// add a child element
+		// add a new child element
 		template<typename ElementType, typename... ArgsT>
 		std::shared_ptr<ElementType> add(ArgsT&&... args){
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
@@ -184,6 +191,9 @@ namespace ui {
 			adopt(child);
 			return child;
 		}
+
+		// adopt an existing child element
+		void adopt(std::shared_ptr<Element> child);
 
 		// remove and destroy a child element
 		void remove(std::shared_ptr<Element> element);
@@ -198,7 +208,7 @@ namespace ui {
 		void clear();
 
 		// find the element at the given local coordinates, optionally excluding a given element and all its children
-		std::shared_ptr<Element> findElementAt(vec2 _pos, std::shared_ptr<Element> exclude = {});
+		std::shared_ptr<Element> findElementAt(vec2 _pos, std::shared_ptr<Element> exclude = nullptr);
 
 		// render the element
 		virtual void render(sf::RenderWindow& renderwindow);
@@ -225,7 +235,7 @@ namespace ui {
 
 		std::shared_ptr<Element> shared_this;
 
-		const DisplayStyle display_style;
+		DisplayStyle display_style;
 		bool disabled;
 		bool visible;
 		bool clipping;
@@ -237,8 +247,6 @@ namespace ui {
 		int layout_index;
 		float padding;
 		float margin;
-
-		void adopt(std::shared_ptr<Element> child);
 
 		void makeDirty();
 		bool isDirty() const;
