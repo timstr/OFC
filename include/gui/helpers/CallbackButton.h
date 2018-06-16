@@ -59,7 +59,7 @@ namespace ui {
 			}
 			return true;
 		}
-		bool onLeftRelease() override {
+		void onLeftRelease() override {
 			if (hovering()){
 				state = State::Hover;
 			} else {
@@ -67,7 +67,6 @@ namespace ui {
 				state = State::Normal;
 			}
 
-			return true;
 		}
 
 		bool onKeyDown(ui::Key key) override {

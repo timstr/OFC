@@ -4,14 +4,16 @@
 
 namespace ui {
 
+	// calls `function` on `element` and all its ancestors until one returns true, and that element is returned
 	template<typename ...ArgsT>
-	void propagate(std::shared_ptr<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args){
+	std::shared_ptr<Element> propagate(std::shared_ptr<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args){
 		while (element) {
 			if (((*element).*function)(args...)){
-				return;
+				return element;
 			}
 			element = element->getParent().lock();
 		}
+		return nullptr;
 	}
 
 	Context::Context() : doubleclicktime(0.25f), quit(false), current_element(root().shared_this) {
@@ -107,16 +109,25 @@ namespace ui {
 			return;
 		}
 
-		// if the mouse has been clicked recently, with the same button, on the same element:
-		if (((clock.getElapsedTime() - click_timestamp).asSeconds() <= doubleclicktime)
-			&& (click_button == button)
-			&& (clicked_element && (hit_element == clicked_element))){
+		bool recent = (clock.getElapsedTime() - click_timestamp).asSeconds() <= doubleclicktime;
+
+		bool same_button = click_button == button;
+
+		bool same_element = false;
+		if (click_button == sf::Mouse::Left){
+			same_element = left_clicked_element == hit_element;
+		} else if (click_button == sf::Mouse::Right){
+			same_element = right_clicked_element == hit_element;
+		}
+
+		// with the same button, on the same element:
+		if (recent && same_button && same_element){
 
 			// double click that element
 			if (button == sf::Mouse::Left){
-				propagate(hit_element, &Element::onLeftClick, 2);
+				left_clicked_element = propagate(hit_element, &Element::onLeftClick, 2);
 			} else if (button == sf::Mouse::Right){
-				propagate(hit_element, &Element::onRightClick, 2);
+				right_clicked_element = propagate(hit_element, &Element::onRightClick, 2);
 			}
 
 			// don't let it be double clicked again until after it gets single clicked again
@@ -127,16 +138,27 @@ namespace ui {
 
 			focusTo(hit_element);
 			if (button == sf::Mouse::Left){
-				propagate(hit_element, &Element::onLeftClick, 1);
+				left_clicked_element = propagate(hit_element, &Element::onLeftClick, 1);
 			} else if (button == sf::Mouse::Right){
-				propagate(hit_element, &Element::onRightClick, 1);
+				right_clicked_element = propagate(hit_element, &Element::onRightClick, 1);
 			}
 
 			click_timestamp = clock.getElapsedTime();
 		}
 
 		click_button = button;
-		clicked_element = hit_element;
+	}
+
+	void Context::handleMouseUp(sf::Mouse::Button button){
+		if (button == sf::Mouse::Left){
+			if (left_clicked_element && !left_clicked_element->isClosed()){
+				left_clicked_element->onLeftRelease();
+			}
+		} else if (button == sf::Mouse::Right){
+			if (right_clicked_element && !right_clicked_element->isClosed()){
+				right_clicked_element->onRightRelease();
+			}
+		}
 	}
 	
 	void Context::addKeyboardCommand(Key trigger_key, std::function<void()> handler){
@@ -174,19 +196,26 @@ namespace ui {
 		if (current_it != commands.end()){
 			current_it->second();
 		} else {
-			propagate(current_element, &Element::onKeyDown, key);
+			auto elem = propagate(current_element, &Element::onKeyDown, key);
+			auto it = keys_pressed.find(key);
+			if (it != keys_pressed.end()){
+				if (it->second != elem){
+					it->second->onKeyUp(key);
+					it->second = elem;
+				}
+			} else {
+				keys_pressed[key] = elem;
+			}
 		}
 	}
 
 	void Context::handleKeyRelease(Key key){
-		propagate(current_element, &Element::onKeyUp, key);
-	}
-	
-	void Context::handleMouseUp(sf::Mouse::Button button, vec2 pos){
-		if (button == sf::Mouse::Left){
-			propagate(current_element, &Element::onLeftRelease);
-		} else if (button == sf::Mouse::Right){
-			propagate(current_element, &Element::onRightRelease);
+		auto it = keys_pressed.find(key);
+		if (it != keys_pressed.end()){
+			if (it->second && !it->second->isClosed()){
+				it->second->onKeyUp(key);
+			}
+			keys_pressed.erase(it);
 		}
 	}
 
@@ -311,7 +340,7 @@ namespace ui {
 		return program_time;
 	}
 	
-	std::shared_ptr<Element> Context::getDraggingElement(){
+	std::shared_ptr<Element> Context::getDraggingElement() const {
 		return dragging_element;
 	}
 	
@@ -320,15 +349,15 @@ namespace ui {
 		drag_offset = offset;
 	}
 	
-	std::shared_ptr<Element> Context::getCurrentElement(){
+	std::shared_ptr<Element> Context::getCurrentElement() const{
 		return current_element;
 	}
 
-	std::shared_ptr<Element> Context::getHoverElement(){
+	std::shared_ptr<Element> Context::getHoverElement() const {
 		return hover_element;
 	}
 	
-	std::shared_ptr<TextEntry> Context::getTextEntry(){
+	std::shared_ptr<TextEntry> Context::getTextEntry() const {
 		return text_entry;
 	}
 	

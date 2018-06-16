@@ -129,9 +129,7 @@ namespace ui {
 						break;
 					}
 					case sf::Event::MouseButtonReleased:
-						getContext().handleMouseUp(event.mouseButton.button,
-												   vec2((float)event.mouseButton.x,
-														(float)event.mouseButton.y));
+						getContext().handleMouseUp(event.mouseButton.button);
 						break;
 					case sf::Event::MouseWheelScrolled:
 					{
@@ -162,6 +160,7 @@ namespace ui {
 			getContext().applyTransitions();
 
 			// update elements
+			root().setSize(getScreenSize(), true);
 			root().update(root().getSize().x);
 
 			// clear the screen
@@ -169,7 +168,6 @@ namespace ui {
 			getContext().resetView();
 
 			// render the root element, and all children it contains
-			root().setSize(getScreenSize());
 			root().renderChildren(getContext().getRenderWindow());
 
 			// highlight current element if alt is pressed

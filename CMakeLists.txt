@@ -27,17 +27,6 @@ set(headers
 	include/gui/helpers/TextEntryHelper.h
 )
 
-set(forms_headers
-	include/gui/forms/doubleproperty.h
-	include/gui/forms/floatproperty.h
-	include/gui/forms/forms.h
-	include/gui/forms/formscontrol.h
-	include/gui/forms/formsmodel.h
-	include/gui/forms/integerproperty.h
-	include/gui/forms/pulldownproperty.h
-	include/gui/forms/stringproperty.h
-)
-
 set(srcs
 	src/context.cpp
 	src/gui.cpp
@@ -47,23 +36,12 @@ set(srcs
 	src/transition.cpp
 	src/element.cpp
 )
-
-set(forms_srcs
-	src/doubleproperty.cpp
-	src/forms.cpp
-	src/formscontrol.cpp
-	src/formsmodel.cpp
-)
 	
 add_library(tims_gui STATIC ${headers} ${srcs})
 
 target_link_libraries(tims_gui sfml-system sfml-window sfml-graphics sfml-audio sfml-main)
 
 target_include_directories(tims_gui PUBLIC "include")
-
-add_library(tims_gui_forms STATIC ${forms_headers} ${forms_srcs})
-
-target_link_libraries(tims_gui_forms tims_gui)
 
 # Testing below
 
@@ -77,5 +55,4 @@ add_executable(tims_gui_test test/test.cpp test/fontspath.h)
 
 target_link_libraries(tims_gui_test
 	PUBLIC tims_gui
-	PUBLIC tims_gui_forms
 )

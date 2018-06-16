@@ -106,6 +106,7 @@ struct TestElement : ui::InlineElement {
 	bool onLeftClick(int clicks) override {
 		bringToFront();
 		if (clicks == 1){
+			std::cout << name << " was left-clicked" << std::endl;
 			setDisplayStyle(DisplayStyle::Free);
 			startDrag();
 		} else if (clicks == 2){
@@ -115,14 +116,13 @@ struct TestElement : ui::InlineElement {
 		return true;
 	}
 
-	bool onLeftRelease() override {
+	void onLeftRelease() override {
 		std::cout << name << " was left released" << std::endl;
 		if (dragging()){
 			stopDrag();
 			setDisplayStyle(DisplayStyle::Inline);
 			drop(localMousePos());
 		}
-		return true;
 	}
 
 	bool onRightClick(int clicks) override {
@@ -149,9 +149,8 @@ struct TestElement : ui::InlineElement {
 		return true;
 	}
 
-	bool onRightRelease() override {
+	void onRightRelease() override {
 		std::cout << name << " was right released" << std::endl;
-		return true;
 	}
 
 	void onFocus() override {
@@ -170,9 +169,8 @@ struct TestElement : ui::InlineElement {
 		return true;
 	}
 
-	bool onKeyUp(ui::Key key) override {
+	void onKeyUp(ui::Key key) override {
 		std::cout << name << " - [" << key << "] was released" << std::endl;
-		return true;
 	}
 
 	bool onScroll(float dx, float dy) override {

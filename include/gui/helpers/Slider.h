@@ -35,9 +35,8 @@ namespace ui {
 				return true;
 			}
 
-			bool onLeftRelease() override {
+			void onLeftRelease() override {
 				stopDrag();
-				return true;
 			}
 
 			void render(sf::RenderWindow& rw) override {

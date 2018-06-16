@@ -74,9 +74,11 @@ namespace ui {
 			makeDirty();
 		}
 		if (force){
+			if (min_size.x > size.x || min_size.y > size.y || max_size.x < size.x || max_size.y < size.y){
+				makeDirty();
+			}
 			min_size = _size;
 			max_size = _size;
-			makeDirty();
 		}
 	}
 	
@@ -123,6 +125,10 @@ namespace ui {
 		shared_this = nullptr;
 	}
 
+	bool Element::isClosed() const {
+		return !static_cast<bool>(shared_this);
+	}
+
 	void Element::onClose(){
 
 	}
@@ -155,16 +161,16 @@ namespace ui {
 		return false;
 	}
 	
-	bool Element::onLeftRelease(){
-		return false;
+	void Element::onLeftRelease(){
+		
 	}
 	
 	bool Element::onRightClick(int clicks){
 		return false;
 	}
 	
-	bool Element::onRightRelease(){
-		return false;
+	void Element::onRightRelease(){
+		
 	}
 	
 	bool Element::leftMouseDown() const {
@@ -263,8 +269,8 @@ namespace ui {
 		return false;
 	}
 	
-	bool Element::onKeyUp(Key key){
-		return false;
+	void Element::onKeyUp(Key key){
+		
 	}
 	
 	bool Element::keyDown(Key key) const {
@@ -503,8 +509,13 @@ namespace ui {
 				std::min(std::max(newsize.y, min_size.y), max_size.y)
 			);
 			if (size.x > width_avail){
-				arrangeChildren(size.x);
+				newsize = arrangeChildren(size.x);
+				size = vec2(
+					std::min(std::max(newsize.x, min_size.x), max_size.x),
+					std::min(std::max(newsize.y, min_size.y), max_size.y)
+				);
 			}
+			
 			vec2 new_total_size = size + vec2(2.0f * margin, 2.0f * margin);
 			float diff = abs(old_total_size.x - new_total_size.x) + abs(old_total_size.y - new_total_size.y);
 			old_total_size = new_total_size;

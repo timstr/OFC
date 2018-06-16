@@ -38,6 +38,9 @@ namespace ui {
 		// clears and removes the element from its parent
 		void close();
 
+		// returns true if the element has been closed
+		bool isClosed() const;
+
 		// called when the element is closed; to be used for releasing resources reliably
 		virtual void onClose();
 
@@ -96,19 +99,19 @@ namespace ui {
 
 		// called when the element is clicked on with the left mouse button
 		// if false is returned, call will propagate to the parent
+		// if true is returned, onLeftRelease will be invoked when the button is released
 		virtual bool onLeftClick(int clicks);
 
 		// called when the left mouse button is released
-		// if false is returned, call will propagate to the parent
-		virtual bool onLeftRelease();
+		virtual void onLeftRelease();
 
 		// called when the element is clicked on with the right mouse button
 		// if false is returned, call will propagate to the parent
+		// if true is returned, onRightRelease will be invoked when the button is released
 		virtual bool onRightClick(int clicks);
 
 		// called when the right mouse button is released
-		// if false is returned, call will propagate to the parent
-		virtual bool onRightRelease();
+		virtual void onRightRelease();
 
 		// true if the left mouse button is down and the element is in focus
 		bool leftMouseDown() const;
@@ -171,11 +174,11 @@ namespace ui {
 
 		// called when a key is pressed and the element is in focus
 		// if false is returned, call will propagate to the parent
+		// if true is returned, onKeyUp will be invoked when the key is released
 		virtual bool onKeyDown(Key key);
 
-		// called when a key is released and the element is in focus
-		// if false is returned, call will propagate to the parent
-		virtual bool onKeyUp(Key key);
+		// called when the key is released and the element last handled this key being pressed
+		virtual void onKeyUp(Key key);
 
 		// true if 'key' is currently being pressed and the element is in focus
 		bool keyDown(Key key) const;

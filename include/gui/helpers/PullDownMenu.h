@@ -38,10 +38,6 @@ namespace ui {
 			return true;
 		}
 
-		bool onLeftRelease() override {
-			return true;
-		}
-
 		void onLoseFocus() override {
 			list->setVisible(false);
 		}
