@@ -258,8 +258,9 @@ int main(int argc, char** argcv){
 		}
 
 		auto block = ui::root().add<ui::BlockElement>();
+
 		block->setMinSize({0, 100});
-		auto pops = block->add<TestElement>("Pops");
+		/*auto pops = block->add<TestElement>("Pops");
 		pops->setMinSize({500, 300});
 		pops->add<TestElement>("Hector");
 		pops->add<TestElement>("Brent");
@@ -277,7 +278,24 @@ int main(int argc, char** argcv){
 		block->add<TestElement>("Collin");
 		block->add<TestElement>("Geoffrey");
 		block->add<TestElement>("Hank");
-		block->add<TestElement>("Brody");
+		block->add<TestElement>("Brody");*/
+
+		auto fleft = block->add<ui::LeftFloatingElement>();
+		fleft->setSize({100.0f, 100.0f}, true);
+		fleft->add<ui::Text>("Floating left", getFont());
+
+		auto fleft2 = block->add<ui::LeftFloatingElement>();
+		fleft2->setSize({100.0f, 50.0f}, true);
+		fleft2->add<ui::Text>("Floating left", getFont());
+
+		//block->add<ui::Text>("LOREM", getFont(), sf::Color(0xFF), 100);
+
+		block->add<ui::Text>("Lorem", getFont());
+		block->add<ui::LineBreak>(50.0f);
+
+		auto fleft3 = block->add<ui::LeftFloatingElement>();
+		fleft3->setSize({100.0f, 50.0f}, true);
+		fleft3->add<ui::Text>("Floating left", getFont());
 
 		std::wstringstream ss;
 		ss.str(L"Lorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.");

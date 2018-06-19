@@ -1,5 +1,6 @@
 #include "gui/element.h"
 #include "gui/gui.h"
+#include <algorithm>
 #include <set>
 
 namespace ui {
@@ -368,13 +369,44 @@ namespace ui {
 	}
 	
 	void Element::render(sf::RenderWindow& rw){
-		sf::RectangleShape rect;
+		/*sf::RectangleShape rect;
 		rect.setOutlineColor(sf::Color(0xFF));
 		rect.setOutlineThickness(1.0f);
 		rect.setSize(getSize() - vec2(2.0f, 2.0f));
 		rect.setPosition({1.0f, 1.0f});
 		rect.setFillColor(sf::Color(0xFFFFFFFF));
-		rw.draw(rect);
+		rw.draw(rect);*/
+
+		// TODO: remove the following and revert to the above
+		sf::RectangleShape rect;
+		rect.setOutlineColor(sf::Color(0x80));
+		rect.setOutlineThickness(1.5f);
+
+		// margin
+		rect.setPosition({-margin + 1.0f, -margin + 1.0f});
+		rect.setSize(size + vec2(2.0f * margin - 2.0f, 2.0f * margin - 2.0f));
+		rect.setFillColor(sf::Color(0xf9cc9dff));
+		if (rect.getSize().x > 0 && rect.getSize().y > 0){
+			rw.draw(rect);
+		}
+
+		// padding
+		rect.setOutlineColor(sf::Color(0xFF));
+		rect.setPosition({1.0f, 1.0f});
+		rect.setSize(size - vec2(2.0f, 2.0f));
+		rect.setFillColor(sf::Color(0xc3d08bff));
+		if (rect.getSize().x > 0 && rect.getSize().y > 0){
+			rw.draw(rect);
+		}
+
+		// content
+		rect.setOutlineColor(sf::Color(0x80));
+		rect.setPosition({padding + 1.0f, padding + 1.0f});
+		rect.setSize(size - vec2(2.0f * padding + 2.0f, 2.0f * padding + 2.0f));
+		rect.setFillColor(sf::Color(0x8cb6c0ff));
+		if (rect.getSize().x > 0 && rect.getSize().y > 0){
+			rw.draw(rect);
+		}
 	}
 	
 	void Element::renderChildren(sf::RenderWindow& renderwindow){
@@ -523,20 +555,138 @@ namespace ui {
 		}
 	}
 
+	struct LayoutData {
+		LayoutData(Element& _self, float _width_avail)
+			: self(_self),
+			width_avail(_width_avail),
+			contentsize({2.0f * _self.padding, 2.0f * _self.padding}),
+			xpos(_self.padding), ypos(_self.padding), next_ypos(_self.padding),
+			left_edge(_self.padding), right_edge(_width_avail - _self.padding),
+			emptyline(true),
+			sorted_elements(_self.getChildren()) {
+
+			auto comp = [](const std::shared_ptr<Element>& l, const std::shared_ptr<Element>& r){
+				return l->layout_index < r->layout_index;
+			};
+			std::sort(sorted_elements.begin(), sorted_elements.end(), comp);
+		}
+
+		const Element& self;
+		const float width_avail;
+		vec2 contentsize;
+		float xpos;
+		float ypos;
+		float next_ypos;
+		// TODO: calculate from `floatingright`, use instead of `width_avail` to break onto new line
+		float left_edge, right_edge;
+		bool emptyline;
+		std::vector<std::shared_ptr<Element>> sorted_elements, floatingleft, floatingright;
+		
+		void arrangeBlock(const std::shared_ptr<Element>& element){
+			Element& elem = *element;
+			newLine();
+			elem.setPos({self.padding + elem.margin, next_ypos + elem.margin});
+			elem.update(right_edge - left_edge - 2.0f * elem.margin);
+			advancePosition(elem);
+			fitContents(elem);
+			newLine();
+		}
+
+		void arrangeInline(const std::shared_ptr<Element>& element){
+			Element& elem = *element;
+			elem.setPos({xpos + elem.margin, ypos + elem.margin});
+			elem.update(self.size.x - xpos + 2.0f * elem.margin - self.padding);
+			if (advancePosition(elem) && !emptyline){
+				elem.setPos({xpos + elem.margin, ypos + elem.margin});
+				elem.update(width_avail - 2.0f * self.padding);
+				advancePosition(elem);
+			}
+			fitContents(elem);
+		}
+
+		void arrangeFloatingLeft(const std::shared_ptr<Element>& element){
+			if (!emptyline){
+				newLine();
+			}
+			Element& elem = *element;
+			elem.setPos({left_edge + elem.margin, ypos + elem.margin});
+			elem.update(right_edge - left_edge - 2.0f * elem.margin);
+			floatingleft.push_back(element);
+			left_edge = getLeftEdge();
+			xpos = left_edge;
+			fitContents(elem);
+		}
+
+		void arrangeFloatingRight(const std::shared_ptr<Element>& element){
+			// TODO
+		}
+
+		void fitContents(const Element& elem){
+			contentsize = vec2(
+				std::max(contentsize.x, elem.pos.x + elem.size.x + elem.margin + self.padding),
+				std::max(contentsize.y, elem.pos.y + elem.size.y + elem.margin + self.padding)
+			);
+		}
+
+		bool advancePosition(const Element& elem){
+			xpos = elem.pos.x + elem.size.x + elem.margin;
+			next_ypos = std::max(next_ypos, elem.pos.y + elem.size.y + elem.margin);
+			emptyline = false;
+			if (xpos > self.size.x - self.padding){
+				newLine();
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		void newLine(){
+			ypos = next_ypos;
+
+			auto aboveNewLine = [=](const std::shared_ptr<Element>& elem){
+				return ypos >= elem->getPos().y + elem->getSize().y + elem->getMargin();
+			};
+
+			floatingleft.erase(
+				std::remove_if(floatingleft.begin(), floatingleft.end(), aboveNewLine),
+				floatingleft.end()
+			);
+
+			floatingright.erase(
+				std::remove_if(floatingright.begin(), floatingright.end(), aboveNewLine),
+				floatingright.end()
+			);
+
+			left_edge = getLeftEdge();
+			right_edge = getRightEdge();
+			xpos = left_edge;
+			emptyline = true;
+		}
+
+		float getLeftEdge() const {
+			// Assumption: all elements in `floatingleft` pass through ypos
+			float extent = self.padding;
+			for (const auto& elem : floatingleft){
+				extent = std::max(extent, elem->getPos().x + elem->getSize().x + elem->getMargin());
+			}
+			return extent;
+		}
+
+		float getRightEdge() const {
+			// Assumption: all elements in `floatingright` pass through ypos
+			float extent = width_avail - self.padding;
+			for (const auto& elem : floatingright){
+				extent = std::min(extent, elem->getPos().x - elem->getMargin());
+			}
+			return extent;
+		}
+	};
+
 	vec2 Element::arrangeChildren(float width_avail){
-		vec2 contentsize = {0, 0};
-		float xpos = padding;
-		float ypos = padding;
-		float next_ypos = ypos;
+		
+		LayoutData layout(*this, width_avail);
 
-		std::vector<std::shared_ptr<Element>> sorted = children;
-
-		auto comp = [](const std::shared_ptr<Element>& l, const std::shared_ptr<Element>& r){
-			return l->layout_index < r->layout_index;
-		};
-		std::sort(sorted.begin(), sorted.end(), comp);
-
-		for (const auto& element : sorted){
+		for (const auto& element : layout.sorted_elements){
 			if (!element->isVisible()){
 				continue;
 			}
@@ -544,51 +694,31 @@ namespace ui {
 				case DisplayStyle::Block:
 					// block elements appear on a new line and may take up the full
 					// width available and as much height as needed
-					{
-						xpos = padding;
-						ypos = next_ypos + element->margin;
-						element->setPos({xpos + element->margin, ypos});
-						float avail = width_avail - 2.0f * (padding + element->margin);
-						element->update(avail);
-						ypos = next_ypos + element->getSize().y + 2.0f * element->margin;
-						next_ypos = ypos;
-					}
+					layout.arrangeBlock(element);
 					break;
 				case DisplayStyle::Inline:
-					// inline elements appear inline and will take up only as much space as needed
-					// inline-block elements appear inline but may take up any desired amount of space
-					{
-						element->setPos({xpos + element->margin, ypos + element->margin});
-						float avail = width_avail - (element->margin + padding + xpos);
-						element->update(avail);
-						// if the element exceeds the end of the line, put it on a new line and rearrange
-						if (xpos + element->getSize().x + 2.0f * element->margin + padding > width_avail){
-							xpos = padding;
-							ypos = next_ypos;
-							avail = width_avail - 2.0f * (padding + element->margin);
-							element->setPos({xpos + element->margin, ypos + element->margin});
-							element->update(avail);
-						}
-						xpos += element->size.x + 2.0f * element->margin;
-						next_ypos = std::max(next_ypos, ypos + element->getSize().y + 2.0f * element->margin);
-					}
+					// inline elements appear next to other inline elements
+					layout.arrangeInline(element);
 					break;
 				case DisplayStyle::Free:
 					// free elements do not appear as flow elements but are positioned
-					// relative to their parent at their x/y position (like the classic ui)
-					
+					// relative to their parent at their specified x/y position
 					element->update(element->size.x);
 					break;
-			}
-			if (element->display_style != DisplayStyle::Free){
-				contentsize = vec2(
-					std::max(contentsize.x, element->pos.x + element->size.x + element->margin + padding),
-					std::max(contentsize.y, element->pos.y + element->size.y + element->margin + padding)
-				);
+				case DisplayStyle::FloatLeft:
+					// left-floating elements are moved to the left of the current line
+					// and inline elements flow around them
+					layout.arrangeFloatingLeft(element);
+					break;
+				case DisplayStyle::FloatRight:
+					// right-floating elements are moved to the right of the current line
+					// and inline elements flow around them
+					layout.arrangeFloatingRight(element);
+					break;
 			}
 		}
 
-		return contentsize;
+		return layout.contentsize;
 	}
 
 	FreeElement::FreeElement() : Element(DisplayStyle::Free) {
@@ -600,6 +730,14 @@ namespace ui {
 	}
 
 	BlockElement::BlockElement() : Element(DisplayStyle::Block) {
+
+	}
+
+	LeftFloatingElement::LeftFloatingElement() : Element(DisplayStyle::FloatLeft) {
+
+	}
+
+	RightFloatingElement::RightFloatingElement() : Element(DisplayStyle::FloatRight) {
 
 	}
 

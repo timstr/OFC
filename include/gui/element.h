@@ -25,8 +25,9 @@ namespace ui {
 		enum class DisplayStyle {
 			Free,
 			Inline,
-			Block
-			// TODO: add float left/center/right and top/middle/bottom?
+			Block,
+			FloatLeft,
+			FloatRight
 		};
 
 		// default constructor
@@ -275,6 +276,7 @@ namespace ui {
 		friend struct Context;
 		friend void run();
 		friend Element& root();
+		friend struct LayoutData;
 	};
 
 	struct FreeElement : Element {
@@ -287,6 +289,14 @@ namespace ui {
 
 	struct BlockElement : Element {
 		BlockElement();
+	};
+
+	struct LeftFloatingElement : Element {
+		LeftFloatingElement();
+	};
+
+	struct RightFloatingElement : Element {
+		RightFloatingElement();
 	};
 
 } // namespace ui
