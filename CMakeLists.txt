@@ -19,6 +19,7 @@ set(headers
 	include/gui/textentry.h
 	include/gui/transition.h
 	include/gui/element.h
+	include/gui/image.h
 	include/gui/helpers/CallbackButton.h
 	include/gui/helpers/linebreak.h
 	include/gui/helpers/NumberTextEntry.h
@@ -35,6 +36,7 @@ set(srcs
 	src/textentry.cpp
 	src/transition.cpp
 	src/element.cpp
+	src/image.cpp
 )
 	
 add_library(tims_gui STATIC ${headers} ${srcs})

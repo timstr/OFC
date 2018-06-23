@@ -8,6 +8,7 @@ namespace ui {
 		LineBreak(float height = 0.0f){
 			setMargin(height * 0.5f);
 			disable();
+			setSize({0.0f, 0.0f}, true);
 		}
 
 		void render(sf::RenderWindow& rw) override {

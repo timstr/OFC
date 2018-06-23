@@ -5,6 +5,7 @@
 #include "text.h"
 #include "textentry.h"
 #include "context.h"
+#include "image.h"
 
 namespace ui {
 

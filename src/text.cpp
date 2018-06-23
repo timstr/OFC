@@ -11,7 +11,7 @@ namespace ui {
 		text.setFillColor(color);
 		updateSize();
 		disable();
-		setMargin((float)charsize / 7.5f);
+		setMargin(ceil((float)charsize / 7.5f));
 		background_color = sf::Color(0x0);
 	}
 
@@ -74,7 +74,7 @@ namespace ui {
 		} else {
 			newsize.x = bounds.width + bounds.left;
 		}
-		setMinSize(newsize);
+		setMinSize({ceil(newsize.x), ceil(newsize.y)});
 	}
 
 }

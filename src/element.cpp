@@ -6,6 +6,7 @@
 namespace ui {
 	namespace {
 		const float epsilon = 0.0001f;
+		const float far_away = 1000000.0f;
 	}
 
 	Element::Element(DisplayStyle _display_style) :
@@ -14,7 +15,7 @@ namespace ui {
 		pos({0.0f, 0.0f}),
 		size({100.0f, 100.0f}),
 		min_size({0.0f, 0.0f}),
-		max_size({10000.0f, 10000.f}),
+		max_size({far_away, far_away}),
 		old_total_size({0.0f, 0.0f}),
 		disabled(false),
 		visible(true),
@@ -104,7 +105,7 @@ namespace ui {
 		}
 	}
 
-	Element::DisplayStyle Element::getDisplayStyle() const {
+	DisplayStyle Element::getDisplayStyle() const {
 		return display_style;
 	}
 	
@@ -369,44 +370,13 @@ namespace ui {
 	}
 	
 	void Element::render(sf::RenderWindow& rw){
-		/*sf::RectangleShape rect;
+		sf::RectangleShape rect;
 		rect.setOutlineColor(sf::Color(0xFF));
 		rect.setOutlineThickness(1.0f);
 		rect.setSize(getSize() - vec2(2.0f, 2.0f));
 		rect.setPosition({1.0f, 1.0f});
 		rect.setFillColor(sf::Color(0xFFFFFFFF));
-		rw.draw(rect);*/
-
-		// TODO: remove the following and revert to the above
-		sf::RectangleShape rect;
-		rect.setOutlineColor(sf::Color(0x80));
-		rect.setOutlineThickness(1.5f);
-
-		// margin
-		rect.setPosition({-margin + 1.0f, -margin + 1.0f});
-		rect.setSize(size + vec2(2.0f * margin - 2.0f, 2.0f * margin - 2.0f));
-		rect.setFillColor(sf::Color(0xf9cc9dff));
-		if (rect.getSize().x > 0 && rect.getSize().y > 0){
-			rw.draw(rect);
-		}
-
-		// padding
-		rect.setOutlineColor(sf::Color(0xFF));
-		rect.setPosition({1.0f, 1.0f});
-		rect.setSize(size - vec2(2.0f, 2.0f));
-		rect.setFillColor(sf::Color(0xc3d08bff));
-		if (rect.getSize().x > 0 && rect.getSize().y > 0){
-			rw.draw(rect);
-		}
-
-		// content
-		rect.setOutlineColor(sf::Color(0x80));
-		rect.setPosition({padding + 1.0f, padding + 1.0f});
-		rect.setSize(size - vec2(2.0f * padding + 2.0f, 2.0f * padding + 2.0f));
-		rect.setFillColor(sf::Color(0x8cb6c0ff));
-		if (rect.getSize().x > 0 && rect.getSize().y > 0){
-			rw.draw(rect);
-		}
+		rw.draw(rect);
 	}
 	
 	void Element::renderChildren(sf::RenderWindow& renderwindow){
@@ -560,7 +530,8 @@ namespace ui {
 			: self(_self),
 			width_avail(_width_avail),
 			contentsize({2.0f * _self.padding, 2.0f * _self.padding}),
-			xpos(_self.padding), ypos(_self.padding), next_ypos(_self.padding),
+			xpos(_self.padding), ypos(_self.padding),
+			next_ypos(_self.padding),
 			left_edge(_self.padding), right_edge(_width_avail - _self.padding),
 			emptyline(true),
 			sorted_elements(_self.getChildren()) {
@@ -577,31 +548,54 @@ namespace ui {
 		float xpos;
 		float ypos;
 		float next_ypos;
-		// TODO: calculate from `floatingright`, use instead of `width_avail` to break onto new line
 		float left_edge, right_edge;
 		bool emptyline;
 		std::vector<std::shared_ptr<Element>> sorted_elements, floatingleft, floatingright;
 		
 		void arrangeBlock(const std::shared_ptr<Element>& element){
 			Element& elem = *element;
-			newLine();
+
+			while (nextWiderLine()){
+
+			}
+
 			elem.setPos({self.padding + elem.margin, next_ypos + elem.margin});
 			elem.update(right_edge - left_edge - 2.0f * elem.margin);
-			advancePosition(elem);
+			next_ypos = elem.pos.y + elem.size.y + elem.margin;
 			fitContents(elem);
 			newLine();
 		}
 
 		void arrangeInline(const std::shared_ptr<Element>& element){
 			Element& elem = *element;
-			elem.setPos({xpos + elem.margin, ypos + elem.margin});
-			elem.update(self.size.x - xpos + 2.0f * elem.margin - self.padding);
-			if (advancePosition(elem) && !emptyline){
+			do {
+				// position the element
 				elem.setPos({xpos + elem.margin, ypos + elem.margin});
-				elem.update(width_avail - 2.0f * self.padding);
-				advancePosition(elem);
-			}
+				elem.update(right_edge - xpos - 2.0f * elem.margin - self.padding);
+
+				if (elem.pos.x + elem.size.x + elem.margin > right_edge){
+					// if it goes past the edge
+					if (emptyline){
+						// if it's the only inline element on the line, find the next wider line
+						if (!nextWiderLine()){
+							// if one doesn't exist
+							break;
+						}
+					} else {
+						// if other inline elements are on the line
+						newLine();
+					}
+				} else {
+					// if the element fits
+					break;
+				}
+
+			} while (true);
+
+			xpos = elem.pos.x + elem.size.x + elem.margin;
+			next_ypos = std::max(next_ypos, elem.pos.y + elem.size.y + elem.margin);
 			fitContents(elem);
+			emptyline = false;
 		}
 
 		void arrangeFloatingLeft(const std::shared_ptr<Element>& element){
@@ -609,8 +603,20 @@ namespace ui {
 				newLine();
 			}
 			Element& elem = *element;
-			elem.setPos({left_edge + elem.margin, ypos + elem.margin});
-			elem.update(right_edge - left_edge - 2.0f * elem.margin);
+			do {
+				elem.setPos({left_edge + elem.margin, ypos + elem.margin});
+				elem.update(right_edge - left_edge - 2.0f * elem.margin);
+				if (elem.pos.x + elem.size.x + elem.padding > right_edge){
+					// if the element doesn't fit
+					if (!nextWiderLine()){
+						// if a wider line can't be found
+						break;
+					}
+				} else {
+					// if the element fits
+					break;
+				}
+			} while(true);
 			floatingleft.push_back(element);
 			left_edge = getLeftEdge();
 			xpos = left_edge;
@@ -618,7 +624,25 @@ namespace ui {
 		}
 
 		void arrangeFloatingRight(const std::shared_ptr<Element>& element){
-			// TODO
+			Element& elem = *element;
+
+			do {
+				float avail = right_edge - left_edge - elem.margin * 2.0f;
+				elem.update(avail);
+				if (elem.getSize().x > avail){
+					if (!nextWiderLine()){
+						// if a wider line can't be found
+						break;
+					}
+				} else {
+					break;
+				}
+			} while(true);
+
+			elem.setPos({right_edge - elem.size.x - elem.margin, ypos + elem.margin});
+			floatingright.push_back(element);
+			right_edge = getRightEdge();
+			fitContents(elem);
 		}
 
 		void fitContents(const Element& elem){
@@ -628,16 +652,26 @@ namespace ui {
 			);
 		}
 
-		bool advancePosition(const Element& elem){
-			xpos = elem.pos.x + elem.size.x + elem.margin;
-			next_ypos = std::max(next_ypos, elem.pos.y + elem.size.y + elem.margin);
-			emptyline = false;
-			if (xpos > self.size.x - self.padding){
+		bool nextWiderLine(){
+			// if floating left elements, find next bottom edge of floating left and make newline there, return true
+			// else return false
+
+			if (floatingleft.size() > 0 || floatingright.size() > 0){
+				float next_y = far_away;
+				for (const auto& elem : floatingleft){
+					next_y = std::min(next_y, elem->pos.y + elem->size.y + elem->margin);
+				}
+
+				for (const auto& elem : floatingright){
+					next_y = std::min(next_y, elem->pos.y + elem->size.y + elem->margin);
+				}
+
+				next_ypos = std::max(next_y, next_ypos);
 				newLine();
 				return true;
-			} else {
-				return false;
 			}
+
+			return false;
 		}
 
 		void newLine(){

@@ -19,16 +19,27 @@ namespace ui {
 
 	using Key = sf::Keyboard::Key;
 
+	// An element's display style 
+	enum class DisplayStyle {
+
+		// positioned only according to setPos()
+		Free,
+
+		// positioned on the same line as adjacent Inline elements
+		Inline,
+
+		// positioned on a unique line, and taking up the full width available
+		Block,
+
+		// positioned left of all inline elements
+		FloatLeft,
+
+		// positioned right of all inline elements
+		FloatRight
+	};
+
 	struct Element : std::enable_shared_from_this<Element> {
 
-		// An element's display style 
-		enum class DisplayStyle {
-			Free,
-			Inline,
-			Block,
-			FloatLeft,
-			FloatRight
-		};
 
 		// default constructor
 		Element(DisplayStyle _display_style);

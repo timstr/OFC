@@ -107,7 +107,7 @@ struct TestElement : ui::InlineElement {
 		bringToFront();
 		if (clicks == 1){
 			std::cout << name << " was left-clicked" << std::endl;
-			setDisplayStyle(DisplayStyle::Free);
+			setDisplayStyle(ui::DisplayStyle::Free);
 			startDrag();
 		} else if (clicks == 2){
 			std::cout << name << " was left-clicked twice" << std::endl;
@@ -120,7 +120,7 @@ struct TestElement : ui::InlineElement {
 		std::cout << name << " was left released" << std::endl;
 		if (dragging()){
 			stopDrag();
-			setDisplayStyle(DisplayStyle::Inline);
+			setDisplayStyle(ui::DisplayStyle::Inline);
 			drop(localMousePos());
 		}
 	}
@@ -249,14 +249,6 @@ int main(int argc, char** argcv){
 	ui::init(1000, 800, "Tim's GUI Test", 30);
 
 	{
-		auto b = ui::root().add<ui::BlockElement>();
-		for (int i = 0; i < 5; ++i){
-			b->add<ui::Text>("Block " + std::to_string(i + 1), getFont());
-			auto newb = b->add<ui::BlockElement>();
-			b->add<ui::Text>("Block " + std::to_string(i + 1), getFont());
-			b = newb;
-		}
-
 		auto block = ui::root().add<ui::BlockElement>();
 
 		block->setMinSize({0, 100});
@@ -280,22 +272,16 @@ int main(int argc, char** argcv){
 		block->add<TestElement>("Hank");
 		block->add<TestElement>("Brody");*/
 
-		auto fleft = block->add<ui::LeftFloatingElement>();
-		fleft->setSize({100.0f, 100.0f}, true);
-		fleft->add<ui::Text>("Floating left", getFont());
-
-		auto fleft2 = block->add<ui::LeftFloatingElement>();
-		fleft2->setSize({100.0f, 50.0f}, true);
-		fleft2->add<ui::Text>("Floating left", getFont());
-
-		//block->add<ui::Text>("LOREM", getFont(), sf::Color(0xFF), 100);
-
-		block->add<ui::Text>("Lorem", getFont());
-		block->add<ui::LineBreak>(50.0f);
-
-		auto fleft3 = block->add<ui::LeftFloatingElement>();
-		fleft3->setSize({100.0f, 50.0f}, true);
-		fleft3->add<ui::Text>("Floating left", getFont());
+		auto widg = block->add<ui::RightFloatingElement>();
+		widg->add<ui::Text>("Table of Contents", getFont(), sf::Color(0x404040FF), 30);
+		widg->add<ui::LineBreak>();
+		widg->add<ui::Text>("Introduction", getFont(), sf::Color(0x000040FF));
+		widg->add<ui::LineBreak>();
+		widg->add<ui::Text>("First Paragaph", getFont(), sf::Color(0x000040FF));
+		widg->add<ui::LineBreak>();
+		widg->add<ui::Text>("Last Paragaph", getFont(), sf::Color(0x000040FF));
+		widg->add<ui::LineBreak>();
+		widg->add<ui::Text>("Conclusion", getFont(), sf::Color(0x000040FF));
 
 		std::wstringstream ss;
 		ss.str(L"Lorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.");
