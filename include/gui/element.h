@@ -59,7 +59,7 @@ namespace ui {
 		template<typename ElementType>
 		std::shared_ptr<ElementType> getThisAs(){
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from ui::Element");
-			return std::dynamic_pointer_cast<ElementType, Element>(shared_this);
+			return std::dynamic_pointer_cast<ElementType, Element>(shared_from_this());
 		}
 
 		// prevent the element from receiving input
@@ -99,6 +99,18 @@ namespace ui {
 
 		// get the display style
 		DisplayStyle getDisplayStyle() const;
+
+		// set the padding; spacing between content and border
+		void setPadding(float _padding);
+
+		// get the padding; spacing between content and border
+		float getPadding() const;
+
+		// set the margin; spacing between other self and other elements
+		void setMargin(float _margin);
+
+		// get the margin; spacing between other self and other elements
+		float getMargin() const;
 
 		// true if a test point (in local space) intercepts the element
 		virtual bool hit(vec2 testpos) const;
@@ -216,7 +228,19 @@ namespace ui {
 		// release a child element, possibly to add to another element
 		std::shared_ptr<Element> release(std::shared_ptr<Element> element);
 
-		// bring the element in front of its siblings
+		// get all children
+		const std::vector<std::shared_ptr<Element>>& getChildren() const;
+
+		// get the parent element
+		std::weak_ptr<Element> getParent() const;
+
+		// layout the element before the given sibling
+		void layoutBefore(const std::shared_ptr<Element>& sibling);
+
+		// layout the element after the given sibling
+		void layoutAfter(const std::shared_ptr<Element>& sibling);
+
+		// render the element in front of its siblings, regardless of layout
 		void bringToFront();
 
 		// destroy all children
@@ -227,24 +251,6 @@ namespace ui {
 
 		// render the element
 		virtual void render(sf::RenderWindow& renderwindow);
-		
-		// get all children
-		const std::vector<std::shared_ptr<Element>>& getChildren() const;
-
-		// get the parent element
-		std::weak_ptr<Element> getParent() const;
-
-		// set the padding; spacing between content and border
-		void setPadding(float _padding);
-
-		// get the padding; spacing between content and border
-		float getPadding() const;
-
-		// set the margin; spacing between other self and other elements
-		void setMargin(float _margin);
-
-		// get the margin; spacing between other self and other elements
-		float getMargin() const;
 
 	private:
 
@@ -259,7 +265,7 @@ namespace ui {
 		vec2 min_size;
 		vec2 max_size;
 		vec2 old_total_size;
-		int layout_index;
+		float layout_index;
 		float padding;
 		float margin;
 
@@ -278,7 +284,7 @@ namespace ui {
 		// render the element's children, translating and clipping as needed
 		void renderChildren(sf::RenderWindow& renderwindow);
 
-		int getNextLayoutIndex() const;
+		float getNextLayoutIndex() const;
 		void organizeLayoutIndices();
 
 		std::weak_ptr<Element> parent;

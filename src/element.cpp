@@ -21,7 +21,7 @@ namespace ui {
 		visible(true),
 		clipping(false),
 		dirty(true),
-		layout_index(0),
+		layout_index(0.0f),
 		padding(5.0f),
 		margin(5.0f) {
 
@@ -406,23 +406,23 @@ namespace ui {
 		}
 	}
 	
-	int Element::getNextLayoutIndex() const {
-		int max = 0;
+	float Element::getNextLayoutIndex() const {
+		float max = 0.0f;
 		for (const auto& child : children){
 			max = std::max(child->layout_index, max);
 		}
-		return max + 1;
+		return max + 1.0f;
 	}
 		
 	void Element::organizeLayoutIndices(){
-		std::set<std::pair<int, std::shared_ptr<Element>>> index_set;
+		std::set<std::pair<float, std::shared_ptr<Element>>> index_set;
 		for (const auto& child : children){
 			index_set.insert({child->layout_index, child});
 		}
-		int i = 0;
+		float i = 0.0f;
 		for (const auto& mapping : index_set){
 			mapping.second->layout_index = i;
-			++i;
+			i += 1.0f;
 		}
 	}
 	
@@ -432,6 +432,36 @@ namespace ui {
 	
 	std::weak_ptr<Element> Element::getParent() const {
 		return parent;
+	}
+
+	void Element::layoutBefore(const std::shared_ptr<Element>& sibling){
+		if (!sibling || isClosed()){
+			return;
+		}
+		if (auto mypar = parent.lock()){
+			if (auto otherpar = sibling->parent.lock()){
+				if (mypar != otherpar){
+					return;
+				}
+				layout_index = sibling->layout_index - 0.5f;
+				organizeLayoutIndices();
+			}
+		}
+	}
+
+	void Element::layoutAfter(const std::shared_ptr<Element>& sibling){
+		if (!sibling || isClosed()){
+			return;
+		}
+		if (auto mypar = parent.lock()){
+			if (auto otherpar = sibling->parent.lock()){
+				if (mypar != otherpar){
+					return;
+				}
+				layout_index = sibling->layout_index + 0.5f;
+				organizeLayoutIndices();
+			}
+		}
 	}
 
 	void Element::setPadding(float _padding){
@@ -529,13 +559,9 @@ namespace ui {
 		LayoutData(Element& _self, float _width_avail)
 			: self(_self),
 			width_avail(_width_avail),
-			contentsize({2.0f * _self.padding, 2.0f * _self.padding}),
-			xpos(_self.padding), ypos(_self.padding),
-			next_ypos(_self.padding),
-			left_edge(_self.padding), right_edge(_width_avail - _self.padding),
-			emptyline(true),
 			sorted_elements(_self.getChildren()) {
 
+			reset();
 			auto comp = [](const std::shared_ptr<Element>& l, const std::shared_ptr<Element>& r){
 				return l->layout_index < r->layout_index;
 			};
@@ -543,7 +569,7 @@ namespace ui {
 		}
 
 		const Element& self;
-		const float width_avail;
+		float width_avail;
 		vec2 contentsize;
 		float xpos;
 		float ypos;
@@ -551,6 +577,106 @@ namespace ui {
 		float left_edge, right_edge;
 		bool emptyline;
 		std::vector<std::shared_ptr<Element>> sorted_elements, floatingleft, floatingright;
+		
+		void reset(){
+			xpos = self.padding;
+			ypos = self.padding;
+			next_ypos = self.padding;
+			contentsize = {2.0f * self.padding, 2.0f * self.padding};
+			left_edge = self.padding;
+			right_edge = width_avail - self.padding;
+			emptyline = true;
+		}
+
+		void layoutElements(){
+			std::vector<std::shared_ptr<Element>> left_elems, right_elems, inline_elems;
+
+			// arranges and empties the current left- and right- floating elements
+			// and inline elements, returning the maximum width needed or the current
+			// available width if it would be exceeded without breaking onto a new line
+			auto layoutBatch = [&,this]() -> float {
+				float lwidth = 0.0f;
+				float rwidth = 0.0f;
+				float iwidth = 0.0f;
+				bool broke_line = false;
+				for (const auto& elem : left_elems){
+					if (arrangeFloatingLeft(elem)){
+						broke_line = true;
+					} else {
+						lwidth += elem->size.x + 2.0f * elem->margin;
+					}
+				}
+				for (const auto& elem : right_elems){
+					if (arrangeFloatingRight(elem)){
+						broke_line = true;
+					} else {
+						lwidth += elem->size.x + 2.0f * elem->margin;
+					}
+				}
+				for (const auto& elem : inline_elems){
+					if (arrangeInline(elem)){
+						broke_line = true;
+					} else {
+						iwidth += elem->size.x + 2.0f * elem->margin;
+					}
+				}
+				left_elems.clear();
+				right_elems.clear();
+				inline_elems.clear();
+				if (broke_line){
+					return this->width_avail;
+				} else {
+					return lwidth + rwidth + iwidth + 2.0f * self.padding;
+				}
+			};
+
+			// arrange all elements in batches to fit within the available width,
+			// returning the maximum width needed without breaking lines
+			// or the available width if it would be exceeded
+			auto layoutEverything = [&,this]() -> float {
+				float max_width = 0.0f;
+				auto it = sorted_elements.cbegin();
+				auto end = sorted_elements.cend();
+				while (true){
+					if (it == end){
+						max_width = std::max(max_width, layoutBatch());
+						break;
+					}
+
+					std::shared_ptr<Element> elem = *it;
+
+					if (elem->visible){
+						switch (elem->display_style){
+							case DisplayStyle::Block:
+								max_width = std::max(max_width, layoutBatch());
+								arrangeBlock(elem);
+								break;
+							case DisplayStyle::Inline:
+								inline_elems.push_back(elem);
+								break;
+							case DisplayStyle::FloatLeft:
+								left_elems.push_back(elem);
+								break;
+							case DisplayStyle::FloatRight:
+								right_elems.push_back(elem);
+								break;
+						}
+					}
+
+					++it;
+				}
+
+				return max_width;
+			};
+
+			float max_width = layoutEverything();
+
+			if (max_width < width_avail && self.display_style != DisplayStyle::Free && self.display_style != DisplayStyle::Block){
+				width_avail = max_width;
+				reset();
+				layoutEverything();
+			}
+		}
 		
 		void arrangeBlock(const std::shared_ptr<Element>& element){
 			Element& elem = *element;
@@ -566,14 +692,20 @@ namespace ui {
 			newLine();
 		}
 
-		void arrangeInline(const std::shared_ptr<Element>& element){
+		// arranges an inline element adjacent to previous inline elements,
+		// flowing around floating elements.
+		// returns true if the available width was exceeded and the element
+		// broke onto a new line
+		bool arrangeInline(const std::shared_ptr<Element>& element){
 			Element& elem = *element;
+			bool broke_line = false;
 			do {
 				// position the element
 				elem.setPos({xpos + elem.margin, ypos + elem.margin});
 				elem.update(right_edge - xpos - 2.0f * elem.margin - self.padding);
 
 				if (elem.pos.x + elem.size.x + elem.margin > right_edge){
+					broke_line = true;
 					// if it goes past the edge
 					if (emptyline){
 						// if it's the only inline element on the line, find the next wider line
@@ -596,17 +728,24 @@ namespace ui {
 			next_ypos = std::max(next_ypos, elem.pos.y + elem.size.y + elem.margin);
 			fitContents(elem);
 			emptyline = false;
+			return broke_line;
 		}
 
-		void arrangeFloatingLeft(const std::shared_ptr<Element>& element){
+		// arranges a left-floating element to the right of the left edge
+		// and any current left-floating elements.
+		// returns true if the available width was exceeded and the element
+		// broke onto a new line
+		bool arrangeFloatingLeft(const std::shared_ptr<Element>& element){
 			if (!emptyline){
 				newLine();
 			}
 			Element& elem = *element;
+			bool broke_line = false;
 			do {
 				elem.setPos({left_edge + elem.margin, ypos + elem.margin});
 				elem.update(right_edge - left_edge - 2.0f * elem.margin);
 				if (elem.pos.x + elem.size.x + elem.padding > right_edge){
+					broke_line = true;
 					// if the element doesn't fit
 					if (!nextWiderLine()){
 						// if a wider line can't be found
@@ -621,15 +760,21 @@ namespace ui {
 			left_edge = getLeftEdge();
 			xpos = left_edge;
 			fitContents(elem);
+			return broke_line;
 		}
 
-		void arrangeFloatingRight(const std::shared_ptr<Element>& element){
+		// arranges a right-floating element left of the right edge and any
+		// other current right-floating elements.
+		// return true if the available width was exceeded and the element
+		// broke onto a new line
+		bool arrangeFloatingRight(const std::shared_ptr<Element>& element){
 			Element& elem = *element;
-
+			bool broke_line = false;
 			do {
 				float avail = right_edge - left_edge - elem.margin * 2.0f;
 				elem.update(avail);
 				if (elem.getSize().x > avail){
+					broke_line = true;
 					if (!nextWiderLine()){
 						// if a wider line can't be found
 						break;
@@ -643,8 +788,10 @@ namespace ui {
 			floatingright.push_back(element);
 			right_edge = getRightEdge();
 			fitContents(elem);
+			return broke_line;
 		}
 
+		// adjusts `contentsize` to include the element
 		void fitContents(const Element& elem){
 			contentsize = vec2(
 				std::max(contentsize.x, elem.pos.x + elem.size.x + elem.margin + self.padding),
@@ -720,37 +867,7 @@ namespace ui {
 		
 		LayoutData layout(*this, width_avail);
 
-		for (const auto& element : layout.sorted_elements){
-			if (!element->isVisible()){
-				continue;
-			}
-			switch (element->display_style){
-				case DisplayStyle::Block:
-					// block elements appear on a new line and may take up the full
-					// width available and as much height as needed
-					layout.arrangeBlock(element);
-					break;
-				case DisplayStyle::Inline:
-					// inline elements appear next to other inline elements
-					layout.arrangeInline(element);
-					break;
-				case DisplayStyle::Free:
-					// free elements do not appear as flow elements but are positioned
-					// relative to their parent at their specified x/y position
-					element->update(element->size.x);
-					break;
-				case DisplayStyle::FloatLeft:
-					// left-floating elements are moved to the left of the current line
-					// and inline elements flow around them
-					layout.arrangeFloatingLeft(element);
-					break;
-				case DisplayStyle::FloatRight:
-					// right-floating elements are moved to the right of the current line
-					// and inline elements flow around them
-					layout.arrangeFloatingRight(element);
-					break;
-			}
-		}
+		layout.layoutElements();
 
 		return layout.contentsize;
 	}
