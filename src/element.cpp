@@ -1,7 +1,10 @@
 #include "gui/element.h"
 #include "gui/gui.h"
+#include "gui/text.h"
+
 #include <algorithm>
 #include <set>
+#include <sstream>
 
 namespace ui {
 	namespace {
@@ -12,6 +15,7 @@ namespace ui {
 	Element::Element(DisplayStyle _display_style) :
 		shared_this(this),
 		display_style(_display_style),
+		align_style(AlignStyle::Left),
 		pos({0.0f, 0.0f}),
 		size({100.0f, 100.0f}),
 		min_size({0.0f, 0.0f}),
@@ -107,6 +111,17 @@ namespace ui {
 
 	DisplayStyle Element::getDisplayStyle() const {
 		return display_style;
+	}
+
+	void Element::setAlignStyle(AlignStyle style){
+		if (align_style != style){
+			align_style = style;
+			makeDirty();
+		}
+	}
+
+	AlignStyle Element::getAlignStyle() const {
+		return align_style;
 	}
 	
 	Element::~Element(){
@@ -278,6 +293,57 @@ namespace ui {
 	bool Element::keyDown(Key key) const {
 		return inFocus() && sf::Keyboard::isKeyPressed(key);
 	}
+
+	void Element::write(const std::string& text, sf::Font& font, sf::Color color, unsigned charsize){
+		write(std::wstring{text.begin(), text.end()}, font, color, charsize);
+	}
+
+	void Element::write(const std::wstring& text, sf::Font& font, sf::Color color, unsigned charsize){
+		/*std::wstringstream mainstream { text };
+		std::wstring line;
+		while (std::getline(mainstream, line)){
+			std::wstring word;
+			std::wstringstream ss { line };
+			while (ss >> word){
+				add<ui::Text>(word, font, color, charsize);
+			}
+			writeLineBreak();
+		}*/
+
+		std::wstring word;
+
+		auto writeWord = [&,this](){
+			if (word.size() > 0){
+				this->add<ui::Text>(word, font, color, charsize);
+				word.clear();
+			}
+		};
+
+		for (const wchar_t& ch : text){
+			if (ch == L'\n'){
+				writeWord();
+				writeLineBreak();
+			} else if (ch == L'\t'){
+				writeWord();
+				writeTab();
+			} else if (ch == L' '){
+				writeWord();
+			} else {
+				word += ch;
+			}
+		}
+		writeWord();
+	}
+
+	void Element::writeLineBreak(){
+		line_breaks.push_back(WhiteSpace(WhiteSpace::LineBreak, getNextLayoutIndex()));
+		makeDirty();
+	}
+
+	void Element::writeTab(){
+		line_breaks.push_back(WhiteSpace(WhiteSpace::Tab, getNextLayoutIndex()));
+		makeDirty();
+	}
 	
 	void Element::adopt(std::shared_ptr<Element> child){
 		if (auto p = child->parent.lock()){
@@ -289,7 +355,6 @@ namespace ui {
 		children.push_back(child);
 		child->parent = shared_this;
 		child->layout_index = getNextLayoutIndex();
-		organizeLayoutIndices();
 		makeDirty();
 	}
 
@@ -406,22 +471,35 @@ namespace ui {
 		}
 	}
 	
-	float Element::getNextLayoutIndex() const {
-		float max = 0.0f;
+	Element::LayoutIndex Element::getNextLayoutIndex() const {
+		LayoutIndex max = 0.0f;
 		for (const auto& child : children){
 			max = std::max(child->layout_index, max);
+		}
+		for (const auto& space : line_breaks){
+			max = std::max(space.layout_index, max);
 		}
 		return max + 1.0f;
 	}
 		
 	void Element::organizeLayoutIndices(){
-		std::set<std::pair<float, std::shared_ptr<Element>>> index_set;
+		using ElementOrSpace = std::pair<std::shared_ptr<Element>, WhiteSpace*>;
+
+		std::set<std::pair<LayoutIndex, ElementOrSpace>> index_set;
 		for (const auto& child : children){
-			index_set.insert({child->layout_index, child});
+			index_set.insert({child->layout_index, {child, nullptr}});
 		}
-		float i = 0.0f;
+		for (auto& space : line_breaks){
+			index_set.insert({space.layout_index, {nullptr, &space}});
+		}
+
+		LayoutIndex i = 0.0f;
 		for (const auto& mapping : index_set){
-			mapping.second->layout_index = i;
+			if (mapping.second.first){
+				mapping.second.first->layout_index = i;
+			} else if (mapping.second.second){
+				mapping.second.second->layout_index = i;
+			}
 			i += 1.0f;
 		}
 	}
@@ -556,14 +634,26 @@ namespace ui {
 	}
 
 	struct LayoutData {
+
+		using Child = std::pair<std::shared_ptr<Element>, Element::WhiteSpace>;
+
 		LayoutData(Element& _self, float _width_avail)
 			: self(_self),
 			width_avail(_width_avail),
-			sorted_elements(_self.getChildren()) {
+			tab_size(50.0f) {
+
+			sorted_elements.reserve(_self.children.size() + _self.line_breaks.size());
+
+			for (const auto& child : _self.children){
+				sorted_elements.push_back({child, Element::WhiteSpace(Element::WhiteSpace::None, 0.0f)});
+			}
+			for (const auto& space : _self.line_breaks){
+				sorted_elements.push_back({nullptr, space});
+			}
 
 			reset();
-			auto comp = [](const std::shared_ptr<Element>& l, const std::shared_ptr<Element>& r){
-				return l->layout_index < r->layout_index;
+			auto comp = [](const Child& l, const Child& r){
+				return (l.first ? l.first->layout_index : l.second.layout_index) < (r.first ? r.first->layout_index : r.second.layout_index);
 			};
 			std::sort(sorted_elements.begin(), sorted_elements.end(), comp);
 		}
@@ -576,7 +666,9 @@ namespace ui {
 		float next_ypos;
 		float left_edge, right_edge;
 		bool emptyline;
-		std::vector<std::shared_ptr<Element>> sorted_elements, floatingleft, floatingright;
+		const float tab_size;
+		std::vector<Child> sorted_elements;
+		std::vector<std::shared_ptr<Element>> floatingleft, floatingright;
 		
 		void reset(){
 			xpos = self.padding;
@@ -589,7 +681,45 @@ namespace ui {
 		}
 
 		void layoutElements(){
-			std::vector<std::shared_ptr<Element>> left_elems, right_elems, inline_elems;
+			std::vector<std::shared_ptr<Element>> left_elems, right_elems;
+			std::vector<Child> inline_children;
+
+			auto horizontalAlign = [&,this](const std::vector<std::shared_ptr<Element>>& line){
+				if (line.size() == 0 || self.align_style == AlignStyle::Left){
+					return;
+				}
+
+				if (self.align_style == AlignStyle::Right){
+
+					float offset = right_edge - (line.back()->pos.x + line.back()->size.x + line.back()->margin);
+					for (const auto& elem : line){
+						elem->pos.x = floor(elem->pos.x + offset);
+					}
+
+				} else if (self.align_style == AlignStyle::Center){
+
+					float width = line.back()->pos.x + line.back()->size.x + line.back()->margin - line.front()->pos.x - line.front()->margin;
+					float left_wanted = (width_avail - width) * 0.5f;
+					float left = std::min(std::max(left_wanted, left_edge), right_edge - width);
+					float offset = left - line.front()->pos.x - line.front()->margin;
+
+					for (const auto& elem : line){
+						elem->pos.x = floor(elem->pos.x + offset);
+					}
+
+				} else if (self.align_style == AlignStyle::Justify){
+					if (line.size() <= 1){
+						return;
+					}
+
+					float offset = (right_edge - (line.back()->pos.x + line.back()->size.x + line.back()->margin)) / (float)(line.size() - 1);
+					float acc = 0;
+					for (const auto& elem : line){
+						elem->pos.x = floor(elem->pos.x + acc);
+						acc += offset;
+					}
+				}
+			};
 
 			// arranges and empties the current left- and right- floating elements
 			// and inline elements, returning the maximum width needed or the current
@@ -598,32 +728,55 @@ namespace ui {
 				float lwidth = 0.0f;
 				float rwidth = 0.0f;
 				float iwidth = 0.0f;
-				bool broke_line = false;
+				bool exceeded_width = false;
+
+				std::vector<std::shared_ptr<Element>> line;
+
 				for (const auto& elem : left_elems){
 					if (arrangeFloatingLeft(elem)){
-						broke_line = true;
+						exceeded_width = true;
 					} else {
 						lwidth += elem->size.x + 2.0f * elem->margin;
 					}
 				}
 				for (const auto& elem : right_elems){
 					if (arrangeFloatingRight(elem)){
-						broke_line = true;
+						exceeded_width = true;
 					} else {
 						lwidth += elem->size.x + 2.0f * elem->margin;
 					}
 				}
-				for (const auto& elem : inline_elems){
-					if (arrangeInline(elem)){
-						broke_line = true;
+				for (const auto& child : inline_children){
+					const std::shared_ptr<Element>& elem = child.first;
+					if (elem){
+						if (arrangeInline(elem)){
+							horizontalAlign(line);
+							line.clear();
+							exceeded_width = true;
+						} else {
+							iwidth += elem->size.x + 2.0f * elem->margin;
+						}
+						line.push_back(elem);
 					} else {
-						iwidth += elem->size.x + 2.0f * elem->margin;
+						const Element::WhiteSpace& space = child.second;
+						if (space.type == Element::WhiteSpace::LineBreak){
+							horizontalAlign(line);
+							line.clear();
+							newLine();
+						} else if (space.type == Element::WhiteSpace::Tab){
+							tab();
+						}
 					}
 				}
+				if (self.align_style != AlignStyle::Justify){
+					// allow the last line to be incomplete in justify mode
+					horizontalAlign(line);
+				}
+				line.clear();
 				left_elems.clear();
 				right_elems.clear();
-				inline_elems.clear();
-				if (broke_line){
+				inline_children.clear();
+				if (exceeded_width){
 					return this->width_avail;
 				} else {
 					return lwidth + rwidth + iwidth + 2.0f * self.padding;
@@ -643,24 +796,31 @@ namespace ui {
 						break;
 					}
 
-					std::shared_ptr<Element> elem = *it;
+					std::shared_ptr<Element> elem = it->first;
 
-					if (elem->visible){
-						switch (elem->display_style){
-							case DisplayStyle::Block:
-								max_width = std::max(max_width, layoutBatch());
-								arrangeBlock(elem);
-								break;
-							case DisplayStyle::Inline:
-								inline_elems.push_back(elem);
-								break;
-							case DisplayStyle::FloatLeft:
-								left_elems.push_back(elem);
-								break;
-							case DisplayStyle::FloatRight:
-								right_elems.push_back(elem);
-								break;
+					if (elem){
+						// child element
+						if (elem->visible){
+							switch (elem->display_style){
+								case DisplayStyle::Block:
+									max_width = std::max(max_width, layoutBatch());
+									arrangeBlock(elem);
+									break;
+								case DisplayStyle::Inline:
+									inline_children.push_back({elem, Element::WhiteSpace(Element::WhiteSpace::None, 0.0f)});
+									break;
+								case DisplayStyle::FloatLeft:
+									left_elems.push_back(elem);
+									break;
+								case DisplayStyle::FloatRight:
+									right_elems.push_back(elem);
+									break;
+							}
 						}
+					} else {
+						// line break
+						const Element::WhiteSpace& br = it->second;
+						inline_children.push_back({nullptr, br});
 					}
 
 					++it;
@@ -844,6 +1004,10 @@ namespace ui {
 			emptyline = true;
 		}
 
+		void tab(){
+			xpos = ceil(xpos / tab_size + 0.5f) * tab_size;
+		}
+
 		float getLeftEdge() const {
 			// Assumption: all elements in `floatingleft` pass through ypos
 			float extent = self.padding;
@@ -889,6 +1053,11 @@ namespace ui {
 	}
 
 	RightFloatingElement::RightFloatingElement() : Element(DisplayStyle::FloatRight) {
+
+	}
+
+	Element::WhiteSpace::WhiteSpace(Element::WhiteSpace::Type _type, LayoutIndex _layout_index)
+		: type(_type), layout_index(_layout_index) {
 
 	}
 

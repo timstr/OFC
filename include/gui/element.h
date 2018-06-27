@@ -9,20 +9,13 @@ typedef sf::Vector2f vec2;
 
 
 namespace ui {
-
-	/******* THOUGHTS ***********
-	- some common boilerplate that could use a design pattern:
-		- keeping a well-typed reference to parent element to use it in handler functions
-		-> only really is a nuisance in buttons and text fields and sliders and so on,
-		   all of which can be replaced with reusable widgets that use lambda callbacks
-	*/
-
+	
 	using Key = sf::Keyboard::Key;
 
-	// An element's display style 
+	// How an element is laid out and positioned relative to its parent and siblings
 	enum class DisplayStyle {
 
-		// positioned only according to setPos()
+		// positioned relative to parent according only to setPos()
 		Free,
 
 		// positioned on the same line as adjacent Inline elements
@@ -36,6 +29,21 @@ namespace ui {
 
 		// positioned right of all inline elements
 		FloatRight
+	};
+
+	// How an element's inline children are aligned horizontally
+	enum class AlignStyle {
+		// from the left edge
+		Left,
+
+		// from the right edge
+		Right,
+
+		// centered between the left and right edges
+		Center,
+
+		// spaced to fill the entire line
+		Justify
 	};
 
 	struct Element : std::enable_shared_from_this<Element> {
@@ -99,6 +107,12 @@ namespace ui {
 
 		// get the display style
 		DisplayStyle getDisplayStyle() const;
+
+		// set the horizontal alignment style
+		void setAlignStyle(AlignStyle style);
+
+		// get the horizontal alignment style
+		AlignStyle getAlignStyle() const;
 
 		// set the padding; spacing between content and border
 		void setPadding(float _padding);
@@ -207,6 +221,18 @@ namespace ui {
 		// true if 'key' is currently being pressed and the element is in focus
 		bool keyDown(Key key) const;
 
+		// write a sequence of text
+		void write(const std::string& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15);
+
+		// write a sequence of text
+		void write(const std::wstring& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15);
+
+		// write a line break
+		void writeLineBreak();
+
+		// write a tab
+		void writeTab();
+
 		// add a new child element
 		template<typename ElementType, typename... ArgsT>
 		std::shared_ptr<ElementType> add(ArgsT&&... args){
@@ -257,6 +283,7 @@ namespace ui {
 		std::shared_ptr<Element> shared_this;
 
 		DisplayStyle display_style;
+		AlignStyle align_style;
 		bool disabled;
 		bool visible;
 		bool clipping;
@@ -275,6 +302,8 @@ namespace ui {
 
 		bool dirty;
 
+		using LayoutIndex = float;
+
 		// returns true if a change is needed
 		bool update(float width_avail);
 
@@ -284,11 +313,26 @@ namespace ui {
 		// render the element's children, translating and clipping as needed
 		void renderChildren(sf::RenderWindow& renderwindow);
 
-		float getNextLayoutIndex() const;
+		LayoutIndex getNextLayoutIndex() const;
 		void organizeLayoutIndices();
+
+		struct WhiteSpace {
+
+			enum Type {
+				None,
+				LineBreak,
+				Tab
+			};
+
+			WhiteSpace(Type _type, LayoutIndex _layout_index);
+
+			Type type;
+			LayoutIndex layout_index;
+		};
 
 		std::weak_ptr<Element> parent;
 		std::vector<std::shared_ptr<Element>> children;
+		std::vector<WhiteSpace> line_breaks;
 
 		friend struct Context;
 		friend void run();
