@@ -5,8 +5,9 @@
 namespace ui {
 
 	struct Text : InlineElement {
-		Text(std::string _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), int charsize = 15);
-		Text(std::wstring _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), int charsize = 15);
+
+		Text(std::string _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15u, TextStyle style = TextStyle::Regular);
+		Text(std::wstring _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15u, TextStyle style = TextStyle::Regular);
 
 		void setText(std::string _text);
 		void setText(std::wstring _text);
@@ -19,8 +20,8 @@ namespace ui {
 		void setTextColor(sf::Color color);
 		const sf::Color& getTextColor() const;
 
-		void setBackGroundColor(sf::Color color);
-		const sf::Color& getBackGroundColor() const;
+		void setStyle(TextStyle style);
+		TextStyle getStyle() const;
 
 		void render(sf::RenderWindow& renderwin) override;
 
@@ -28,7 +29,6 @@ namespace ui {
 
 		void updateSize();
 
-		sf::Color background_color;
 		sf::Text text;
 	};
 

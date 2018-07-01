@@ -2,17 +2,19 @@
 
 namespace ui {
 
-	Text::Text(std::string _text, const sf::Font& _font, sf::Color color, int charsize)
-		: Text(std::wstring{_text.begin(), _text.end()}, _font, color, charsize) {
+	Text::Text(std::string _text, const sf::Font& _font, sf::Color color, unsigned charsize, TextStyle style)
+		: Text(std::wstring{_text.begin(), _text.end()}, _font, color, charsize, style) {
 	}
 	
-	Text::Text(std::wstring _text, const sf::Font& _font, sf::Color color, int charsize)
+	Text::Text(std::wstring _text, const sf::Font& _font, sf::Color color, unsigned charsize, TextStyle style)
 		: text(_text, _font, charsize) {
 		text.setFillColor(color);
+		setBorderColor(sf::Color(0));
+		setBackgroundColor(sf::Color(0));
+		setStyle(style);
 		updateSize();
 		disable();
-		setMargin(ceil((float)charsize / 7.5f));
-		background_color = sf::Color(0x0);
+		setMargin(ceil((float)charsize / 5.0f));
 	}
 
 	void Text::setText(std::string _text){
@@ -49,19 +51,17 @@ namespace ui {
 	const sf::Color& Text::getTextColor() const {
 		return text.getFillColor();
 	}
-	
-	void Text::setBackGroundColor(sf::Color color){
-		background_color = color;
+
+	void Text::setStyle(TextStyle style){
+		text.setStyle(static_cast<uint32_t>(style));
 	}
-	
-	const sf::Color& Text::getBackGroundColor() const {
-		return background_color;
+
+	TextStyle Text::getStyle() const {
+		return static_cast<TextStyle>(text.getStyle());
 	}
 	
 	void Text::render(sf::RenderWindow& rw){
-		sf::RectangleShape rect(getSize());
-		rect.setFillColor(background_color);
-		rw.draw(rect);
+		Element::render(rw);
 		rw.draw(text);
 	}
 	

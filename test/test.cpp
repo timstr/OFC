@@ -58,7 +58,7 @@ struct TestElement : ui::InlineElement {
 			{sf::Color(0x9c1003ff), "lipstick"}
 		};
 		add<ui::PullDownMenu<sf::Color>>(color_options, getFont(), [this](const sf::Color& color){
-			this->bgcolor = color;
+			this->setBackgroundColor(color);
 		});
 
 		add<ui::TextEntryHelper>("", getFont(), [this](const std::wstring& text){
@@ -87,20 +87,10 @@ struct TestElement : ui::InlineElement {
 
 	void changeColor(){
 		std::uniform_int_distribution<unsigned> dist(0, 0xFF);
-		bgcolor = sf::Color(dist(randeng),
+		setBackgroundColor(sf::Color(dist(randeng),
 							dist(randeng),
 							dist(randeng),
-							255);
-	}
-
-	void render(sf::RenderWindow& rw){
-		ui::RoundedRectangle rect;
-		rect.setSize(getSize());
-		rect.setRadius(getPadding());
-		rect.setFillColor(bgcolor);
-		rect.setOutlineColor(sf::Color(0xFF));
-		rect.setOutlineThickness(1.0f);
-		rw.draw(rect);
+							255));
 	}
 
 	bool onLeftClick(int clicks) override {
@@ -205,7 +195,6 @@ struct TestElement : ui::InlineElement {
 		return true;
 	}
 
-	sf::Color bgcolor;
 	const std::string name;
 	std::shared_ptr<ui::Text> label;
 };
@@ -252,47 +241,36 @@ int main(int argc, char** argcv){
 		auto block = ui::root().add<ui::BlockElement>();
 
 		block->setMinSize({0, 100});
-		/*auto pops = block->add<TestElement>("Pops");
+
+		auto pops = block->add<TestElement>("Pops");
 		pops->setMinSize({500, 300});
 		pops->add<TestElement>("Hector");
-		pops->add<TestElement>("Brent");
-		pops->add<TestElement>("Greg");
-		pops->add<TestElement>("Donny");
 
-		block->add<ui::LineBreak>(10.0f);
-
-		block->add<TestElement>("Jorgan");
-
-		block->add<ui::LineBreak>(15.0f);
-
-		block->add<TestElement>("Allen");;
-		block->add<TestElement>("Percy");
-		block->add<TestElement>("Collin");
-		block->add<TestElement>("Geoffrey");
 		block->add<TestElement>("Hank");
-		block->add<TestElement>("Brody");*/
+
+		block->setAlignStyle(ui::AlignStyle::Justify);
 
 		auto widg = block->add<ui::RightFloatingElement>();
-		widg->add<ui::Text>("Table of Contents", getFont(), sf::Color(0x404040FF), 30);
-		widg->add<ui::LineBreak>();
-		widg->add<ui::Text>("Introduction", getFont(), sf::Color(0x000040FF))->setDisplayStyle(ui::DisplayStyle::FloatRight);
-		widg->add<ui::LineBreak>();
-		widg->add<ui::Text>("First Paragraph", getFont(), sf::Color(0x000040FF))->setDisplayStyle(ui::DisplayStyle::FloatRight);
-		widg->add<ui::LineBreak>();
-		widg->add<ui::Text>("Last Paragraph", getFont(), sf::Color(0x000040FF))->setDisplayStyle(ui::DisplayStyle::FloatRight);
-		widg->add<ui::LineBreak>();
-		widg->add<ui::Text>("Conclusion", getFont(), sf::Color(0x000040FF))->setDisplayStyle(ui::DisplayStyle::FloatRight);
-		widg->add<ui::LineBreak>();
+		widg->add<ui::Text>("Table of Contents", getFont(), sf::Color(0x404040FF), 30, ui::TextStyle::Underlined);
+		widg->add<ui::PageBreak>();
+		widg->add<ui::Text>("Introduction", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setDisplayStyle(ui::DisplayStyle::FloatRight);
+		widg->add<ui::PageBreak>();
+		widg->add<ui::Text>("First Paragraph", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setDisplayStyle(ui::DisplayStyle::FloatRight);
+		widg->add<ui::PageBreak>();
+		widg->add<ui::Text>("Last Paragraph", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setDisplayStyle(ui::DisplayStyle::FloatRight);
+		widg->add<ui::PageBreak>();
+		widg->add<ui::Text>("Conclusion", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setDisplayStyle(ui::DisplayStyle::FloatRight);
+		widg->add<ui::PageBreak>();
 		int count = 1;
 		std::shared_ptr<ui::CallbackButton> btn = widg->add<ui::CallbackButton>("Add a guy", getFont(), [widg,&btn,&count](){
 			auto par = widg->add<ui::Text>("Bonus Paragraph " + std::to_string(count), getFont(), sf::Color(0x000040FF));
-			widg->add<ui::LineBreak>()->layoutBefore(btn);
+			widg->add<ui::PageBreak>()->layoutBefore(btn);
 			par->setDisplayStyle(ui::DisplayStyle::FloatRight);
 			par->layoutBefore(btn);
 			++count;
 		});
 
-		std::wstring str = L"Lorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.";
+		std::wstring str = L"\tLorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.";
 		
 		block->write(str, getFont());
 
@@ -300,7 +278,18 @@ int main(int argc, char** argcv){
 		img->setDisplayStyle(ui::DisplayStyle::FloatLeft);
 		img->setSize(img->getSize() * 0.5f, true);
 
-		block->setAlignStyle(ui::AlignStyle::Justify);
+		block->add<ui::PageBreak>(10.0f);
+
+		block->write("a\ta\ta\ta\na a\ta a\ta a\ta a\na a a\ta a a\ta a a\ta a a\na a a a\ta a a a\ta a a a\ta a a a", getFont(), sf::Color(0xFF), 30);
+
+		block->add<ui::PageBreak>(10.0f);
+
+		block->write("Regular\n", getFont(), sf::Color(0xFF), 15, ui::TextStyle::Regular);
+		block->write("Italic\n", getFont(), sf::Color(0xFF), 15, ui::TextStyle::Italic);
+		block->write("Underlined\n", getFont(), sf::Color(0xFF), 15, ui::TextStyle::Underlined);
+		block->write("Bold\n", getFont(), sf::Color(0xFF), 15, ui::TextStyle::Bold);
+		block->write("Strikethrough\n", getFont(), sf::Color(0xFF), 15, ui::TextStyle::StrikeThrough);
+
 	}
 
 	ui::run();

@@ -21,7 +21,7 @@ namespace ui {
 		struct TextField : TextEntry {
 			TextField(float defaultval, float _min, float _max, const sf::Font& font, std::function<void(float)> _callback)
 				: TextEntry(toString(defaultval), font), value(defaultval), min(_min), max(_max), callback(_callback) {
-				setBackGroundColor(sf::Color(0xFFFFFFFF));
+				setBackgroundColor(sf::Color(0xFFFFFFFF));
 				setTextColor(sf::Color(0xFF));
 			}
 
@@ -34,9 +34,9 @@ namespace ui {
 
 			void onType(std::wstring full_text) override {
 				if (validate(full_text)){
-					setBackGroundColor(sf::Color(0xFFFFFFFF));
+					setBackgroundColor(sf::Color(0xFFFFFFFF));
 				} else {
-					setBackGroundColor(sf::Color(0xFF8080FF));
+					setBackgroundColor(sf::Color(0xFF8080FF));
 				}
 			}
 

@@ -8,7 +8,7 @@ namespace ui {
 	template<typename ...ArgsT>
 	std::shared_ptr<Element> propagate(std::shared_ptr<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args){
 		while (element) {
-			if (((*element).*function)(args...)){
+			if (((*element).*function)(std::forward<ArgsT>(args)...)){
 				return element;
 			}
 			element = element->getParent().lock();

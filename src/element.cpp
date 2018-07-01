@@ -1,6 +1,7 @@
 #include "gui/element.h"
 #include "gui/gui.h"
 #include "gui/text.h"
+#include "gui/roundrectangle.h"
 
 #include <algorithm>
 #include <set>
@@ -16,6 +17,8 @@ namespace ui {
 		shared_this(this),
 		display_style(_display_style),
 		align_style(AlignStyle::Left),
+		background_color(0xFFFFFFFF),
+		border_color(0xFF),
 		pos({0.0f, 0.0f}),
 		size({100.0f, 100.0f}),
 		min_size({0.0f, 0.0f}),
@@ -27,7 +30,8 @@ namespace ui {
 		dirty(true),
 		layout_index(0.0f),
 		padding(5.0f),
-		margin(5.0f) {
+		margin(5.0f),
+		border_radius(0.0f) {
 
 	}
 
@@ -94,10 +98,24 @@ namespace ui {
 		makeDirty();
 	}
 
+	void Element::setMinWidth(float width){
+		setMinSize({width, min_size.y});
+	}
+	void Element::setMinHeight(float height){
+		setMinSize({min_size.x, height});
+	}
+
 	void Element::setMaxSize(vec2 _max_size){
 		_max_size = vec2(std::max(_max_size.x, 0.0f), std::max(_max_size.y, 0.0f));
 		max_size = _max_size;
 		makeDirty();
+	}
+
+	void Element::setMaxWidth(float width){
+		setMaxSize({width, max_size.y});
+	}
+	void Element::setMaxHeight(float height){
+		setMaxSize({max_size.x, height});
 	}
 
 	void Element::setDisplayStyle(DisplayStyle style){
@@ -294,27 +312,16 @@ namespace ui {
 		return inFocus() && sf::Keyboard::isKeyPressed(key);
 	}
 
-	void Element::write(const std::string& text, sf::Font& font, sf::Color color, unsigned charsize){
-		write(std::wstring{text.begin(), text.end()}, font, color, charsize);
+	void Element::write(const std::string& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style){
+		write(std::wstring{text.begin(), text.end()}, font, color, charsize, style);
 	}
 
-	void Element::write(const std::wstring& text, sf::Font& font, sf::Color color, unsigned charsize){
-		/*std::wstringstream mainstream { text };
-		std::wstring line;
-		while (std::getline(mainstream, line)){
-			std::wstring word;
-			std::wstringstream ss { line };
-			while (ss >> word){
-				add<ui::Text>(word, font, color, charsize);
-			}
-			writeLineBreak();
-		}*/
-
+	void Element::write(const std::wstring& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style){
 		std::wstring word;
 
 		auto writeWord = [&,this](){
 			if (word.size() > 0){
-				this->add<ui::Text>(word, font, color, charsize);
+				this->add<ui::Text>(word, font, color, charsize, style);
 				word.clear();
 			}
 		};
@@ -322,7 +329,7 @@ namespace ui {
 		for (const wchar_t& ch : text){
 			if (ch == L'\n'){
 				writeWord();
-				writeLineBreak();
+				writeLineBreak(charsize);
 			} else if (ch == L'\t'){
 				writeWord();
 				writeTab();
@@ -335,13 +342,14 @@ namespace ui {
 		writeWord();
 	}
 
-	void Element::writeLineBreak(){
-		line_breaks.push_back(WhiteSpace(WhiteSpace::LineBreak, getNextLayoutIndex()));
+	void Element::writeLineBreak(unsigned charsize){
+		white_spaces.push_back(WhiteSpace(WhiteSpace::LineBreak, getNextLayoutIndex(), charsize));
 		makeDirty();
 	}
 
-	void Element::writeTab(){
-		line_breaks.push_back(WhiteSpace(WhiteSpace::Tab, getNextLayoutIndex()));
+	void Element::writeTab(float width){
+		unsigned charsize = static_cast<unsigned>(floor(width / 50.0f * 15.0f));
+		white_spaces.push_back(WhiteSpace(WhiteSpace::Tab, getNextLayoutIndex(), charsize));
 		makeDirty();
 	}
 	
@@ -435,12 +443,13 @@ namespace ui {
 	}
 	
 	void Element::render(sf::RenderWindow& rw){
-		sf::RectangleShape rect;
-		rect.setOutlineColor(sf::Color(0xFF));
+		RoundedRectangle rect;
+		rect.setRadius(border_radius);
+		rect.setOutlineColor(sf::Color(border_color));
 		rect.setOutlineThickness(1.0f);
 		rect.setSize(getSize() - vec2(2.0f, 2.0f));
 		rect.setPosition({1.0f, 1.0f});
-		rect.setFillColor(sf::Color(0xFFFFFFFF));
+		rect.setFillColor(sf::Color(background_color));
 		rw.draw(rect);
 	}
 	
@@ -476,7 +485,7 @@ namespace ui {
 		for (const auto& child : children){
 			max = std::max(child->layout_index, max);
 		}
-		for (const auto& space : line_breaks){
+		for (const auto& space : white_spaces){
 			max = std::max(space.layout_index, max);
 		}
 		return max + 1.0f;
@@ -489,7 +498,7 @@ namespace ui {
 		for (const auto& child : children){
 			index_set.insert({child->layout_index, {child, nullptr}});
 		}
-		for (auto& space : line_breaks){
+		for (auto& space : white_spaces){
 			index_set.insert({space.layout_index, {nullptr, &space}});
 		}
 
@@ -563,6 +572,30 @@ namespace ui {
 
 	float Element::getMargin() const {
 		return margin;
+	}
+
+	sf::Color Element::getBackgroundColor() const {
+		return background_color;
+	}
+
+	void Element::setBackgroundColor(sf::Color color){
+		background_color = color;
+	}
+
+	sf::Color Element::getBorderColor() const {
+		return border_color;
+	}
+
+	void Element::setBorderColor(sf::Color color){
+		border_color = color;
+	}
+
+	float Element::getBorderRadius() const {
+		return border_radius;
+	}
+
+	void Element::setBorderRadius(float radius){
+		border_radius = std::max(radius, 0.0f);
 	}
 
 	void Element::makeDirty(){
@@ -639,15 +672,14 @@ namespace ui {
 
 		LayoutData(Element& _self, float _width_avail)
 			: self(_self),
-			width_avail(_width_avail),
-			tab_size(50.0f) {
+			width_avail(_width_avail) {
 
-			sorted_elements.reserve(_self.children.size() + _self.line_breaks.size());
+			sorted_elements.reserve(_self.children.size() + _self.white_spaces.size());
 
 			for (const auto& child : _self.children){
 				sorted_elements.push_back({child, Element::WhiteSpace(Element::WhiteSpace::None, 0.0f)});
 			}
-			for (const auto& space : _self.line_breaks){
+			for (const auto& space : _self.white_spaces){
 				sorted_elements.push_back({nullptr, space});
 			}
 
@@ -666,7 +698,6 @@ namespace ui {
 		float next_ypos;
 		float left_edge, right_edge;
 		bool emptyline;
-		const float tab_size;
 		std::vector<Child> sorted_elements;
 		std::vector<std::shared_ptr<Element>> floatingleft, floatingright;
 		
@@ -684,38 +715,38 @@ namespace ui {
 			std::vector<std::shared_ptr<Element>> left_elems, right_elems;
 			std::vector<Child> inline_children;
 
-			auto horizontalAlign = [&,this](const std::vector<std::shared_ptr<Element>>& line){
+			auto horizontalAlign = [&,this](const std::vector<std::shared_ptr<Element>>& line, float left_limit, float right_limit, bool full){
 				if (line.size() == 0 || self.align_style == AlignStyle::Left){
 					return;
 				}
 
 				if (self.align_style == AlignStyle::Right){
 
-					float offset = right_edge - (line.back()->pos.x + line.back()->size.x + line.back()->margin);
+					float offset = right_limit - (line.back()->pos.x + line.back()->size.x + line.back()->margin);
 					for (const auto& elem : line){
-						elem->pos.x = floor(elem->pos.x + offset);
+						elem->pos.x = elem->pos.x + offset;
 					}
 
 				} else if (self.align_style == AlignStyle::Center){
 
 					float width = line.back()->pos.x + line.back()->size.x + line.back()->margin - line.front()->pos.x - line.front()->margin;
 					float left_wanted = (width_avail - width) * 0.5f;
-					float left = std::min(std::max(left_wanted, left_edge), right_edge - width);
-					float offset = left - line.front()->pos.x - line.front()->margin;
+					float left = std::min(std::max(left_wanted, left_limit), right_limit - width);
+					float offset = left - line.front()->pos.x;
 
 					for (const auto& elem : line){
-						elem->pos.x = floor(elem->pos.x + offset);
+						elem->pos.x = round(elem->pos.x + offset);
 					}
 
 				} else if (self.align_style == AlignStyle::Justify){
-					if (line.size() <= 1){
+					if (line.size() <= 1 || !full){
 						return;
 					}
 
-					float offset = (right_edge - (line.back()->pos.x + line.back()->size.x + line.back()->margin)) / (float)(line.size() - 1);
+					float offset = (right_limit - (line.back()->pos.x + line.back()->size.x + line.back()->margin)) / (float)(line.size() - 1);
 					float acc = 0;
 					for (const auto& elem : line){
-						elem->pos.x = floor(elem->pos.x + acc);
+						elem->pos.x = round(elem->pos.x + acc);
 						acc += offset;
 					}
 				}
@@ -727,6 +758,7 @@ namespace ui {
 			auto layoutBatch = [&,this]() -> float {
 				float lwidth = 0.0f;
 				float rwidth = 0.0f;
+				float iwidth_current = 0.0f;
 				float iwidth = 0.0f;
 				bool exceeded_width = false;
 
@@ -748,30 +780,36 @@ namespace ui {
 				}
 				for (const auto& child : inline_children){
 					const std::shared_ptr<Element>& elem = child.first;
+					float left = left_edge, right = right_edge;
 					if (elem){
 						if (arrangeInline(elem)){
-							horizontalAlign(line);
+							horizontalAlign(line, left, right, true);
 							line.clear();
 							exceeded_width = true;
 						} else {
-							iwidth += elem->size.x + 2.0f * elem->margin;
+							iwidth_current += elem->size.x + 2.0f * elem->margin;
 						}
 						line.push_back(elem);
 					} else {
 						const Element::WhiteSpace& space = child.second;
 						if (space.type == Element::WhiteSpace::LineBreak){
-							horizontalAlign(line);
+							iwidth = std::max(iwidth, iwidth_current);
+							iwidth_current = 0.0f;
+							horizontalAlign(line, left, right, false);
 							line.clear();
-							newLine();
+							if (emptyline){
+								next_ypos += (float)space.charsize;
+								newLine();
+							} else {
+								newLine();
+							}
 						} else if (space.type == Element::WhiteSpace::Tab){
-							tab();
+							iwidth_current += tab(space.charsize);
 						}
 					}
 				}
-				if (self.align_style != AlignStyle::Justify){
-					// allow the last line to be incomplete in justify mode
-					horizontalAlign(line);
-				}
+				horizontalAlign(line, left_edge, right_edge, false);
+				iwidth = std::max(iwidth, iwidth_current);
 				line.clear();
 				left_elems.clear();
 				right_elems.clear();
@@ -831,7 +869,11 @@ namespace ui {
 
 			float max_width = layoutEverything();
 
-			if (max_width < width_avail && self.display_style != DisplayStyle::Free && self.display_style != DisplayStyle::Block){
+			bool should_shrink = self.display_style == DisplayStyle::Inline ||
+				self.display_style == DisplayStyle::FloatLeft ||
+				self.display_style == DisplayStyle::FloatRight;
+
+			if (should_shrink && max_width < width_avail){
 				width_avail = max_width;
 				reset();
 				layoutEverything();
@@ -1004,8 +1046,12 @@ namespace ui {
 			emptyline = true;
 		}
 
-		void tab(){
-			xpos = ceil(xpos / tab_size + 0.5f) * tab_size;
+		float tab(unsigned charsize){
+			float tab_size = 50.0f * (float)charsize / 15.0f;
+			float nu_xpos = floor((xpos / tab_size) + 1.0f) * tab_size;
+			float diff = nu_xpos - xpos;
+			xpos = nu_xpos;
+			return diff;
 		}
 
 		float getLeftEdge() const {
@@ -1028,7 +1074,10 @@ namespace ui {
 	};
 
 	vec2 Element::arrangeChildren(float width_avail){
-		
+		if (children.size() == 0 && white_spaces.size() == 0){
+			return { padding, padding };
+		}
+
 		LayoutData layout(*this, width_avail);
 
 		layout.layoutElements();
@@ -1056,8 +1105,8 @@ namespace ui {
 
 	}
 
-	Element::WhiteSpace::WhiteSpace(Element::WhiteSpace::Type _type, LayoutIndex _layout_index)
-		: type(_type), layout_index(_layout_index) {
+	Element::WhiteSpace::WhiteSpace(Element::WhiteSpace::Type _type, LayoutIndex _layout_index, unsigned _charsize)
+		: type(_type), layout_index(_layout_index), charsize(_charsize) {
 
 	}
 

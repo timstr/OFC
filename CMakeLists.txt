@@ -21,7 +21,7 @@ set(headers
 	include/gui/element.h
 	include/gui/image.h
 	include/gui/helpers/CallbackButton.h
-	include/gui/helpers/linebreak.h
+	include/gui/helpers/pagebreak.h
 	include/gui/helpers/NumberTextEntry.h
 	include/gui/helpers/PullDownMenu.h
 	include/gui/helpers/Slider.h

@@ -46,6 +46,14 @@ namespace ui {
 		Justify
 	};
 
+	enum class TextStyle : uint32_t {
+		Regular = sf::Text::Text::Style::Regular,
+		Bold = sf::Text::Text::Style::Bold,
+		Italic = sf::Text::Text::Style::Italic,
+		Underlined = sf::Text::Text::Style::Underlined,
+		StrikeThrough = sf::Text::Text::Style::StrikeThrough,
+	};
+
 	struct Element : std::enable_shared_from_this<Element> {
 
 
@@ -99,8 +107,14 @@ namespace ui {
 
 		// set the size. Choosing force = true will set both the min and max size
 		void setSize(vec2 _size, bool force = false);
+
+		// set the minimum and maximum size
 		void setMinSize(vec2 _min_size);
+		void setMinWidth(float width);
+		void setMinHeight(float height);
 		void setMaxSize(vec2 _max_size);
+		void setMaxWidth(float width);
+		void setMaxHeight(float height);
 
 		// set the display style
 		void setDisplayStyle(DisplayStyle style);
@@ -125,6 +139,24 @@ namespace ui {
 
 		// get the margin; spacing between other self and other elements
 		float getMargin() const;
+
+		// get the background color
+		sf::Color getBackgroundColor() const;
+
+		// set the background color
+		void setBackgroundColor(sf::Color color);
+
+		// get the border color
+		sf::Color getBorderColor() const;
+
+		// set the border color
+		void setBorderColor(sf::Color color);
+
+		// get the border radius
+		float getBorderRadius() const;
+
+		// set the border radius
+		void setBorderRadius(float radius);
 
 		// true if a test point (in local space) intercepts the element
 		virtual bool hit(vec2 testpos) const;
@@ -222,16 +254,16 @@ namespace ui {
 		bool keyDown(Key key) const;
 
 		// write a sequence of text
-		void write(const std::string& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15);
+		void write(const std::string& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15, TextStyle style = TextStyle::Regular);
 
 		// write a sequence of text
-		void write(const std::wstring& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15);
+		void write(const std::wstring& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15, TextStyle style = TextStyle::Regular);
 
 		// write a line break
-		void writeLineBreak();
+		void writeLineBreak(unsigned charsize = 15u);
 
 		// write a tab
-		void writeTab();
+		void writeTab(float width = 50.0f);
 
 		// add a new child element
 		template<typename ElementType, typename... ArgsT>
@@ -284,17 +316,24 @@ namespace ui {
 
 		DisplayStyle display_style;
 		AlignStyle align_style;
+
+		sf::Color background_color;
+		sf::Color border_color;
+
 		bool disabled;
 		bool visible;
 		bool clipping;
+
 		vec2 pos;
 		vec2 size;
 		vec2 min_size;
 		vec2 max_size;
 		vec2 old_total_size;
+
 		float layout_index;
 		float padding;
 		float margin;
+		float border_radius;
 
 		void makeDirty();
 		bool isDirty() const;
@@ -324,15 +363,16 @@ namespace ui {
 				Tab
 			};
 
-			WhiteSpace(Type _type, LayoutIndex _layout_index);
+			WhiteSpace(Type _type, LayoutIndex _layout_index, unsigned _charsize = 15u);
 
 			Type type;
 			LayoutIndex layout_index;
+			unsigned charsize;
 		};
 
 		std::weak_ptr<Element> parent;
 		std::vector<std::shared_ptr<Element>> children;
-		std::vector<WhiteSpace> line_breaks;
+		std::vector<WhiteSpace> white_spaces;
 
 		friend struct Context;
 		friend void run();

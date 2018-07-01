@@ -27,7 +27,7 @@ namespace ui {
 							std::function<void(const std::wstring&)> _on_change)
 				: TextEntry(str, font), on_return(_on_return), validate(_validate), on_change(_on_change) {
 
-				setBackGroundColor(sf::Color(0xFFFFFFFF));
+				setBackgroundColor(sf::Color(0xFFFFFFFF));
 				setTextColor(sf::Color(0xFF));
 			}
 
@@ -40,9 +40,9 @@ namespace ui {
 			void onType(std::wstring full_text) override {
 				if (validate){
 					if (validate(full_text)){
-						setBackGroundColor(sf::Color(0xFFFFFFFF));
+						setBackgroundColor(sf::Color(0xFFFFFFFF));
 					} else {
-						setBackGroundColor(sf::Color(0xFF8080FF));
+						setBackgroundColor(sf::Color(0xFF8080FF));
 					}
 				}
 				if (on_change){

@@ -11,12 +11,12 @@ namespace ui {
 
 	TextEntry::TextEntry(std::string str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color)
 		: Text(str, font, _text_color, charsize) {
-		setBackGroundColor(_bg_color);
+		setBackgroundColor(_bg_color);
 		enable();
 	}
 	TextEntry::TextEntry(std::wstring str, const sf::Font& font, int charsize, sf::Color _text_color, sf::Color _bg_color)
 		: Text(str, font, _text_color, charsize) {
-		setBackGroundColor(_bg_color);
+		setBackgroundColor(_bg_color);
 		enable();
 	}
 	
@@ -58,10 +58,7 @@ namespace ui {
 	}
 	
 	void TextEntry::render(sf::RenderWindow& renderwindow){
-		sf::RectangleShape rect(getSize());
-		rect.setFillColor(background_color);
-		renderwindow.draw(rect);
-		renderwindow.draw(text);
+		Text::render(renderwindow);
 		if (typing()){
 			positionCursor();
 			sf::RectangleShape rect2(vec2(cursor_width, (float)text.getCharacterSize()));
