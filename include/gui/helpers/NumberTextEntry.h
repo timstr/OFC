@@ -4,23 +4,43 @@
 
 namespace ui {
 
-	// TODO: allow limits and value to be changed
-
 	struct NumberTextEntry : ui::InlineElement {
 		NumberTextEntry(float defaultval, float _min, float _max, const sf::Font& font, std::function<void(float)> _callback){
 			textfield = add<TextField>(defaultval, _min, _max, font, _callback);
 		}
 
 		bool onLeftClick(int clicks) override {
-			textfield->beginTyping();
+			textfield->startTyping();
 			return true;
+		}
+
+		void setMinimum(float min){
+			textfield->minimum = min;
+		}
+		float getMinimum() const {
+			return textfield->minimum;
+		}
+
+		void setMaximum(float max){
+			textfield->maximum = max;
+		}
+		float getMaximum(float max){
+			return textfield->maximum;
+		}
+
+		void setValue(float val){
+			textfield->value = std::min(std::max(textfield->minimum, val), textfield->maximum);
+			textfield->setText(std::to_string(val));
+		}
+		float getValue() const {
+			return textfield->value;
 		}
 
 	private:
 
 		struct TextField : TextEntry {
 			TextField(float defaultval, float _min, float _max, const sf::Font& font, std::function<void(float)> _callback)
-				: TextEntry(toString(defaultval), font), value(defaultval), min(_min), max(_max), callback(_callback) {
+				: TextEntry(toString(defaultval), font), value(defaultval), minimum(_min), maximum(_max), callback(_callback) {
 				setBackgroundColor(sf::Color(0xFFFFFFFF));
 				setTextColor(sf::Color(0xFF));
 			}
@@ -45,13 +65,13 @@ namespace ui {
 				if (std::isnan(val)){
 					return false;
 				}
-				return (val >= min) && (val <= max);
+				return (val >= minimum) && (val <= maximum);
 			}
 			std::function<void(float)> callback;
 
 			float value;
-			const float min;
-			const float max;
+			float minimum;
+			float maximum;
 		};
 
 		std::shared_ptr<TextField> textfield;

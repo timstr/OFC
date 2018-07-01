@@ -9,8 +9,8 @@ namespace ui {
 		TextEntry(std::wstring str, const sf::Font& font, int charsize = 15, sf::Color _text_color = sf::Color(0xFF), sf::Color _bg_color = sf::Color(0xFFFFFFFF));
 		TextEntry(std::string str, const sf::Font& font, int charsize = 15, sf::Color _text_color = sf::Color(0xFF), sf::Color _bg_color = sf::Color(0xFFFFFFFF));
 
-		void beginTyping();
-		void endTyping();
+		void startTyping();
+		void stopTyping();
 		bool typing() const;
 		void moveTo(vec2 pos);
 
@@ -20,8 +20,10 @@ namespace ui {
 
 		void render(sf::RenderWindow& renderwindow) override;
 
+		bool onKeyDown(Key key) override;
 		bool onLeftClick(int clicks) override;
 		void onFocus() override;
+		void onLoseFocus() override;
 
 		private:
 		void write(char ch);

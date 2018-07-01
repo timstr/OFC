@@ -1,5 +1,7 @@
 #pragma once
 
+#include "gui/roundrectangle.h"
+
 #include <SFML\Graphics.hpp>
 #include <vector>
 #include <functional>
@@ -317,9 +319,6 @@ namespace ui {
 		DisplayStyle display_style;
 		AlignStyle align_style;
 
-		sf::Color background_color;
-		sf::Color border_color;
-
 		bool disabled;
 		bool visible;
 		bool clipping;
@@ -333,7 +332,8 @@ namespace ui {
 		float layout_index;
 		float padding;
 		float margin;
-		float border_radius;
+
+		RoundedRectangle display_rect;
 
 		void makeDirty();
 		bool isDirty() const;

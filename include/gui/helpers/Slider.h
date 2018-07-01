@@ -4,7 +4,6 @@
 
 namespace ui {
 
-	// TODO: allow value and limits to be changed
 	struct Slider : InlineElement {
 		Slider(float defaultval, float min, float max, sf::Font& font, std::function<void(float)> _onChange)
 			: minimum(std::min(min, max)),
@@ -21,6 +20,28 @@ namespace ui {
 			handle->setPos(localMousePos() - handle->getSize() * 0.5f);
 			handle->startDrag();
 			return true;
+		}
+
+		void setMinimum(float min){
+			minimum = min;
+		}
+		float getMinimum() const {
+			return minimum;
+		}
+
+		void setMaximum(float max){
+			maximum = max;
+		}
+		float getMaximum(float max){
+			return maximum;
+		}
+
+		void setValue(float val){
+			value = std::min(std::max(minimum, val), maximum);
+			label->setText(std::to_string(val));
+		}
+		float getValue() const {
+			return value;
 		}
 
 	private:

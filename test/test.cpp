@@ -243,7 +243,7 @@ int main(int argc, char** argcv){
 		block->setMinSize({0, 100});
 
 		auto pops = block->add<TestElement>("Pops");
-		pops->setMinSize({500, 300});
+		pops->setDisplayStyle(ui::DisplayStyle::FloatLeft);
 		pops->add<TestElement>("Hector");
 
 		block->add<TestElement>("Hank");
@@ -273,10 +273,6 @@ int main(int argc, char** argcv){
 		std::wstring str = L"\tLorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.";
 		
 		block->write(str, getFont());
-
-		auto img = block->add<ui::Image>("C:/Users/Tim/Pictures/Aye/tumblr_mdb34uLl1z1qbdv4lo10_500.png");
-		img->setDisplayStyle(ui::DisplayStyle::FloatLeft);
-		img->setSize(img->getSize() * 0.5f, true);
 
 		block->add<ui::PageBreak>(10.0f);
 

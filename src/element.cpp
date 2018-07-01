@@ -17,8 +17,6 @@ namespace ui {
 		shared_this(this),
 		display_style(_display_style),
 		align_style(AlignStyle::Left),
-		background_color(0xFFFFFFFF),
-		border_color(0xFF),
 		pos({0.0f, 0.0f}),
 		size({100.0f, 100.0f}),
 		min_size({0.0f, 0.0f}),
@@ -30,9 +28,12 @@ namespace ui {
 		dirty(true),
 		layout_index(0.0f),
 		padding(5.0f),
-		margin(5.0f),
-		border_radius(0.0f) {
+		margin(5.0f) {
 
+		display_rect.setFillColor(sf::Color(0xFFFFFFFF));
+		display_rect.setOutlineThickness(1.0f);
+		display_rect.setOutlineColor(sf::Color(0xFF));
+		display_rect.setPosition({1.0f, 1.0f});
 	}
 
 	void Element::disable(){
@@ -443,14 +444,10 @@ namespace ui {
 	}
 	
 	void Element::render(sf::RenderWindow& rw){
-		RoundedRectangle rect;
-		rect.setRadius(border_radius);
-		rect.setOutlineColor(sf::Color(border_color));
-		rect.setOutlineThickness(1.0f);
-		rect.setSize(getSize() - vec2(2.0f, 2.0f));
-		rect.setPosition({1.0f, 1.0f});
-		rect.setFillColor(sf::Color(background_color));
-		rw.draw(rect);
+		if (display_rect.getFillColor().a == 0){
+			return;
+		}
+		rw.draw(display_rect);
 	}
 	
 	void Element::renderChildren(sf::RenderWindow& renderwindow){
@@ -575,27 +572,27 @@ namespace ui {
 	}
 
 	sf::Color Element::getBackgroundColor() const {
-		return background_color;
+		return display_rect.getFillColor();
 	}
 
 	void Element::setBackgroundColor(sf::Color color){
-		background_color = color;
+		display_rect.setFillColor(color);
 	}
 
 	sf::Color Element::getBorderColor() const {
-		return border_color;
+		return display_rect.getOutlineColor();
 	}
 
 	void Element::setBorderColor(sf::Color color){
-		border_color = color;
+		display_rect.setOutlineColor(color);
 	}
 
 	float Element::getBorderRadius() const {
-		return border_radius;
+		return display_rect.getRadius();
 	}
 
 	void Element::setBorderRadius(float radius){
-		border_radius = std::max(radius, 0.0f);
+		display_rect.setRadius(radius);
 	}
 
 	void Element::makeDirty(){
@@ -641,6 +638,7 @@ namespace ui {
 				std::min(std::max({size.x, contentsize.x, min_size.x}), max_size.x),
 				std::min(std::max({size.y, contentsize.y, min_size.y}), max_size.y)
 			);
+			display_rect.setSize(size - vec2(2.0f, 2.0f));
 			return false;
 		} else {
 			vec2 newsize = arrangeChildren(width_avail);
@@ -658,7 +656,7 @@ namespace ui {
 					std::min(std::max(newsize.y, min_size.y), max_size.y)
 				);
 			}
-			
+			display_rect.setSize(size - vec2(2.0f, 2.0f));
 			vec2 new_total_size = size + vec2(2.0f * margin, 2.0f * margin);
 			float diff = abs(old_total_size.x - new_total_size.x) + abs(old_total_size.y - new_total_size.y);
 			old_total_size = new_total_size;
@@ -735,7 +733,7 @@ namespace ui {
 					float offset = left - line.front()->pos.x;
 
 					for (const auto& elem : line){
-						elem->pos.x = round(elem->pos.x + offset);
+						elem->pos.x += offset;
 					}
 
 				} else if (self.align_style == AlignStyle::Justify){
@@ -746,7 +744,7 @@ namespace ui {
 					float offset = (right_limit - (line.back()->pos.x + line.back()->size.x + line.back()->margin)) / (float)(line.size() - 1);
 					float acc = 0;
 					for (const auto& elem : line){
-						elem->pos.x = round(elem->pos.x + acc);
+						elem->pos.x += acc;
 						acc += offset;
 					}
 				}
@@ -804,7 +802,7 @@ namespace ui {
 								newLine();
 							}
 						} else if (space.type == Element::WhiteSpace::Tab){
-							iwidth_current += tab(space.charsize);
+							iwidth_current += tab(space.charsize, left_edge);
 						}
 					}
 				}
@@ -1046,11 +1044,11 @@ namespace ui {
 			emptyline = true;
 		}
 
-		float tab(unsigned charsize){
+		float tab(unsigned charsize, float left){
 			float tab_size = 50.0f * (float)charsize / 15.0f;
-			float nu_xpos = floor((xpos / tab_size) + 1.0f) * tab_size;
-			float diff = nu_xpos - xpos;
-			xpos = nu_xpos;
+			float nu_xpos = floor(((xpos - left) / tab_size) + 1.0f) * tab_size;
+			float diff = nu_xpos - (xpos - left);
+			xpos = nu_xpos + left;
 			return diff;
 		}
 

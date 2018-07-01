@@ -20,13 +20,13 @@ namespace ui {
 		enable();
 	}
 	
-	void TextEntry::beginTyping(){
+	void TextEntry::startTyping(){
 		grabFocus();
 		auto self = std::dynamic_pointer_cast<TextEntry, Element>(shared_from_this());
 		getContext().setTextEntry(self);
 	}
 	
-	void TextEntry::endTyping(){
+	void TextEntry::stopTyping(){
 		if (typing()){
 			getContext().setTextEntry(nullptr);
 		}
@@ -72,14 +72,22 @@ namespace ui {
 		}
 	}
 	
+	bool TextEntry::onKeyDown(Key key){
+		return true;
+	}
+
 	bool TextEntry::onLeftClick(int clicks){
-		beginTyping();
+		startTyping();
 		moveTo(localMousePos());
 		return true;
 	}
 	
 	void TextEntry::onFocus(){
-		beginTyping();
+		startTyping();
+	}
+
+	void TextEntry::onLoseFocus(){
+		stopTyping();
 	}
 	
 	void TextEntry::write(char ch){

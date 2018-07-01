@@ -14,7 +14,7 @@ namespace ui {
 		}
 
 		bool onLeftClick(int clicks) override {
-			textfield->beginTyping();
+			textfield->startTyping();
 			return true;
 		}
 
