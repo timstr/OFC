@@ -20,9 +20,9 @@ namespace ui {
 			normal_color(0xBBBBBBFF),
 			hover_color(0xDDDDDDFF),
 			active_color(0x888888FF),
-			bgcolor(normal_color),
 			state(State::Normal) {
 
+			setBackgroundColor(normal_color);
 		}
 
 		void setNormalColor(sf::Color color){
@@ -63,7 +63,7 @@ namespace ui {
 			if (hovering()){
 				state = State::Hover;
 			} else {
-				fadeColor(bgcolor, normal_color, 0.15f);
+				fadeColor(getBackgroundColor(), normal_color, 0.15f);
 				state = State::Normal;
 			}
 
@@ -79,7 +79,7 @@ namespace ui {
 
 		void render(sf::RenderWindow& rw) override {
 			sf::RectangleShape rect{getSize()};
-			rect.setFillColor(bgcolor);
+			rect.setFillColor(getBackgroundColor());
 			rect.setOutlineThickness(1.0f);
 			rect.setOutlineColor(sf::Color(0xFF));
 			rw.draw(rect);
@@ -88,13 +88,13 @@ namespace ui {
 		void onMouseOver() override {
 			if (state == State::Normal){
 				state = State::Hover;
-				fadeColor(bgcolor, hover_color, 0.15f);
+				fadeColor(getBackgroundColor(), hover_color, 0.15f);
 			}
 		}
 		void onMouseOut() override {
 			if (state == State::Hover){
 				state = State::Normal;
-				fadeColor(bgcolor, normal_color, 0.15f);
+				fadeColor(getBackgroundColor(), normal_color, 0.15f);
 			}
 		}
 
@@ -102,7 +102,6 @@ namespace ui {
 
 		std::function<void()> callback;
 		std::shared_ptr<Text> label;
-		sf::Color bgcolor;
 		sf::Color normal_color, hover_color, active_color;
 		State state;
 
@@ -115,7 +114,7 @@ namespace ui {
 					(uint8_t)(from.b * (1.0f - t) + to.b * t),
 					255
 				);
-				self->bgcolor = color;
+				setBackgroundColor(color);
 			});
 		}
 	};

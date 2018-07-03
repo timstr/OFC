@@ -12,6 +12,7 @@ namespace ui {
 			onChange(_onChange) {
 
 			setSize({100.0f, 35.0f}, true);
+			setBorderRadius(17.5f);
 			label = add<Text>(std::to_wstring(value), font);
 			handle = add<Handle>(*this);
 		}
@@ -20,6 +21,10 @@ namespace ui {
 			handle->setPos(localMousePos() - handle->getSize() * 0.5f);
 			handle->startDrag();
 			return true;
+		}
+
+		void onLeftRelease() override {
+			handle->stopDrag();
 		}
 
 		void setMinimum(float min){
@@ -49,6 +54,9 @@ namespace ui {
 			Handle(Slider& _slider) : slider(_slider) {
 				float size = slider.getSize().y;
 				setSize({size, size}, true);
+				setBorderRadius(size * 0.5f);
+				setBackgroundColor(sf::Color(0x80808080));
+				setBorderThickness(0.0f);
 			}
 
 			bool onLeftClick(int clicks) override {
@@ -58,15 +66,6 @@ namespace ui {
 
 			void onLeftRelease() override {
 				stopDrag();
-			}
-
-			void render(sf::RenderWindow& rw) override {
-				sf::RectangleShape rect {getSize() - vec2(2.0f, 2.0f)};
-				rect.setPosition({1.0f, 1.0f});
-				rect.setFillColor(sf::Color(0x80808080));
-				rect.setOutlineColor(sf::Color(0xFF));
-				rect.setOutlineThickness(1.0f);
-				rw.draw(rect);
 			}
 
 			void onDrag() override {

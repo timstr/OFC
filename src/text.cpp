@@ -7,14 +7,15 @@ namespace ui {
 	}
 	
 	Text::Text(std::wstring _text, const sf::Font& _font, sf::Color color, unsigned charsize, TextStyle style)
-		: text(_text, _font, charsize) {
+		: text(_text, _font) {
 		text.setFillColor(color);
+		setCharacterSize(charsize);
 		setBorderColor(sf::Color(0));
 		setBackgroundColor(sf::Color(0));
 		setStyle(style);
 		updateSize();
+		setMargin(0.0f);
 		disable();
-		setMargin(ceil((float)charsize / 5.0f));
 	}
 
 	void Text::setText(std::string _text){
@@ -37,6 +38,7 @@ namespace ui {
 	
 	void Text::setCharacterSize(unsigned int size){
 		text.setCharacterSize(size);
+		text.setPosition({ceil((float)getCharacterSize() / 5.0f), ceil((float)getCharacterSize() / 5.0f)});
 		updateSize();
 	}
 	
@@ -74,7 +76,10 @@ namespace ui {
 		} else {
 			newsize.x = bounds.width + bounds.left;
 		}
-		setMinSize({ceil(newsize.x), ceil(newsize.y)});
+		setSize({
+			ceil(newsize.x) + ceil((float)getCharacterSize() / 2.5f),
+			ceil(newsize.y) + ceil((float)getCharacterSize() / 2.5f)
+		}, true);
 	}
 
 }

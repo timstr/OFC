@@ -22,7 +22,7 @@ sf::Font& getFont(){
 	return font;
 }
 
-struct TestElement : ui::InlineElement {
+struct TestElement : ui::FreeElement {
 	TestElement(std::string name) : name(name) {
 		std::cout << name << " was constructed" << std::endl;
 		changeColor();
@@ -97,7 +97,6 @@ struct TestElement : ui::InlineElement {
 		bringToFront();
 		if (clicks == 1){
 			std::cout << name << " was left-clicked" << std::endl;
-			setDisplayStyle(ui::DisplayStyle::Free);
 			startDrag();
 		} else if (clicks == 2){
 			std::cout << name << " was left-clicked twice" << std::endl;
@@ -110,7 +109,6 @@ struct TestElement : ui::InlineElement {
 		std::cout << name << " was left released" << std::endl;
 		if (dragging()){
 			stopDrag();
-			setDisplayStyle(ui::DisplayStyle::Inline);
 			drop(localMousePos());
 		}
 	}
@@ -118,15 +116,15 @@ struct TestElement : ui::InlineElement {
 	bool onRightClick(int clicks) override {
 		if (clicks == 1){
 			std::cout << name << " was right-clicked once" << std::endl;
-			std::uniform_real_distribution<float> sdist {20, 300};
-			std::uniform_real_distribution<float> mdist {0, 20};
+			std::uniform_int_distribution<int> sdist {20, 300};
+			std::uniform_int_distribution<int> mdist {0, 20};
 			auto self = shared_from_this();
 			vec2 oldsize = getSize();
-			vec2 newsize = {sdist(randeng), sdist(randeng)};
+			vec2 newsize = {(float)sdist(randeng), (float)sdist(randeng)};
 			float oldmargin = getMargin();
-			float newmargin = mdist(randeng);
+			float newmargin = (float)mdist(randeng);
 			float oldpadding = getPadding();
-			float newpadding = mdist(randeng);
+			float newpadding = (float)mdist(randeng);
 			ui::startTransition(1.0, [=](float t){
 				float x = 0.5f - 0.5f * cos(t * 3.141592654f);
 				self->setSize(oldsize * (1.0f - x) + newsize * x);
@@ -144,6 +142,7 @@ struct TestElement : ui::InlineElement {
 	}
 
 	void onFocus() override {
+		bringToFront();
 		std::cout << name << " gained focus" << std::endl;
 	}
 
@@ -199,40 +198,6 @@ struct TestElement : ui::InlineElement {
 	std::shared_ptr<ui::Text> label;
 };
 
-struct BlueMan : ui::InlineElement {
-	BlueMan(){
-		std::uniform_int_distribution<int> xdist {30, 200};
-		std::uniform_int_distribution<int> ydist {20, 50};
-
-		setMinSize({(float)xdist(randeng), (float)ydist(randeng)});
-
-		add<ui::Text>("Inline", getFont());
-	}
-
-	void render(sf::RenderWindow& rw) override {
-		sf::RectangleShape rect(getSize());
-		rect.setFillColor(sf::Color(0x0000FF80));
-		rw.draw(rect);
-	}
-};
-
-struct RedMan : ui::BlockElement {
-	RedMan(){
-		std::uniform_int_distribution<int> xdist {50, 200};
-		std::uniform_int_distribution<int> ydist {20, 50};
-
-		setMinSize({(float)xdist(randeng), (float)ydist(randeng)});
-
-		add<ui::Text>("Block", getFont());
-	}
-
-	void render(sf::RenderWindow& rw) override {
-		sf::RectangleShape rect(getSize());
-		rect.setFillColor(sf::Color(0xFF000080));
-		rw.draw(rect);
-	}
-};
-
 int main(int argc, char** argcv){
 
 	ui::init(1000, 800, "Tim's GUI Test", 30);
@@ -243,29 +208,29 @@ int main(int argc, char** argcv){
 		block->setMinSize({0, 100});
 
 		auto pops = block->add<TestElement>("Pops");
-		pops->setDisplayStyle(ui::DisplayStyle::FloatLeft);
+		pops->setLayoutStyle(ui::LayoutStyle::FloatLeft);
 		pops->add<TestElement>("Hector");
 
 		block->add<TestElement>("Hank");
 
-		block->setAlignStyle(ui::AlignStyle::Justify);
+		block->setContentAlign(ui::ContentAlign::Justify);
 
 		auto widg = block->add<ui::RightFloatingElement>();
 		widg->add<ui::Text>("Table of Contents", getFont(), sf::Color(0x404040FF), 30, ui::TextStyle::Underlined);
-		widg->add<ui::PageBreak>();
-		widg->add<ui::Text>("Introduction", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setDisplayStyle(ui::DisplayStyle::FloatRight);
-		widg->add<ui::PageBreak>();
-		widg->add<ui::Text>("First Paragraph", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setDisplayStyle(ui::DisplayStyle::FloatRight);
-		widg->add<ui::PageBreak>();
-		widg->add<ui::Text>("Last Paragraph", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setDisplayStyle(ui::DisplayStyle::FloatRight);
-		widg->add<ui::PageBreak>();
-		widg->add<ui::Text>("Conclusion", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setDisplayStyle(ui::DisplayStyle::FloatRight);
-		widg->add<ui::PageBreak>();
+		widg->writePageBreak();
+		widg->add<ui::Text>("Introduction", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setLayoutStyle(ui::LayoutStyle::FloatRight);
+		widg->writePageBreak();
+		widg->add<ui::Text>("First Paragraph", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setLayoutStyle(ui::LayoutStyle::FloatRight);
+		widg->writePageBreak();
+		widg->add<ui::Text>("Last Paragraph", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setLayoutStyle(ui::LayoutStyle::FloatRight);
+		widg->writePageBreak();
+		widg->add<ui::Text>("Conclusion", getFont(), sf::Color(0x000040FF), 15, ui::TextStyle::Underlined)->setLayoutStyle(ui::LayoutStyle::FloatRight);
+		widg->writePageBreak();
 		int count = 1;
 		std::shared_ptr<ui::CallbackButton> btn = widg->add<ui::CallbackButton>("Add a guy", getFont(), [widg,&btn,&count](){
 			auto par = widg->add<ui::Text>("Bonus Paragraph " + std::to_string(count), getFont(), sf::Color(0x000040FF));
-			widg->add<ui::PageBreak>()->layoutBefore(btn);
-			par->setDisplayStyle(ui::DisplayStyle::FloatRight);
+			widg->writePageBreak();
+			par->setLayoutStyle(ui::LayoutStyle::FloatRight);
 			par->layoutBefore(btn);
 			++count;
 		});
@@ -274,11 +239,11 @@ int main(int argc, char** argcv){
 		
 		block->write(str, getFont());
 
-		block->add<ui::PageBreak>(10.0f);
+		block->writePageBreak(10.0f);
 
-		block->write("a\ta\ta\ta\na a\ta a\ta a\ta a\na a a\ta a a\ta a a\ta a a\na a a a\ta a a a\ta a a a\ta a a a", getFont(), sf::Color(0xFF), 30);
+		block->write("a\t\ta\t\ta\na\ta\ta\ta\na a\ta a\ta a\ta a\na a a\ta a a\ta a a\ta a a\na a a a\ta a a a\ta a a a\ta a a a", getFont(), sf::Color(0xFF), 30);
 
-		block->add<ui::PageBreak>(10.0f);
+		block->writePageBreak(10.0f);
 
 		block->write("Regular\n", getFont(), sf::Color(0xFF), 15, ui::TextStyle::Regular);
 		block->write("Italic\n", getFont(), sf::Color(0xFF), 15, ui::TextStyle::Italic);

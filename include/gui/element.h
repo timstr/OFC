@@ -15,7 +15,7 @@ namespace ui {
 	using Key = sf::Keyboard::Key;
 
 	// How an element is laid out and positioned relative to its parent and siblings
-	enum class DisplayStyle {
+	enum class LayoutStyle {
 
 		// positioned relative to parent according only to setPos()
 		Free,
@@ -33,8 +33,31 @@ namespace ui {
 		FloatRight
 	};
 
+	// How a free element is positioned relative to the parent
+	enum class PositionStyle {
+		None,
+
+		OutsideBegin,
+		OutsideLeft = OutsideBegin,
+		OutsideTop = OutsideBegin,
+
+		InsideBegin,
+		InsideLeft = InsideBegin,
+		InsideTop = InsideBegin,
+
+		Center,
+
+		InsideEnd,
+		InsideRight = InsideEnd,
+		InsideBottom = InsideEnd,
+
+		OutsideEnd,
+		OutsideRight = OutsideEnd,
+		OutsideBottom = OutsideEnd,
+	};
+
 	// How an element's inline children are aligned horizontally
-	enum class AlignStyle {
+	enum class ContentAlign {
 		// from the left edge
 		Left,
 
@@ -60,7 +83,7 @@ namespace ui {
 
 
 		// default constructor
-		Element(DisplayStyle _display_style);
+		Element(LayoutStyle _display_style);
 
 		// virtual destructor for safe polymorphic destruction
 		virtual ~Element();
@@ -119,16 +142,38 @@ namespace ui {
 		void setMaxHeight(float height);
 
 		// set the display style
-		void setDisplayStyle(DisplayStyle style);
+		void setLayoutStyle(LayoutStyle style);
 
 		// get the display style
-		DisplayStyle getDisplayStyle() const;
+		LayoutStyle getLayoutStyle() const;
 
 		// set the horizontal alignment style
-		void setAlignStyle(AlignStyle style);
+		void setContentAlign(ContentAlign style);
 
 		// get the horizontal alignment style
-		AlignStyle getAlignStyle() const;
+		ContentAlign getContentAlign() const;
+
+		// Set the horizontal position style, which only applies to Free elements
+		// Determines how the element is positioned relative to the edges of the parent
+		// spacing has no effect if Center is selected
+		void setXPositionStyle(PositionStyle style, float spacing = 0.0f);
+
+		// get the horizontal position style
+		PositionStyle getXPositionStyle() const;
+
+		// get the spacing for the horizontal position style
+		float getXPositionSpacing() const;
+
+		// Set the vertical position style, which only applies to Free elements
+		// Determines how the element is positioned relative to the edges of the parent
+		// spacing has no effect if Center is selected
+		void setYPositionStyle(PositionStyle style, float spacing = 0.0f);
+
+		// get the horizontal position style
+		PositionStyle getYPositionStyle() const;
+
+		// get the spacing for the horizontal position style
+		float getYPositionSpacing() const;
 
 		// set the padding; spacing between content and border
 		void setPadding(float _padding);
@@ -159,6 +204,12 @@ namespace ui {
 
 		// set the border radius
 		void setBorderRadius(float radius);
+
+		// get the border thickness
+		float getBorderThickness() const;
+
+		// set the border thickness
+		void setBorderThickness(float thickness);
 
 		// true if a test point (in local space) intercepts the element
 		virtual bool hit(vec2 testpos) const;
@@ -261,8 +312,11 @@ namespace ui {
 		// write a sequence of text
 		void write(const std::wstring& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15, TextStyle style = TextStyle::Regular);
 
-		// write a line break
+		// write a line break, causing inline elements to continue on a new line
 		void writeLineBreak(unsigned charsize = 15u);
+
+		// write a page break, causing all elements to continue on a new line
+		void writePageBreak(float height = 0.0f);
 
 		// write a tab
 		void writeTab(float width = 50.0f);
@@ -316,8 +370,8 @@ namespace ui {
 
 		std::shared_ptr<Element> shared_this;
 
-		DisplayStyle display_style;
-		AlignStyle align_style;
+		LayoutStyle layout_style;
+		ContentAlign content_align;
 
 		bool disabled;
 		bool visible;
@@ -332,6 +386,12 @@ namespace ui {
 		float layout_index;
 		float padding;
 		float margin;
+
+		void updatePosition();
+		void updateChildPositions();
+
+		PositionStyle x_position_style, y_position_style;
+		float x_spacing, y_spacing;
 
 		RoundedRectangle display_rect;
 
