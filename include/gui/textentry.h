@@ -25,7 +25,7 @@ namespace ui {
 		void onFocus() override;
 		void onLoseFocus() override;
 
-		private:
+	private:
 		void write(char ch);
 		void onBackspace();
 		void onDelete();

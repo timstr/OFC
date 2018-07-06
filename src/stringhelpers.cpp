@@ -6,64 +6,64 @@ namespace {
 	std::wstringstream stream;
 }
 
-std::wstring toString(float x){
+std::wstring toString(float x) {
 	stream.str(L"");
 	stream.clear();
 	stream << x;
 	return stream.str();
 }
 
-std::wstring toString(double x){
+std::wstring toString(double x) {
 	stream.str(L"");
 	stream.clear();
 	stream << x;
 	return stream.str();
 }
 
-std::wstring toString(int x){
+std::wstring toString(int x) {
 	stream.str(L"");
 	stream.clear();
 	stream << x;
 	return stream.str();
 }
 
-float stringToFloat(const std::wstring& str){
+ParseResult<float> stringToFloat(const std::wstring& str) {
 	stream.str(str);
 	stream.clear();
 	float x;
 	stream >> x;
-	if (!stream.fail() && stream.eof()){
-		return x;
+	if (!stream.fail() && stream.eof()) {
+		return ParseResult<float>(x, true);
 	} else {
-		return std::numeric_limits<float>::quiet_NaN();
+		return ParseResult<float>(std::numeric_limits<float>::quiet_NaN(), false);
 	}
 }
 
-double stringToDouble(const std::wstring& str){
+ParseResult<double> stringToDouble(const std::wstring& str) {
 	stream.str(str);
 	stream.clear();
 	double x;
 	stream >> x;
-	if (!stream.fail() && stream.eof()){
-		return x;
+	if (!stream.fail() && stream.eof()) {
+		return ParseResult<double>(x, true);;
 	} else {
-		return std::numeric_limits<double>::quiet_NaN();
+		return ParseResult<double>(std::numeric_limits<double>::quiet_NaN(), false);
 	}
 }
 
-int stringToInt(const std::wstring& str, int default_value){
+ParseResult<int> stringToInt(const std::wstring& str) {
 	stream.str(str);
 	stream.clear();
 	int x;
 	stream >> x;
-	if (!stream.fail() && stream.eof()){
-		return x;
+	if (!stream.fail() && stream.eof()) {
+		return ParseResult<int>(x, true);
 	} else {
-		return default_value;
+		return ParseResult<int>(x, false);
 	}
 }
 
-bool stringIsInt(const std::wstring& str){
+bool stringIsInt(const std::wstring& str) {
 	stream.str(str);
 	stream.clear();
 	int x;

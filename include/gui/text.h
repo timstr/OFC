@@ -25,7 +25,7 @@ namespace ui {
 
 		void render(sf::RenderWindow& renderwin) override;
 
-		protected:
+	protected:
 
 		void updateSize();
 

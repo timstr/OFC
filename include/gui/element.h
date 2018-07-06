@@ -11,7 +11,7 @@ typedef sf::Vector2f vec2;
 
 
 namespace ui {
-	
+
 	using Key = sf::Keyboard::Key;
 
 	// How an element is laid out and positioned relative to its parent and siblings
@@ -35,24 +35,42 @@ namespace ui {
 
 	// How a free element is positioned relative to the parent
 	enum class PositionStyle {
+		// the element's position is left untouched
 		None,
 
 		OutsideBegin,
+
+		// the element is positioned left of the left edge
 		OutsideLeft = OutsideBegin,
+
+		// the element is positioned above the top edge
 		OutsideTop = OutsideBegin,
 
 		InsideBegin,
+
+		// the element is positioned inside the left edge
 		InsideLeft = InsideBegin,
+
+		// the element is positioned inside the top edge
 		InsideTop = InsideBegin,
 
+		// the element is positioned in the middle of the parent
 		Center,
 
 		InsideEnd,
+
+		// the element is positioned inside the right edge
 		InsideRight = InsideEnd,
+
+		// the element is positioned inside the bottom edge
 		InsideBottom = InsideEnd,
 
 		OutsideEnd,
+
+		// the element is positioned right of the right edge
 		OutsideRight = OutsideEnd,
+
+		// the element is positioned below the bottom edge
 		OutsideBottom = OutsideEnd,
 	};
 
@@ -81,7 +99,6 @@ namespace ui {
 
 	struct Element : std::enable_shared_from_this<Element> {
 
-
 		// default constructor
 		Element(LayoutStyle _display_style);
 
@@ -98,7 +115,7 @@ namespace ui {
 		virtual void onClose();
 
 		template<typename ElementType>
-		std::shared_ptr<ElementType> getThisAs(){
+		std::shared_ptr<ElementType> getThisAs() {
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from ui::Element");
 			return std::dynamic_pointer_cast<ElementType, Element>(shared_from_this());
 		}
@@ -133,13 +150,35 @@ namespace ui {
 		// set the size. Choosing force = true will set both the min and max size
 		void setSize(vec2 _size, bool force = false);
 
-		// set the minimum and maximum size
-		void setMinSize(vec2 _min_size);
-		void setMinWidth(float width);
-		void setMinHeight(float height);
+		// set the maximum size
 		void setMaxSize(vec2 _max_size);
+
+		// set the minimum size
+		void setMinSize(vec2 _min_size);
+
+		// get the maximum size
+		vec2 getMaxSize() const;
+
+		// get the minimum size
+		vec2 getMinSize() const;
+
+		// set the minimum width
+		void setMinWidth(float width);
+
+		// set the maximum width
 		void setMaxWidth(float width);
+
+		// set the current size. Choosing force = true will set both the min and max width
+		void setWidth(float width, bool force = false);
+
+		// set the minimum height
+		void setMinHeight(float height);
+
+		// set the maximum height
 		void setMaxHeight(float height);
+
+		// set the current height. Choosing force = true will set the both the min and max height.
+		void setHeight(float height, bool force = false);
 
 		// set the display style
 		void setLayoutStyle(LayoutStyle style);
@@ -211,7 +250,7 @@ namespace ui {
 		// set the border thickness
 		void setBorderThickness(float thickness);
 
-		// true if a test point (in local space) intercepts the element
+		// true if a test point (in local space, relative to the element's origin) intercepts the element
 		virtual bool hit(vec2 testpos) const;
 
 		// the mouse's position relative to the element
@@ -248,7 +287,7 @@ namespace ui {
 
 		// begins the element being dragged by the mouse
 		void startDrag();
-		
+
 		// called when the element is being dragged
 		virtual void onDrag();
 
@@ -323,7 +362,7 @@ namespace ui {
 
 		// add a new child element
 		template<typename ElementType, typename... ArgsT>
-		std::shared_ptr<ElementType> add(ArgsT&&... args){
+		std::shared_ptr<ElementType> add(ArgsT&&... args) {
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
 			// This may look strange, but the child creates the first shared_ptr to itself
 			// (so that shared_from_this is valid in the constructor) and this is how that is dealt with.

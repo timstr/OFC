@@ -10,7 +10,7 @@
 namespace ui {
 
 	Element& root();
-	
+
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler);
 	void addKeyboardCommand(Key trigger_key, std::vector<Key> required_keys, std::function<void()> handler);
 	void setQuitHandler(std::function<bool()> handler);

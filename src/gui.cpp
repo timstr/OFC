@@ -7,11 +7,11 @@
 #include <functional>
 
 namespace ui {
-	
-	Element& root(){
+
+	Element& root() {
 		static bool initialized = false;
 		static std::shared_ptr<Element> root;
-		if (!initialized){
+		if (!initialized) {
 			Element* rawroot = new FreeElement();
 			root = rawroot->shared_from_this();
 			root->setMargin(0.0f);
@@ -20,55 +20,55 @@ namespace ui {
 		}
 		return *root;
 	}
-	
-	void addKeyboardCommand(Key trigger_key, std::function<void()> handler){
+
+	void addKeyboardCommand(Key trigger_key, std::function<void()> handler) {
 		getContext().addKeyboardCommand(trigger_key, handler);
 	}
-	
-	void addKeyboardCommand(Key trigger_key, std::vector<Key> required_keys, std::function<void()> handler){
+
+	void addKeyboardCommand(Key trigger_key, std::vector<Key> required_keys, std::function<void()> handler) {
 		getContext().addKeyboardCommand(trigger_key, required_keys, handler);
 	}
-	
-	void setQuitHandler(std::function<bool()> handler){
+
+	void setQuitHandler(std::function<bool()> handler) {
 		getContext().setQuitHandler(handler);
 	}
-	
-	void startTransition(float duration, std::function<void(float)> transitionFn, std::function<void()> onComplete){
+
+	void startTransition(float duration, std::function<void(float)> transitionFn, std::function<void()> onComplete) {
 		getContext().addTransition(Transition(duration, transitionFn, onComplete));
 	}
-	
-	double getProgramTime(){
+
+	double getProgramTime() {
 		return getContext().getProgramTime();
 	}
-	
-	vec2 getScreenSize(){
+
+	vec2 getScreenSize() {
 		sf::Vector2u size = getContext().getRenderWindow().getSize();
 		return vec2((float)size.x, (float)size.y);
 	}
-	
-	vec2 getMousePos(){
+
+	vec2 getMousePos() {
 		return vec2(sf::Mouse::getPosition(getContext().getRenderWindow()));
 	}
-	
-	Context& getContext(){
+
+	Context& getContext() {
 		static Context context;
 		return context;
 	}
-	
-	void init(unsigned width, unsigned height, std::string title, int target_fps){
+
+	void init(unsigned width, unsigned height, std::string title, int target_fps) {
 		getContext().init(width, height, title, 1.0 / target_fps);
 	}
-	
-	void quit(bool force){
+
+	void quit(bool force) {
 		getContext().handleQuit(force);
 	}
-	
-	void run(){
+
+	void run() {
 		double prev_time = getContext().getProgramTime();
-		while (getContext().getRenderWindow().isOpen() && !getContext().hasQuit()){
+		while (getContext().getRenderWindow().isOpen() && !getContext().hasQuit()) {
 			sf::Event event;
-			while (getContext().getRenderWindow().pollEvent(event)){
-				switch (event.type){
+			while (getContext().getRenderWindow().pollEvent(event)) {
+				switch (event.type) {
 					case sf::Event::Closed:
 						quit();
 						break;
@@ -79,15 +79,15 @@ namespace ui {
 						getContext().setDraggingElement(nullptr);
 						break;
 					case sf::Event::TextEntered:
-						if (auto text_entry = getContext().getTextEntry()){
-							if (event.text.unicode >= 32 && event.text.unicode < 127){
+						if (auto text_entry = getContext().getTextEntry()) {
+							if (event.text.unicode >= 32 && event.text.unicode < 127) {
 								text_entry->write(static_cast<char>(event.text.unicode));
 							}
 						}
 						break;
 					case sf::Event::KeyPressed:
-						if (auto text_entry = getContext().getTextEntry()){
-							switch (event.key.code){
+						if (auto text_entry = getContext().getTextEntry()) {
+							switch (event.key.code) {
 								case Key::BackSpace:
 									text_entry->onBackspace();
 									break;
@@ -116,7 +116,7 @@ namespace ui {
 						} else {
 							getContext().handleKeyPress(event.key.code);
 						}
-						
+
 						break;
 					case sf::Event::KeyReleased:
 						getContext().handleKeyRelease(event.key.code);
@@ -125,7 +125,7 @@ namespace ui {
 					{
 						getContext().handleMouseDown(event.mouseButton.button,
 													 vec2((float)event.mouseButton.x,
-														  (float)event.mouseButton.y));
+													 (float)event.mouseButton.y));
 						break;
 					}
 					case sf::Event::MouseButtonReleased:
@@ -137,13 +137,13 @@ namespace ui {
 							(float)event.mouseWheelScroll.x,
 							(float)event.mouseWheelScroll.y
 						};
-						if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel){
+						if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel) {
 							getContext().handleScroll(pos, event.mouseWheelScroll.delta, 0.0f);
-						} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
+						} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel) {
 							getContext().handleScroll(pos, 0.0f, event.mouseWheelScroll.delta);
 						}
 					}
-						break;
+					break;
 				}
 			}
 
@@ -171,8 +171,8 @@ namespace ui {
 			root().renderChildren(getContext().getRenderWindow());
 
 			// highlight current element if alt is pressed
-			if (auto curr = getContext().getCurrentElement()){
-				if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))){
+			if (auto curr = getContext().getCurrentElement()) {
+				if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))) {
 					sf::RectangleShape rect(curr->getSize());
 					rect.setPosition(curr->rootPos());
 					rect.setFillColor(sf::Color(0));

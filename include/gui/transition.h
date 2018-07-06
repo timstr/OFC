@@ -11,7 +11,7 @@ namespace ui {
 
 		bool complete() const;
 
-		private:
+	private:
 		std::function<void(float)> transitionFn;
 		std::function<void()> onComplete;
 		bool completed;

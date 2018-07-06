@@ -4,8 +4,9 @@
 
 namespace ui {
 
+	template<typename NumberType, typename = std::enable_if_t<std::is_arithmetic<NumberType>::value>>
 	struct NumberTextEntry : ui::InlineElement {
-		NumberTextEntry(float defaultval, float _min, float _max, const sf::Font& font, std::function<void(float)> _callback){
+		NumberTextEntry(NumberType defaultval, NumberType _min, NumberType _max, const sf::Font& font, std::function<void(NumberType)> _callback) {
 			textfield = add<TextField>(defaultval, _min, _max, font, _callback);
 		}
 
@@ -14,64 +15,64 @@ namespace ui {
 			return true;
 		}
 
-		void setMinimum(float min){
+		void setMinimum(NumberType min) {
 			textfield->minimum = min;
 		}
-		float getMinimum() const {
+		NumberType getMinimum() const {
 			return textfield->minimum;
 		}
 
-		void setMaximum(float max){
+		void setMaximum(NumberType max) {
 			textfield->maximum = max;
 		}
-		float getMaximum(float max){
+		NumberType getMaximum(NumberType max) {
 			return textfield->maximum;
 		}
 
-		void setValue(float val){
+		void setValue(NumberType val) {
 			textfield->value = std::min(std::max(textfield->minimum, val), textfield->maximum);
 			textfield->setText(std::to_string(val));
 		}
-		float getValue() const {
+		NumberType getValue() const {
 			return textfield->value;
 		}
 
 	private:
 
 		struct TextField : TextEntry {
-			TextField(float defaultval, float _min, float _max, const sf::Font& font, std::function<void(float)> _callback)
+			TextField(NumberType defaultval, NumberType _min, NumberType _max, const sf::Font& font, std::function<void(NumberType)> _callback)
 				: TextEntry(toString(defaultval), font), value(defaultval), minimum(_min), maximum(_max), callback(_callback) {
 				setBackgroundColor(sf::Color(0xFFFFFFFF));
 				setTextColor(sf::Color(0xFF));
 			}
 
 			void onReturn(std::wstring entered_text) override {
-				if (validate(entered_text) && callback){
-					float val = stringToFloat(entered_text);
+				if (validate(entered_text) && callback) {
+					NumberType val = stringTo<NumberType>(entered_text);
 					callback(val);
 				}
 			}
 
 			void onType(std::wstring full_text) override {
-				if (validate(full_text)){
+				if (validate(full_text)) {
 					setBackgroundColor(sf::Color(0xFFFFFFFF));
 				} else {
 					setBackgroundColor(sf::Color(0xFF8080FF));
 				}
 			}
 
-			bool validate(const std::wstring& text){
-				float val = stringToFloat(text);
-				if (std::isnan(val)){
+			bool validate(const std::wstring& text) {
+				auto val = stringTo<NumberType>(text);
+				if (!val) {
 					return false;
 				}
-				return (val >= minimum) && (val <= maximum);
+				return (val.getValue() >= minimum) && (val.getValue() <= maximum);
 			}
-			std::function<void(float)> callback;
+			std::function<void(NumberType)> callback;
 
-			float value;
-			float minimum;
-			float maximum;
+			NumberType value;
+			NumberType minimum;
+			NumberType maximum;
 		};
 
 		std::shared_ptr<TextField> textfield;

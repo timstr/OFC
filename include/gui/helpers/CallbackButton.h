@@ -22,45 +22,47 @@ namespace ui {
 			active_color(0x888888FF),
 			state(State::Normal) {
 
+			setBorderThickness(1.0f);
+			setBorderColor(sf::Color(0xFF));
 			setBackgroundColor(normal_color);
 		}
 
-		void setNormalColor(sf::Color color){
+		void setNormalColor(sf::Color color) {
 			normal_color = color;
 		}
 		sf::Color getNormalColor() const {
 			return normal_color;
 		}
-		void setHoverColor(sf::Color color){
+		void setHoverColor(sf::Color color) {
 			hover_color = color;
 		}
 		sf::Color getHoverColor(sf::Color color) const {
 			return hover_color;
 		}
-		void setActiveColor(sf::Color color){
+		void setActiveColor(sf::Color color) {
 			active_color = color;
 		}
 		sf::Color getActiveColor() const {
 			return active_color;
 		}
 
-		void setCallback(std::function<void()> _callback){
+		void setCallback(std::function<void()> _callback) {
 			callback = _callback;
 		}
 
-		void setCaption(std::string _label){
+		void setCaption(std::string _label) {
 			label->setText(_label);
 		}
 
 		bool onLeftClick(int clicks) override {
-			if (callback){
+			if (callback) {
 				callback();
 				fadeColor(active_color, hover_color, 0.15f);
 			}
 			return true;
 		}
 		void onLeftRelease() override {
-			if (hovering()){
+			if (hovering()) {
 				state = State::Hover;
 			} else {
 				fadeColor(getBackgroundColor(), normal_color, 0.15f);
@@ -70,29 +72,21 @@ namespace ui {
 		}
 
 		bool onKeyDown(ui::Key key) override {
-			if (key == ui::Key::Return && callback){
+			if (key == ui::Key::Return && callback) {
 				callback();
 				fadeColor(active_color, hovering() ? hover_color : normal_color, 0.15f);
 			}
 			return true;
 		}
 
-		void render(sf::RenderWindow& rw) override {
-			sf::RectangleShape rect{getSize()};
-			rect.setFillColor(getBackgroundColor());
-			rect.setOutlineThickness(1.0f);
-			rect.setOutlineColor(sf::Color(0xFF));
-			rw.draw(rect);
-		}
-
 		void onMouseOver() override {
-			if (state == State::Normal){
+			if (state == State::Normal) {
 				state = State::Hover;
 				fadeColor(getBackgroundColor(), hover_color, 0.15f);
 			}
 		}
 		void onMouseOut() override {
-			if (state == State::Hover){
+			if (state == State::Hover) {
 				state = State::Normal;
 				fadeColor(getBackgroundColor(), normal_color, 0.15f);
 			}
@@ -105,9 +99,9 @@ namespace ui {
 		sf::Color normal_color, hover_color, active_color;
 		State state;
 
-		void fadeColor(sf::Color from, sf::Color to, float seconds){
+		void fadeColor(sf::Color from, sf::Color to, float seconds) {
 			auto self = getThisAs<CallbackButton>();
-			startTransition(seconds, [=](float t){
+			startTransition(seconds, [=](float t) {
 				auto color = sf::Color(
 					(uint8_t)(from.r * (1.0f - t) + to.r * t),
 					(uint8_t)(from.g * (1.0f - t) + to.g * t),

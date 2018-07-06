@@ -11,8 +11,8 @@ namespace ui {
 			value(std::min(std::max(defaultval, minimum), maximum)),
 			onChange(_onChange) {
 
-			setSize({100.0f, 35.0f}, true);
-			setBorderRadius(17.5f);
+			setSize({ 100.0f, 30.0f }, true);
+			setBackgroundColor(sf::Color(0xFFFFFFFF));
 			label = add<Text>(std::to_wstring(value), font);
 			handle = add<Handle>(*this);
 		}
@@ -27,21 +27,21 @@ namespace ui {
 			handle->stopDrag();
 		}
 
-		void setMinimum(float min){
+		void setMinimum(float min) {
 			minimum = min;
 		}
 		float getMinimum() const {
 			return minimum;
 		}
 
-		void setMaximum(float max){
+		void setMaximum(float max) {
 			maximum = max;
 		}
-		float getMaximum(float max){
+		float getMaximum(float max) {
 			return maximum;
 		}
 
-		void setValue(float val){
+		void setValue(float val) {
 			value = std::min(std::max(minimum, val), maximum);
 			label->setText(std::to_string(val));
 		}
@@ -49,12 +49,15 @@ namespace ui {
 			return value;
 		}
 
+		const std::shared_ptr<Element>& getHandle() const {
+			return handle;
+		}
+
 	private:
 		struct Handle : FreeElement {
 			Handle(Slider& _slider) : slider(_slider) {
 				float size = slider.getSize().y;
-				setSize({size, size}, true);
-				setBorderRadius(size * 0.5f);
+				setSize({ size, size }, true);
 				setBackgroundColor(sf::Color(0x80808080));
 				setBorderThickness(0.0f);
 			}

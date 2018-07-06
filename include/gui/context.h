@@ -126,7 +126,7 @@ namespace ui {
 		// set the current text entry
 		void setTextEntry(std::shared_ptr<TextEntry> textentry);
 
-		private:
+	private:
 
 		// flag for run() to stop
 		bool quit;

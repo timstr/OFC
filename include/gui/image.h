@@ -7,7 +7,7 @@ namespace ui {
 	struct Image : ui::InlineElement {
 		// construct a blank image
 		Image(unsigned width = 100, unsigned height = 100, sf::Color color = sf::Color(0xFFFFFFFF));
-		
+
 		// load an image from a file path
 		Image(const std::string& path, bool auto_size = true);
 
