@@ -180,6 +180,10 @@ namespace ui {
 		// set the current height. Choosing force = true will set the both the min and max height.
 		void setHeight(float height, bool force = false);
 
+		// called when the window changes size. Useful for size-dependent updates
+		// that should happen after the window resizes due to layout or other cause
+		virtual void onResize();
+
 		// set the display style
 		void setLayoutStyle(LayoutStyle style);
 
@@ -379,6 +383,7 @@ namespace ui {
 		void remove(std::shared_ptr<Element> element);
 
 		// release a child element, possibly to add to another element
+		// returns nullptr if the element is not found
 		std::shared_ptr<Element> release(std::shared_ptr<Element> element);
 
 		// get all children
@@ -403,7 +408,7 @@ namespace ui {
 		std::shared_ptr<Element> findElementAt(vec2 _pos, std::shared_ptr<Element> exclude = nullptr);
 
 		// render the element
-		virtual void render(sf::RenderWindow& renderwindow);
+		virtual void render(sf::RenderWindow& renderwindow) const;
 
 	private:
 

@@ -30,7 +30,9 @@ namespace ui {
 		// copy from an existing image
 		bool copyFrom(const sf::Image& img, bool auto_size = true);
 
-		void render(sf::RenderWindow& rw) override;
+		void onResize() override;
+
+		void render(sf::RenderWindow& rw) const override;
 
 	private:
 

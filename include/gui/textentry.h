@@ -18,7 +18,7 @@ namespace ui {
 		virtual void onReturn(std::wstring entered_text);
 		virtual void onType(std::wstring full_text);
 
-		void render(sf::RenderWindow& renderwindow) override;
+		void render(sf::RenderWindow& renderwindow) const override;
 
 		bool onKeyDown(Key key) override;
 		bool onLeftClick(int clicks) override;
@@ -33,11 +33,11 @@ namespace ui {
 		void onRight();
 		void onHome();
 		void onEnd();
-		void positionCursor();
+		void updateCursorPosition() const;
 
-		size_t cursor_index = 0;
-		float cursor_pos;
-		float cursor_width;
+		mutable size_t cursor_index = 0;
+		mutable float cursor_pos;
+		mutable float cursor_width;
 
 		friend void run();
 	};

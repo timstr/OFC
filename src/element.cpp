@@ -96,7 +96,9 @@ namespace ui {
 	void Element::setMinSize(vec2 _min_size) {
 		_min_size = vec2(std::max(_min_size.x, 0.0f), std::max(_min_size.y, 0.0f));
 		min_size = _min_size;
-		makeDirty();
+		if (min_size.x > size.x || min_size.y > size.y) {
+			makeDirty();
+		}
 	}
 
 	vec2 Element::getMaxSize() const {
@@ -117,7 +119,9 @@ namespace ui {
 	void Element::setMaxSize(vec2 _max_size) {
 		_max_size = vec2(std::max(_max_size.x, 0.0f), std::max(_max_size.y, 0.0f));
 		max_size = _max_size;
-		makeDirty();
+		if (max_size.x < size.x || max_size.y < size.y) {
+			makeDirty();
+		}
 	}
 
 	void Element::setMaxWidth(float width) {
@@ -154,6 +158,10 @@ namespace ui {
 			min_size.y = height;
 			max_size.y = height;
 		}
+	}
+
+	void Element::onResize() {
+
 	}
 
 	void Element::setLayoutStyle(LayoutStyle style) {
@@ -520,7 +528,7 @@ namespace ui {
 		return nullptr;
 	}
 
-	void Element::render(sf::RenderWindow& rw) {
+	void Element::render(sf::RenderWindow& rw) const {
 		rw.draw(display_rect);
 	}
 
@@ -773,6 +781,7 @@ namespace ui {
 			display_rect.setSize(size - vec2(2.0f, 2.0f));
 			updateChildPositions();
 			updatePosition();
+			onResize();
 			return false;
 		} else {
 			vec2 newsize = arrangeChildren(width_avail);
@@ -792,6 +801,7 @@ namespace ui {
 			}
 			display_rect.setSize(size - vec2(2.0f, 2.0f));
 			updateChildPositions();
+			onResize();
 			vec2 new_total_size = size + vec2(2.0f * margin, 2.0f * margin);
 			float diff = abs(old_total_size.x - new_total_size.x) + abs(old_total_size.y - new_total_size.y);
 			old_total_size = new_total_size;
@@ -985,6 +995,9 @@ namespace ui {
 									break;
 								case LayoutStyle::FloatRight:
 									right_elems.push_back(elem);
+									break;
+								default:
+									elem->update(far_away);
 									break;
 							}
 						}

@@ -23,7 +23,7 @@ namespace ui {
 		void setStyle(TextStyle style);
 		TextStyle getStyle() const;
 
-		void render(sf::RenderWindow& renderwin) override;
+		void render(sf::RenderWindow& renderwin) const override;
 
 	protected:
 

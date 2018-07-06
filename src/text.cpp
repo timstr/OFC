@@ -60,7 +60,7 @@ namespace ui {
 		return static_cast<TextStyle>(text.getStyle());
 	}
 
-	void Text::render(sf::RenderWindow& rw) {
+	void Text::render(sf::RenderWindow& rw) const {
 		Element::render(rw);
 		rw.draw(text);
 	}

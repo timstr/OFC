@@ -56,10 +56,10 @@ namespace ui {
 
 	}
 
-	void TextEntry::render(sf::RenderWindow& renderwindow) {
+	void TextEntry::render(sf::RenderWindow& renderwindow) const {
 		Text::render(renderwindow);
 		if (typing()) {
-			positionCursor();
+			updateCursorPosition();
 			sf::RectangleShape rect { vec2(cursor_width, (float)text.getCharacterSize()) };
 			rect.setFillColor(sf::Color(
 				text.getFillColor().r,
@@ -147,7 +147,7 @@ namespace ui {
 		updateSize();
 	}
 
-	void TextEntry::positionCursor() {
+	void TextEntry::updateCursorPosition() const {
 		cursor_index = std::min(cursor_index, text.getString().getSize());
 		cursor_pos = text.findCharacterPos(cursor_index).x;
 		if (cursor_index == text.getString().getSize()) {

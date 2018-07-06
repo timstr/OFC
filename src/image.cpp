@@ -48,10 +48,13 @@ bool ui::Image::copyFrom(const sf::Image& img, bool auto_size) {
 	return update();
 }
 
-void ui::Image::render(sf::RenderWindow& rw) {
+void ui::Image::onResize() {
 	sprite.setScale({
 		getSize().x / (float)image.getSize().x,
 		getSize().y / (float)image.getSize().y
 	});
+}
+
+void ui::Image::render(sf::RenderWindow& rw) const {
 	rw.draw(sprite);
 }

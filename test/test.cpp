@@ -232,7 +232,7 @@ struct TestElement : ui::FreeElement {
 
 int main(int argc, char** argcv) {
 
-	ui::init(1000, 800, "Tim's GUI Test", 30);
+	ui::init(1000, 800, "Tim's GUI Test", 60);
 
 	{
 		auto block = ui::root().add<ui::BlockElement>();
