@@ -16,7 +16,7 @@ namespace ui {
 		std::function<void()> onComplete;
 		bool completed;
 		float duration;
-		double timestamp;
+		float timestamp;
 	};
 
 }

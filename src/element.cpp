@@ -25,6 +25,7 @@ namespace ui {
 		disabled(false),
 		visible(true),
 		clipping(false),
+		keyboard_navigation(true),
 		dirty(true),
 		layout_index(0.0f),
 		padding(0.0f),
@@ -46,6 +47,18 @@ namespace ui {
 
 	bool Element::isEnabled() const {
 		return !disabled;
+	}
+
+	void Element::enableKeyboardNavigation() {
+		keyboard_navigation = true;
+	}
+
+	void Element::disableKeyboardNavigation() {
+		keyboard_navigation = false;
+	}
+
+	bool Element::isKeyboardNavigable() const {
+		return keyboard_navigation;
 	}
 
 	void Element::setVisible(bool is_visible) {
@@ -530,11 +543,103 @@ namespace ui {
 		rw.draw(display_rect);
 	}
 
+	bool Element::navigateToPreviousElement() {
+		auto par = parent.lock();
+		if (!par) {
+			return false;
+		}
+		std::map<LayoutIndex, std::shared_ptr<Element>> siblings;
+		for (const auto& sib : par->getChildren()) {
+			if (!sib->disabled) {
+				siblings[sib->layout_index] = sib;
+			}
+		}
+		if (siblings.size() < 2) {
+			return par->navigateToPreviousElement();
+		}
+
+		auto self = siblings.find(this->layout_index);
+
+		if (self == siblings.begin()) {
+			self = siblings.end();
+		}
+		--self;
+		self->second->grabFocus();
+		return true;
+	}
+
+	bool Element::navigateToNextElement() {
+		auto par = parent.lock();
+		if (!par) {
+			return false;
+		}
+		std::map<LayoutIndex, std::shared_ptr<Element>> siblings;
+		for (const auto& sib : par->getChildren()) {
+			if (!sib->disabled) {
+				siblings[sib->layout_index] = sib;
+			}
+		}
+		if (siblings.size() < 2) {
+			return par->navigateToNextElement();
+		}
+
+		auto self = siblings.find(this->layout_index);
+
+		++self;
+		if (self == siblings.end()) {
+			self = siblings.begin();
+		}
+		self->second->grabFocus();
+		return true;
+	}
+
+	bool Element::navigateIn() {
+		std::map<LayoutIndex, std::shared_ptr<Element>> elems;
+		for (const auto& child : getChildren()) {
+			if (!child->disabled) {
+				elems[child->layout_index] = child;
+			}
+		}
+		if (elems.size() == 0) {
+			grabFocus();
+			return true;
+		} else if (elems.size() == 1) {
+			return elems.begin()->second->navigateIn();
+		} else if (elems.size() > 1) {
+			elems.begin()->second->grabFocus();
+			return true;
+		}
+		return false;
+	}
+
+	bool Element::navigateOut() {
+		auto par = parent.lock();
+		if (!par) {
+			return false;
+		}
+		int count = 0;
+		for (const auto& sib : par->getChildren()) {
+			if (!sib->disabled) {
+				++count;
+			}
+		}
+		if (count >= 2) {
+			par->grabFocus();
+			return true;
+		} else {
+			return par->navigateOut();
+		}
+	}
+
 	void Element::renderChildren(sf::RenderWindow& renderwindow) {
 		for (auto it = children.begin(); it != children.end(); ++it) {
 			const std::shared_ptr<Element>& child = *it;
 			if (child->visible) {
 				if (child->clipping) {
+					auto childrect = sf::FloatRect(getContext().getViewOffset() + child->pos, child->size);
+					if (!getContext().getClipRect().intersects(childrect)) {
+						continue;
+					}
 					getContext().translateView(child->pos);
 					sf::FloatRect rect = getContext().getClipRect();
 					vec2 pos = getContext().getViewOffset();
@@ -588,6 +693,21 @@ namespace ui {
 			}
 			i += 1.0f;
 		}
+	}
+
+	std::vector<std::pair<std::shared_ptr<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const {
+		std::vector<std::pair<std::shared_ptr<Element>, Element::WhiteSpace>> sorted_elements;
+
+		sorted_elements.reserve(children.size() + white_spaces.size());
+
+		for (const auto& child : children) {
+			sorted_elements.push_back({ child, Element::WhiteSpace(Element::WhiteSpace::None, 0.0f) });
+		}
+		for (const auto& space : white_spaces) {
+			sorted_elements.push_back({ nullptr, space });
+		}
+
+		return sorted_elements;
 	}
 
 	const std::vector<std::shared_ptr<Element>>& Element::getChildren() const {
@@ -815,14 +935,7 @@ namespace ui {
 			: self(_self),
 			width_avail(_width_avail) {
 
-			sorted_elements.reserve(_self.children.size() + _self.white_spaces.size());
-
-			for (const auto& child : _self.children) {
-				sorted_elements.push_back({ child, Element::WhiteSpace(Element::WhiteSpace::None, 0.0f) });
-			}
-			for (const auto& space : _self.white_spaces) {
-				sorted_elements.push_back({ nullptr, space });
-			}
+			sorted_elements = self.sortChildrenByLayoutIndex();
 
 			reset();
 			auto comp = [](const Child& l, const Child& r) {

@@ -4,6 +4,8 @@
 
 namespace ui {
 
+	// TODO: increment/decrement when left/right are pressed
+
 	struct Slider : InlineElement {
 		Slider(float defaultval, float min, float max, sf::Font& font, std::function<void(float)> _onChange)
 			: minimum(std::min(min, max)),

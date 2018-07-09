@@ -9,6 +9,8 @@
 
 namespace ui {
 
+	// TODO: document
+
 	Element& root();
 
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler);
@@ -17,7 +19,7 @@ namespace ui {
 
 	void startTransition(float duration, std::function<void(float)> transitionFn, std::function<void()> onComplete = {});
 
-	double getProgramTime();
+	float getProgramTime();
 
 	vec2 getScreenSize();
 

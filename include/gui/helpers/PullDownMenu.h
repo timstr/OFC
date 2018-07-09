@@ -4,6 +4,8 @@
 
 namespace ui {
 
+	// TODO: make keyboard navigation friendly
+
 	template<typename Type>
 	struct PullDownMenu : InlineElement {
 		PullDownMenu(std::vector<std::pair<Type, std::string>> options, sf::Font& font, std::function<void(const Type&)> _onSelect)

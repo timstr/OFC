@@ -4,6 +4,8 @@
 
 namespace ui {
 
+	// TODO: add toggle button
+
 	struct CallbackButton : InlineElement {
 	private:
 		enum class State {

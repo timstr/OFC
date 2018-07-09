@@ -129,6 +129,15 @@ namespace ui {
 		// returns true if the element can receive input
 		bool isEnabled() const;
 
+		// allow child elements to be navigated using the keyboard
+		void enableKeyboardNavigation();
+
+		// prevent child elements from being navigated using the keyboard
+		void disableKeyboardNavigation();
+
+		// returns true if child elements can be navigated using the keyboard
+		bool isKeyboardNavigable() const;
+
 		// set the visibility of the element
 		void setVisible(bool is_visible);
 
@@ -421,6 +430,13 @@ namespace ui {
 		bool visible;
 		bool clipping;
 
+		bool keyboard_navigation;
+
+		bool navigateToPreviousElement();
+		bool navigateToNextElement();
+		bool navigateIn();
+		bool navigateOut();
+
 		vec2 pos;
 		vec2 size;
 		vec2 min_size;
@@ -473,6 +489,8 @@ namespace ui {
 			LayoutIndex layout_index;
 			unsigned charsize;
 		};
+
+		std::vector<std::pair<std::shared_ptr<Element>, WhiteSpace>> sortChildrenByLayoutIndex() const;
 
 		std::weak_ptr<Element> parent;
 		std::vector<std::shared_ptr<Element>> children;

@@ -16,11 +16,18 @@ namespace ui {
 		return nullptr;
 	}
 
-	Context::Context() : doubleclicktime(0.25f), quit(false), current_element(root().shared_this) {
+	Context::Context() :
+		quit(false),
+		render_delay(1.0f / 30.0f),
+		doubleclicktime(0.25f),
+		current_element(root().shared_this) {
 
+		program_time = clock.getElapsedTime().asSeconds();
+		highlight_timestamp = clock.getElapsedTime() - sf::seconds(10.0f);
+		click_timestamp = clock.getElapsedTime() - sf::seconds(10.0f);
 	}
 
-	void Context::init(unsigned width, unsigned height, std::string title, double _render_delay) {
+	void Context::init(unsigned width, unsigned height, std::string title, float _render_delay) {
 		render_delay = _render_delay;
 		sf::ContextSettings settings;
 		settings.antialiasingLevel = 8;
@@ -176,35 +183,72 @@ namespace ui {
 	}
 
 	void Context::handleKeyPress(Key key) {
-		auto it = commands.begin();
+		// search for longest matching set of keys in registered commands
 		size_t max = 0;
-		auto current_it = commands.end();
-		while (it != commands.end()) {
-			if (it->first.first == key) {
+		auto current_cmd = commands.end();
+		for (auto cmd_it = commands.begin(), end = commands.end(); cmd_it != end; ++cmd_it) {
+			if (cmd_it->first.first == key) {
 				bool match = true;
-				for (int i = 0; i < it->first.second.size() && match; i++) {
-					match = sf::Keyboard::isKeyPressed(it->first.second[i]);
+				for (int i = 0; i < cmd_it->first.second.size() && match; i++) {
+					match = sf::Keyboard::isKeyPressed(cmd_it->first.second[i]);
 				}
-				if (match && it->first.second.size() >= max) {
-					max = it->first.second.size();
-					current_it = it;
+				if (match && cmd_it->first.second.size() >= max) {
+					max = cmd_it->first.second.size();
+					current_cmd = cmd_it;
 				}
 			}
-			it++;
 		}
 
-		if (current_it != commands.end()) {
-			current_it->second();
+		if (current_cmd != commands.end()) {
+			// if one was found, invoke that command
+			current_cmd->second();
+			return;
+		}
+
+		// if no command was found, send key stroke to the current element
+		auto elem = propagate(current_element, &Element::onKeyDown, key);
+		// and send key up to last element receiving same keystroke
+		// in case of switching focus while key is held
+		auto key_it = keys_pressed.find(key);
+		if (key_it != keys_pressed.end()) {
+			if (key_it->second && key_it->second != elem) {
+				key_it->second->onKeyUp(key);
+				key_it->second = elem;
+			}
 		} else {
-			auto elem = propagate(current_element, &Element::onKeyDown, key);
-			auto it = keys_pressed.find(key);
-			if (it != keys_pressed.end()) {
-				if (it->second && it->second != elem) {
-					it->second->onKeyUp(key);
-					it->second = elem;
+			keys_pressed[key] = elem;
+		}
+
+		// keyboard navigation
+		auto parent = current_element->parent.lock();
+		if (parent && parent->keyboard_navigation) {
+			if (key == ui::Key::Tab && (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift))) {
+				// navigate to previous element
+				if (current_element->navigateToPreviousElement()) {
+					highlightCurrentElement();
+					return;
 				}
-			} else {
-				keys_pressed[key] = elem;
+				highlightCurrentElement();
+			} else if (key == ui::Key::Tab) {
+				// navigate to next element
+				if (current_element->navigateToNextElement()) {
+					highlightCurrentElement();
+					return;
+				}
+				highlightCurrentElement();
+			} else if (key == ui::Key::Return) {
+				// navigate in
+				if (current_element->navigateIn()) {
+					highlightCurrentElement();
+					return;
+				}
+			} else if (key == ui::Key::Escape) {
+				// navigate out
+				if (current_element->navigateOut()) {
+					highlightCurrentElement();
+					return;
+				}
+				highlightCurrentElement();
 			}
 		}
 	}
@@ -291,7 +335,7 @@ namespace ui {
 		return renderwindow;
 	}
 
-	double Context::getRenderDelay() {
+	float Context::getRenderDelay() {
 		return render_delay;
 	}
 
@@ -333,10 +377,10 @@ namespace ui {
 	}
 
 	void Context::updateTime() {
-		program_time = clock.getElapsedTime().asMilliseconds() / 1000.0;
+		program_time = clock.getElapsedTime().asSeconds();
 	}
 
-	double Context::getProgramTime() const {
+	float Context::getProgramTime() const {
 		return program_time;
 	}
 
@@ -363,6 +407,14 @@ namespace ui {
 
 	void Context::setTextEntry(std::shared_ptr<TextEntry> textentry) {
 		text_entry = textentry;
+	}
+
+	void Context::highlightCurrentElement() {
+		highlight_timestamp = clock.getElapsedTime();
+	}
+
+	float Context::timeSinceHighlight() const {
+		return program_time - highlight_timestamp.asSeconds();
 	}
 
 	void Context::updateView() {

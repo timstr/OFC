@@ -11,7 +11,7 @@ namespace ui {
 		Context();
 
 		// creates the application window and initializes rendering
-		void init(unsigned width, unsigned height, std::string title, double _render_delay);
+		void init(unsigned width, unsigned height, std::string title, float _render_delay);
 
 		// adds a transition to be applied when the screen redraws
 		void addTransition(Transition transition);
@@ -71,7 +71,7 @@ namespace ui {
 		sf::RenderWindow& getRenderWindow();
 
 		// get the desired time between renders
-		double getRenderDelay();
+		float getRenderDelay();
 
 		// translate the rendering context
 		void translateView(vec2 offset);
@@ -101,7 +101,7 @@ namespace ui {
 		void updateTime();
 
 		// return the cached program time
-		double getProgramTime() const;
+		float getProgramTime() const;
 
 		// get the dragging element
 		std::shared_ptr<Element> getDraggingElement() const;
@@ -126,15 +126,21 @@ namespace ui {
 		// set the current text entry
 		void setTextEntry(std::shared_ptr<TextEntry> textentry);
 
+		// highlight the current element
+		void highlightCurrentElement();
+
+		// time since the current element was highlighted	
+		float timeSinceHighlight() const;
+
 	private:
 
 		// flag for run() to stop
 		bool quit;
 		// desired time between frames, in seconds
-		double render_delay;
+		float render_delay;
 
 		// cached current program time
-		double program_time;
+		float program_time;
 
 		// the renderwindow to which all ui elements are drawn
 		sf::RenderWindow renderwindow;
@@ -150,6 +156,9 @@ namespace ui {
 
 		// the element currently in focus
 		std::shared_ptr<Element> current_element;
+
+		// time when current element was highlighted
+		sf::Time highlight_timestamp;
 
 		// the text entry currently being typed into
 		std::shared_ptr<TextEntry> text_entry;

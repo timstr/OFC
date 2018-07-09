@@ -25,6 +25,9 @@ sf::Font& getFont() {
 
 struct TestElement : ui::FreeElement {
 	TestElement(std::string name) : name(name) {
+
+		enableKeyboardNavigation();
+
 		std::cout << name << " was constructed" << std::endl;
 		changeColor();
 		label = add<ui::Text>(name, getFont());
@@ -160,7 +163,7 @@ struct TestElement : ui::FreeElement {
 
 	bool onKeyDown(ui::Key key) override {
 		std::cout << name << " - [" << key << "] was pressed" << std::endl;
-		if (key == ui::Key::Escape) {
+		if (key == ui::Key::Delete) {
 			close();
 		}
 		return true;
@@ -233,7 +236,7 @@ struct TestElement : ui::FreeElement {
 
 int main(int argc, char** argcv) {
 
-	ui::init(1000, 800, "Tim's GUI Test", 60);
+	ui::init(1000, 800, "Tim's GUI Test", 120);
 
 	{
 		auto block = ui::root().add<ui::BlockElement>();

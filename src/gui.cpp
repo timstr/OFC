@@ -38,7 +38,7 @@ namespace ui {
 		getContext().addTransition(Transition(duration, transitionFn, onComplete));
 	}
 
-	double getProgramTime() {
+	float getProgramTime() {
 		return getContext().getProgramTime();
 	}
 
@@ -57,7 +57,7 @@ namespace ui {
 	}
 
 	void init(unsigned width, unsigned height, std::string title, int target_fps) {
-		getContext().init(width, height, title, 1.0 / target_fps);
+		getContext().init(width, height, title, 1.0f / target_fps);
 	}
 
 	void quit(bool force) {
@@ -65,7 +65,7 @@ namespace ui {
 	}
 
 	void run() {
-		double prev_time = getContext().getProgramTime();
+		float prev_time = getContext().getProgramTime();
 		while (getContext().getRenderWindow().isOpen() && !getContext().hasQuit()) {
 			sf::Event event;
 			while (getContext().getRenderWindow().pollEvent(event)) {
@@ -172,12 +172,23 @@ namespace ui {
 			root().renderChildren(getContext().getRenderWindow());
 
 			// highlight current element if alt is pressed
+			if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))) {
+				getContext().highlightCurrentElement();
+			}
+
+			// highlight
 			if (auto curr = getContext().getCurrentElement()) {
-				if ((sf::Keyboard::isKeyPressed(Key::LAlt) || sf::Keyboard::isKeyPressed(Key::RAlt))) {
+				float elapsed = getContext().timeSinceHighlight();
+
+				if (elapsed <= 2.0f) {
+					float value = exp(-elapsed * 3.453877f);
+					sf::Color color { 0xFFFF00FF };
+					color.a = (uint8_t)(std::min(value, 1.0f) * 255.0f);
+
 					sf::RectangleShape rect(curr->getSize());
 					rect.setPosition(curr->rootPos());
 					rect.setFillColor(sf::Color(0));
-					rect.setOutlineColor(sf::Color(0xFFFF0080));
+					rect.setOutlineColor(color);
 					rect.setOutlineThickness(2);
 					getContext().getRenderWindow().draw(rect);
 				}
@@ -186,9 +197,9 @@ namespace ui {
 			getContext().getRenderWindow().display();
 
 			// sleep only as long as needed
-			double now = getContext().getProgramTime();
-			double delay = getContext().getRenderDelay();
-			sf::sleep(sf::seconds(std::max(0.0f, (float)(getContext().getRenderDelay() - (now - prev_time)))));
+			float now = getContext().getProgramTime();
+			float delay = getContext().getRenderDelay();
+			sf::sleep(sf::seconds(std::max(0.0f, getContext().getRenderDelay() - now + prev_time)));
 			prev_time = now;
 		}
 
