@@ -34,7 +34,6 @@ namespace ui {
 		display_rect.setFillColor(sf::Color(0));
 		display_rect.setOutlineThickness(0.0f);
 		display_rect.setOutlineColor(sf::Color(0xFF));
-		display_rect.setPosition({ 1.0f, 1.0f });
 	}
 
 	void Element::disable() {
@@ -777,7 +776,7 @@ namespace ui {
 				std::min(std::max({ size.x, contentsize.x, min_size.x }), max_size.x),
 				std::min(std::max({ size.y, contentsize.y, min_size.y }), max_size.y)
 			);
-			display_rect.setSize(size - vec2(2.0f, 2.0f));
+			display_rect.setSize(size);
 			updateChildPositions();
 			updatePosition();
 			onResize();
@@ -798,7 +797,7 @@ namespace ui {
 					std::min(std::max(newsize.y, min_size.y), max_size.y)
 				);
 			}
-			display_rect.setSize(size - vec2(2.0f, 2.0f));
+			display_rect.setSize(size);
 			updateChildPositions();
 			onResize();
 			vec2 new_total_size = size + vec2(2.0f * margin, 2.0f * margin);

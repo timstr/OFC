@@ -250,6 +250,7 @@ int main(int argc, char** argcv) {
 		block->setContentAlign(ui::ContentAlign::Justify);
 
 		auto widg = block->add<ui::RightFloatingElement>();
+		widg->setMargin(5.0f);
 		widg->setBorderThickness(1.0f);
 		widg->setBorderRadius(5.0f);
 		widg->add<ui::Text>("Table of Contents", getFont(), sf::Color(0x404040FF), 30, ui::TextStyle::Underlined);

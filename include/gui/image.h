@@ -4,27 +4,22 @@
 
 namespace ui {
 
-	// TODO: allow sharing resources, maybe via std::shared_ptr<sf::Texture>?
-
 	struct Image : ui::InlineElement {
-		// construct a blank image
-		Image(unsigned width = 100, unsigned height = 100, sf::Color color = sf::Color(0xFFFFFFFF));
-
 		// load an image from a file path
+		// using the same path multiple times will lead to many texture copies and wasted memory
+		// in this case, consider using a shared texture
 		Image(const std::string& path, bool auto_size = true);
 
-		// construct from an existing image
+		// copy from an existing image
+		// if used multiple times, this will lead to many texture copies and wasted memory
+		// in this case, consider using a shared texture
 		Image(const sf::Image& img, bool auto_size = true);
 
-		// get the stored image
-		sf::Image& getImage();
+		// use an existing shared texture
+		Image(const std::shared_ptr<sf::Texture>& _texture, bool autosize = true);
 
-		// apply changes made to the image so that they can be seen when rendered
-		// should only be called after modifying the internal image through getImage()
-		bool update();
-
-		// reset the stored image
-		bool create(unsigned width = 100, unsigned height = 100, sf::Color color = sf::Color(0xFFFFFFFF));
+		// get the shared texture
+		const std::shared_ptr<sf::Texture>& getTexture() const;
 
 		// load an image from a file path
 		bool loadFromFile(const std::string& path, bool auto_size = true);
@@ -44,14 +39,16 @@ namespace ui {
 		// copy from an existing image
 		bool copyFrom(const sf::Image& img, bool auto_size = true);
 
+		// use a shared texture
+		bool setTexture(const std::shared_ptr<sf::Texture>& _texture, bool auto_size = true);
+
+	private:
+
 		void onResize() override;
 
 		void render(sf::RenderWindow& rw) const override;
 
-	private:
-
-		sf::Image image;
-		sf::Texture texture;
+		std::shared_ptr<sf::Texture> texture;
 		sf::Sprite sprite;
 	};
 

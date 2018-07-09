@@ -1,9 +1,5 @@
 #include "gui/image.h"
 
-ui::Image::Image(unsigned width, unsigned height, sf::Color color) {
-	create(width, height, color);
-}
-
 ui::Image::Image(const std::string& path, bool auto_size) {
 	loadFromFile(path, auto_size);
 }
@@ -12,31 +8,20 @@ ui::Image::Image(const sf::Image& img, bool auto_size) {
 	copyFrom(img, auto_size);
 }
 
-sf::Image& ui::Image::getImage() {
-	return image;
+ui::Image::Image(const std::shared_ptr<sf::Texture>& _texture, bool auto_size) {
+	setTexture(_texture, auto_size);
 }
 
-bool ui::Image::update() {
-	bool loaded = texture.loadFromImage(image);
-	sprite.setTexture(texture, true);
-	return loaded;
-}
-
-bool ui::Image::create(unsigned width, unsigned height, sf::Color color) {
-	setSize({ (float)width, (float)height }, true);
-	image.create(width, height, color);
-	return update();
+const std::shared_ptr<sf::Texture>& ui::Image::getTexture() const {
+	return texture;
 }
 
 bool ui::Image::loadFromFile(const std::string& path, bool auto_size) {
+	sf::Image image;
 	if (!image.loadFromFile(path)) {
 		return false;
 	}
-	if (auto_size) {
-		auto imgsize = image.getSize();
-		setSize({ (float)imgsize.x, (float)imgsize.y }, true);
-	}
-	return update();
+	return copyFrom(image, auto_size);
 }
 
 void ui::Image::setAlpha(uint8_t alpha) {
@@ -57,19 +42,31 @@ sf::Color ui::Image::getColorMod() const {
 	return sprite.getColor();
 }
 
-bool ui::Image::copyFrom(const sf::Image& img, bool auto_size) {
-	image = img;
-	if (auto_size) {
-		auto imgsize = image.getSize();
-		setSize({ (float)imgsize.x, (float)imgsize.y }, true);
+bool ui::Image::copyFrom(const sf::Image& image, bool auto_size) {
+	auto tex = std::make_shared<sf::Texture>();
+	if (!tex->loadFromImage(image)) {
+		return false;
 	}
-	return update();
+	return setTexture(tex, auto_size);
+}
+
+bool ui::Image::setTexture(const std::shared_ptr<sf::Texture>& _texture, bool auto_size) {
+	texture = _texture;
+	if (!texture) {
+		return false;
+	}
+	if (auto_size) {
+		auto s = texture->getSize();
+		setSize({ (float)s.x, (float)s.y }, true);
+	}
+	sprite.setTexture(*texture);
+	return true;
 }
 
 void ui::Image::onResize() {
 	sprite.setScale({
-		getSize().x / (float)image.getSize().x,
-		getSize().y / (float)image.getSize().y
+		getSize().x / (float)texture->getSize().x,
+		getSize().y / (float)texture->getSize().y
 	});
 }
 
