@@ -25,6 +25,7 @@ set(headers
 	include/gui/helpers/PullDownMenu.h
 	include/gui/helpers/Slider.h
 	include/gui/helpers/TextEntryHelper.h
+	include/gui/helpers/pi.h
 )
 
 set(srcs

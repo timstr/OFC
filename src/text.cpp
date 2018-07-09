@@ -12,7 +12,6 @@ namespace ui {
 		setBorderColor(sf::Color(0));
 		setBackgroundColor(sf::Color(0));
 		setStyle(style);
-		setMargin(0.0f);
 		disable();
 		setCharacterSize(charsize);
 	}

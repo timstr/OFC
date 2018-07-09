@@ -17,7 +17,6 @@ namespace ui {
 			caption = add<Text>(options.empty() ? "" : options.front().second, font);
 
 			list = add<FreeElement>();
-			list->setPadding(0.0f);
 			list->setVisible(false);
 			for (const auto& option : options) {
 				Type value = option.first;
@@ -61,7 +60,6 @@ namespace ui {
 			ListItem(std::string _text, sf::Font& _font, std::function<void()> _callback) : callback(_callback) {
 				add<Text>(_text, _font);
 				setMinSize({ 0.0f, 20.0f });
-				setMargin(0.0f);
 				setBorderColor(sf::Color(0xFF));
 				setBorderThickness(1.0f);
 				setBackgroundColor(sf::Color(0xBBBBBBFF));

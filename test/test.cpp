@@ -1,5 +1,6 @@
 ﻿#include "gui/gui.h"
 #include "gui/helpers.h"
+#include "gui/helpers/pi.h"
 
 #include "gui/roundrectangle.h"
 
@@ -292,14 +293,11 @@ int main(int argc, char** argcv) {
 		auto output = block->add<ui::BlockElement>();
 		output->setBackgroundColor(sf::Color(0xFF));
 		output->setBorderRadius(10.0f);
-		output->setPadding(0.0f);
 		output->setMargin(10.0f);
 		output->setHeight(100.0f, true);
 		output->setClipping(true);
 
 		auto textcont = output->add<ui::FreeElement>();
-		textcont->setPadding(0.0f);
-		textcont->setMargin(0.0f);
 		textcont->setXPositionStyle(ui::PositionStyle::InsideLeft, 5.0f);
 		textcont->setYPositionStyle(ui::PositionStyle::InsideBottom, 5.0f);
 
@@ -323,7 +321,6 @@ int main(int argc, char** argcv) {
 		blob->add<ui::NumberTextEntry<int>>(50, 0, 100, getFont(), [&](int val) {
 			log(std::to_string(val));
 		});
-
 	}
 
 	ui::run();

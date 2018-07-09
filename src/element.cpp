@@ -421,7 +421,6 @@ namespace ui {
 
 	void Element::writePageBreak(float height) {
 		auto br = add<BlockElement>();
-		br->setPadding(0.0f);
 		br->setMargin(height * 0.5f);
 		br->setBorderColor(sf::Color(0));
 		br->setBackgroundColor(sf::Color(0));
@@ -899,11 +898,24 @@ namespace ui {
 			// and inline elements, returning the maximum width needed or the current
 			// available width if it would be exceeded without breaking onto a new line
 			auto layoutBatch = [&, this]() -> float {
+
+				// maximum natural size of left floating elements
 				float lwidth = 0.0f;
+
+				// maximum natural size of right floating elements
 				float rwidth = 0.0f;
+
+				// current size of inline elements
 				float iwidth_current = 0.0f;
+
+				// maximum size of inline elements
 				float iwidth = 0.0f;
+
+				// true if the available size is exceeded
 				bool exceeded_width = false;
+
+				// width of the largest element
+				float largest_width = 0.0f;
 
 				std::vector<std::shared_ptr<Element>> line;
 
@@ -913,6 +925,7 @@ namespace ui {
 					} else {
 						lwidth += elem->size.x + 2.0f * elem->margin;
 					}
+					largest_width = std::max(largest_width, elem->size.x);
 				}
 				for (const auto& elem : right_elems) {
 					if (arrangeFloatingRight(elem)) {
@@ -920,6 +933,7 @@ namespace ui {
 					} else {
 						lwidth += elem->size.x + 2.0f * elem->margin;
 					}
+					largest_width = std::max(largest_width, elem->size.x);
 				}
 				for (const auto& child : inline_children) {
 					const std::shared_ptr<Element>& elem = child.first;
@@ -933,6 +947,7 @@ namespace ui {
 							iwidth_current += elem->size.x + 2.0f * elem->margin;
 						}
 						line.push_back(elem);
+						largest_width = std::max(largest_width, elem->size.x);
 					} else {
 						const Element::WhiteSpace& space = child.second;
 						if (space.type == Element::WhiteSpace::LineBreak) {
@@ -958,7 +973,7 @@ namespace ui {
 				right_elems.clear();
 				inline_children.clear();
 				if (exceeded_width) {
-					return this->width_avail;
+					return std::max(this->width_avail, largest_width);
 				} else {
 					return lwidth + rwidth + iwidth + 2.0f * self.padding;
 				}
@@ -1019,7 +1034,7 @@ namespace ui {
 				self.layout_style == LayoutStyle::FloatLeft ||
 				self.layout_style == LayoutStyle::FloatRight;
 
-			if (should_shrink && max_width < width_avail) {
+			if ((should_shrink && max_width < width_avail) || (max_width > width_avail && (max_width <= self.max_size.x))) {
 				width_avail = max_width;
 				reset();
 				layoutEverything();

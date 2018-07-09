@@ -8,17 +8,18 @@
 
 namespace ui {
 
+	namespace {
+		std::shared_ptr<Element> root_ptr;
+	}
+
 	Element& root() {
 		static bool initialized = false;
-		static std::shared_ptr<Element> root;
 		if (!initialized) {
 			Element* rawroot = new FreeElement();
-			root = rawroot->shared_from_this();
-			root->setMargin(0.0f);
-			root->setPadding(0.0f);
+			root_ptr = rawroot->shared_from_this();
 			initialized = true;
 		}
-		return *root;
+		return *root_ptr;
 	}
 
 	void addKeyboardCommand(Key trigger_key, std::function<void()> handler) {
@@ -191,6 +192,10 @@ namespace ui {
 			prev_time = now;
 		}
 
-		root().clear();
+		// remove all windows from and close root
+		root().close();
+
+		// and allow root to be destroyed
+		root_ptr = nullptr;
 	}
 }

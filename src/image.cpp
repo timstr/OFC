@@ -39,6 +39,24 @@ bool ui::Image::loadFromFile(const std::string& path, bool auto_size) {
 	return update();
 }
 
+void ui::Image::setAlpha(uint8_t alpha) {
+	sf::Color colormod = sprite.getColor();
+	colormod.a = alpha;
+	sprite.setColor(colormod);
+}
+
+uint8_t ui::Image::getAlpha() const {
+	return sprite.getColor().a;
+}
+
+void ui::Image::setColorMod(sf::Color color) {
+	sprite.setColor(color);
+}
+
+sf::Color ui::Image::getColorMod() const {
+	return sprite.getColor();
+}
+
 bool ui::Image::copyFrom(const sf::Image& img, bool auto_size) {
 	image = img;
 	if (auto_size) {

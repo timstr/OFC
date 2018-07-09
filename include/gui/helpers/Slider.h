@@ -44,6 +44,7 @@ namespace ui {
 		void setValue(float val) {
 			value = std::min(std::max(minimum, val), maximum);
 			label->setText(std::to_string(val));
+			moveHandle(value);
 		}
 		float getValue() const {
 			return value;
@@ -53,7 +54,18 @@ namespace ui {
 			return handle;
 		}
 
+		void onResize() override {
+			handle->setSize({ getSize().y, getSize().y });
+			moveHandle(value);
+		}
+
 	private:
+
+		void moveHandle(float val) {
+			float x = (val - minimum) / (maximum - minimum) * (getSize().x - handle->getSize().x);
+			handle->setPos({ x, 0 });
+		}
+
 		struct Handle : FreeElement {
 			Handle(Slider& _slider) : slider(_slider) {
 				float size = slider.getSize().y;
