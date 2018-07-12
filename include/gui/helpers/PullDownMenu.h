@@ -4,12 +4,10 @@
 
 namespace ui {
 
-	// TODO: make keyboard navigation friendly
-
 	template<typename Type>
 	struct PullDownMenu : InlineElement {
 		PullDownMenu(std::vector<std::pair<Type, std::string>> options, sf::Font& font, std::function<void(const Type&)> _onSelect)
-			: collapsed(true), onSelect(_onSelect) {
+			: onSelect(_onSelect) {
 
 			setMinSize({ 0.0f, 20.0f });
 			setBackgroundColor(sf::Color(0xBBBBBBFF));
@@ -19,7 +17,6 @@ namespace ui {
 			caption = add<Text>(options.empty() ? "" : options.front().second, font);
 
 			list = add<FreeElement>();
-			list->setVisible(false);
 			for (const auto& option : options) {
 				Type value = option.first;
 				std::string desc = option.second;
@@ -28,26 +25,53 @@ namespace ui {
 					if (this->onSelect) {
 						this->onSelect(value);
 					}
-					this->list->setVisible(false);
+					this->hideList();
 					this->grabFocus();
 				});
 			}
+			hideList();
 		}
 		PullDownMenu(std::vector<Type> options, sf::Font& font, std::function<void(const Type&)> _onSelect)
 			: PullDownMenu(generateDescriptions(options), font, _onSelect) {
 		}
 
-		bool onLeftClick(int clicks) override {
+	private:
+
+		void showList() {
+			grabFocus();
 			bringToFront();
-			list->setVisible(true);
+			adopt(list);
+			list->grabFocus();
+		}
+
+		void hideList() {
+			release(list);
+		}
+
+		bool onLeftClick(int clicks) override {
+			showList();
 			return true;
 		}
 
-		void onLoseFocus() override {
-			list->setVisible(false);
+		bool onKeyDown(ui::Key key) override {
+			if (key == ui::Key::Return ||
+				key == ui::Key::Left ||
+				key == ui::Key::Right ||
+				key == ui::Key::Up ||
+				key == ui::Key::Down) {
+				showList();
+				list->navigateIn();
+				return true;
+			}
+			if (key == ui::Key::Escape) {
+				hideList();
+			}
+			return false;
 		}
 
-	private:
+		void onLoseFocus() override {
+			hideList();
+		}
 
 		std::vector<std::pair<Type, std::string>> generateDescriptions(std::vector<Type> options) {
 			std::vector<std::pair<Type, std::string>> res;
@@ -81,6 +105,24 @@ namespace ui {
 				return true;
 			}
 
+			bool onKeyDown(ui::Key key) override {
+				if (key == ui::Key::Return) {
+					if (callback) {
+						callback();
+					}
+					return true;
+				}
+				if (key == ui::Key::Left || key == ui::Key::Up) {
+					navigateToPreviousElement();
+					return true;
+				}
+				if (key == ui::Key::Right || key == ui::Key::Down) {
+					navigateToNextElement();
+					return true;
+				}
+				return false;
+			}
+
 			void fadeColor(sf::Color from, sf::Color to, float seconds) {
 				auto self = getThisAs<ListItem>();
 				startTransition(seconds, [=](float t) {
@@ -97,7 +139,6 @@ namespace ui {
 			const std::function<void()> callback;
 		};
 
-		bool collapsed;
 		std::shared_ptr<Text> caption;
 		std::shared_ptr<FreeElement> list;
 		std::function<void(const Type&)> onSelect;

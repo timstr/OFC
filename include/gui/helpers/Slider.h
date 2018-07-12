@@ -4,8 +4,6 @@
 
 namespace ui {
 
-	// TODO: increment/decrement when left/right are pressed
-
 	struct Slider : InlineElement {
 		Slider(float defaultval, float min, float max, sf::Font& font, std::function<void(float)> _onChange)
 			: minimum(std::min(min, max)),
@@ -46,7 +44,7 @@ namespace ui {
 		void setValue(float val) {
 			value = std::min(std::max(minimum, val), maximum);
 			label->setText(std::to_string(val));
-			moveHandle(value);
+			moveHandleTo(value);
 		}
 		float getValue() const {
 			return value;
@@ -56,16 +54,31 @@ namespace ui {
 			return handle;
 		}
 
-		void onResize() override {
-			handle->setSize({ getSize().y, getSize().y });
-			moveHandle(value);
-		}
-
 	private:
 
-		void moveHandle(float val) {
+		void onResize() override {
+			handle->setSize({ getSize().y, getSize().y });
+			moveHandleTo(value);
+		}
+
+		void moveHandleTo(float val) {
 			float x = (val - minimum) / (maximum - minimum) * (getSize().x - handle->getSize().x);
 			handle->setPos({ x, 0 });
+		}
+
+		bool onKeyDown(ui::Key key) override {
+			vec2 delta = (keyDown(ui::Key::LShift) || keyDown(ui::Key::RShift)) ? vec2(0.1f, 0.0f) : vec2(1.0f, 0.0f);
+			if (key == ui::Key::Left) {
+				handle->setPos(handle->getPos() - delta);
+				handle->updateFromPos();
+				return true;
+			}
+			if (key == ui::Key::Right) {
+				handle->setPos(handle->getPos() + delta);
+				handle->updateFromPos();
+				return true;
+			}
+			return false;
 		}
 
 		struct Handle : FreeElement {
@@ -86,6 +99,25 @@ namespace ui {
 			}
 
 			void onDrag() override {
+				updateFromPos();
+			}
+
+			bool onKeyDown(ui::Key key) override {
+				vec2 delta = (keyDown(ui::Key::LShift) || keyDown(ui::Key::RShift)) ? vec2(0.1f, 0.0f) : vec2(1.0f, 0.0f);
+				if (key == ui::Key::Left) {
+					setPos(getPos() - delta);
+					updateFromPos();
+					return true;
+				}
+				if (key == ui::Key::Right) {
+					setPos(getPos() + delta);
+					updateFromPos();
+					return true;
+				}
+				return false;
+			}
+
+			void updateFromPos() {
 				vec2 pos = getPos();
 				float left = 0.0f;
 				float right = slider.getSize().x - getSize().x;

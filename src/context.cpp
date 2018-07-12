@@ -225,27 +225,21 @@ namespace ui {
 			if (key == ui::Key::Tab && (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift))) {
 				// navigate to previous element
 				if (current_element->navigateToPreviousElement()) {
-					highlightCurrentElement();
 					return;
 				}
-				highlightCurrentElement();
 			} else if (key == ui::Key::Tab) {
 				// navigate to next element
 				if (current_element->navigateToNextElement()) {
-					highlightCurrentElement();
 					return;
 				}
-				highlightCurrentElement();
 			} else if (key == ui::Key::Return) {
 				// navigate in
 				if (current_element->navigateIn()) {
-					highlightCurrentElement();
 					return;
 				}
 			} else if (key == ui::Key::Escape) {
 				// navigate out
 				if (current_element->navigateOut()) {
-					highlightCurrentElement();
 					return;
 				}
 				highlightCurrentElement();

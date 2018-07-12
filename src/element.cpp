@@ -231,6 +231,9 @@ namespace ui {
 	}
 
 	void Element::close() {
+		if (isClosed()) {
+			return;
+		}
 		onClose();
 		while (!children.empty()) {
 			if (children.back()->inFocus()) {
@@ -238,10 +241,11 @@ namespace ui {
 			}
 			children.back()->close();
 		}
-		if (auto p = parent.lock()) {
-			p->remove(shared_this);
-		}
+		auto self = shared_this;
 		shared_this = nullptr;
+		if (auto p = parent.lock()) {
+			p->remove(self);
+		}
 	}
 
 	bool Element::isClosed() const {
@@ -467,11 +471,12 @@ namespace ui {
 		if (element) {
 			for (auto it = children.begin(); it != children.end(); ++it) {
 				if (*it == element) {
-					if (element->inFocus()) {
+					if (element->ancestorInFocus()) {
 						grabFocus();
 					}
 					children.erase(it);
 					element->parent = {};
+					element->close();
 					organizeLayoutIndices();
 					makeDirty();
 					return;
@@ -484,8 +489,12 @@ namespace ui {
 		if (element) {
 			for (auto it = children.begin(); it != children.end(); ++it) {
 				if (*it == element) {
+					if (element->ancestorInFocus()) {
+						grabFocus();
+					}
 					children.erase(it);
 					element->parent = {};
+					organizeLayoutIndices();
 					makeDirty();
 					return element;
 				}
@@ -544,6 +553,9 @@ namespace ui {
 	}
 
 	bool Element::navigateToPreviousElement() {
+		if (!inFocus()) {
+			return false;
+		}
 		auto par = parent.lock();
 		if (!par) {
 			return false;
@@ -565,10 +577,14 @@ namespace ui {
 		}
 		--self;
 		self->second->grabFocus();
+		getContext().highlightCurrentElement();
 		return true;
 	}
 
 	bool Element::navigateToNextElement() {
+		if (!inFocus()) {
+			return false;
+		}
 		auto par = parent.lock();
 		if (!par) {
 			return false;
@@ -590,10 +606,14 @@ namespace ui {
 			self = siblings.begin();
 		}
 		self->second->grabFocus();
+		getContext().highlightCurrentElement();
 		return true;
 	}
 
 	bool Element::navigateIn() {
+		if (!inFocus()) {
+			return false;
+		}
 		std::map<LayoutIndex, std::shared_ptr<Element>> elems;
 		for (const auto& child : getChildren()) {
 			if (!child->disabled) {
@@ -602,17 +622,22 @@ namespace ui {
 		}
 		if (elems.size() == 0) {
 			grabFocus();
+			getContext().highlightCurrentElement();
 			return true;
 		} else if (elems.size() == 1) {
 			return elems.begin()->second->navigateIn();
 		} else if (elems.size() > 1) {
 			elems.begin()->second->grabFocus();
+			getContext().highlightCurrentElement();
 			return true;
 		}
 		return false;
 	}
 
 	bool Element::navigateOut() {
+		if (!inFocus()) {
+			return false;
+		}
 		auto par = parent.lock();
 		if (!par) {
 			return false;
@@ -625,6 +650,7 @@ namespace ui {
 		}
 		if (count >= 2) {
 			par->grabFocus();
+			getContext().highlightCurrentElement();
 			return true;
 		} else {
 			return par->navigateOut();
@@ -693,6 +719,18 @@ namespace ui {
 			}
 			i += 1.0f;
 		}
+	}
+
+	bool Element::ancestorInFocus() const {
+		if (inFocus()) {
+			return true;
+		}
+		for (const auto& child : children) {
+			if (child->ancestorInFocus()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	std::vector<std::pair<std::shared_ptr<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const {

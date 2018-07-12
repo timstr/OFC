@@ -1,6 +1,5 @@
 ﻿#include "gui/gui.h"
 #include "gui/helpers.h"
-#include "gui/helpers/pi.h"
 
 #include "gui/roundrectangle.h"
 
@@ -83,6 +82,10 @@ struct TestElement : ui::FreeElement {
 
 		add<ui::CallbackButton>("add something", getFont(), [this] {
 			write("blop", getFont());
+		});
+
+		add<ui::ToggleButton>(false, getFont(), [this](bool v) {
+			std::cout << this->name << ": a thing was set to " << std::boolalpha << v << std::endl;
 		});
 
 		add<SizeButton>(*this);

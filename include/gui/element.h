@@ -138,6 +138,18 @@ namespace ui {
 		// returns true if child elements can be navigated using the keyboard
 		bool isKeyboardNavigable() const;
 
+		// navigate to the first non-disabled element before this
+		bool navigateToPreviousElement();
+
+		// navigate to the first non-disabled element after this
+		bool navigateToNextElement();
+
+		// navigate to the first non-disabled descendant
+		bool navigateIn();
+
+		// navigate to the first non-disabled ancestor
+		bool navigateOut();
+
 		// set the visibility of the element
 		void setVisible(bool is_visible);
 
@@ -432,11 +444,6 @@ namespace ui {
 
 		bool keyboard_navigation;
 
-		bool navigateToPreviousElement();
-		bool navigateToNextElement();
-		bool navigateIn();
-		bool navigateOut();
-
 		vec2 pos;
 		vec2 size;
 		vec2 min_size;
@@ -474,6 +481,9 @@ namespace ui {
 
 		LayoutIndex getNextLayoutIndex() const;
 		void organizeLayoutIndices();
+
+		// returns true if this or an ancestor is in focus
+		bool ancestorInFocus() const;
 
 		struct WhiteSpace {
 
