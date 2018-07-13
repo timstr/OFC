@@ -722,13 +722,12 @@ namespace ui {
 	}
 
 	bool Element::ancestorInFocus() const {
-		if (inFocus()) {
-			return true;
-		}
-		for (const auto& child : children) {
-			if (child->ancestorInFocus()) {
+		auto elem = getContext().getCurrentElement();
+		while (elem) {
+			if (elem.get() == this) {
 				return true;
 			}
+			elem = elem->parent.lock();
 		}
 		return false;
 	}

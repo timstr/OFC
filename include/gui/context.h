@@ -198,4 +198,7 @@ namespace ui {
 		// height of the program's window
 		int height;
 	};
+
+	// get the global context
+	Context& getContext();
 }

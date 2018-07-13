@@ -51,11 +51,6 @@ namespace ui {
 		return vec2(sf::Mouse::getPosition(getContext().getRenderWindow()));
 	}
 
-	Context& getContext() {
-		static Context context;
-		return context;
-	}
-
 	void init(unsigned width, unsigned height, std::string title, int target_fps) {
 		getContext().init(width, height, title, 1.0f / target_fps);
 	}

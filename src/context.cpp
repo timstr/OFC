@@ -428,4 +428,9 @@ namespace ui {
 		renderwindow.setView(view);
 	}
 
+	Context& getContext() {
+		static Context context;
+		return context;
+	}
+
 }
