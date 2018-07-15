@@ -73,6 +73,7 @@ namespace ui {
 						break;
 					case sf::Event::LostFocus:
 						getContext().setDraggingElement(nullptr);
+						getContext().releaseAllButtons();
 						break;
 					case sf::Event::TextEntered:
 						if (auto text_entry = getContext().getTextEntry()) {
@@ -106,16 +107,16 @@ namespace ui {
 									text_entry->onReturn(text_entry->getText());
 									break;
 								default:
-									getContext().handleKeyPress(event.key.code);
+									getContext().handleKeyDown(event.key.code);
 									break;
 							}
 						} else {
-							getContext().handleKeyPress(event.key.code);
+							getContext().handleKeyDown(event.key.code);
 						}
 
 						break;
 					case sf::Event::KeyReleased:
-						getContext().handleKeyRelease(event.key.code);
+						getContext().handleKeyUp(event.key.code);
 						break;
 					case sf::Event::MouseButtonPressed:
 					{
@@ -194,7 +195,7 @@ namespace ui {
 			// sleep only as long as needed
 			float now = getContext().getProgramTime();
 			float delay = getContext().getRenderDelay();
-			sf::sleep(sf::seconds(std::max(0.0f, getContext().getRenderDelay() - now + prev_time)));
+			sf::sleep(sf::seconds(std::max(0.0f, delay - now + prev_time)));
 			prev_time = now;
 		}
 

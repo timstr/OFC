@@ -29,6 +29,7 @@ namespace ui {
 
 		void setNormalColor(sf::Color color) {
 			normal_color = color;
+			setBackgroundColor(normal_color);
 		}
 		sf::Color getNormalColor() const {
 			return normal_color;
@@ -36,7 +37,7 @@ namespace ui {
 		void setHoverColor(sf::Color color) {
 			hover_color = color;
 		}
-		sf::Color getHoverColor(sf::Color color) const {
+		sf::Color getHoverColor() const {
 			return hover_color;
 		}
 		void setActiveColor(sf::Color color) {
@@ -54,10 +55,10 @@ namespace ui {
 			label->setText(_label);
 		}
 
-		bool onLeftClick(int clicks) override {
+		bool onLeftClick(int) override {
 			if (callback) {
 				callback();
-				fadeColor(active_color, hover_color, 0.15f);
+				fadeColor(active_color, hover_color);
 			}
 			return true;
 		}
@@ -65,30 +66,31 @@ namespace ui {
 			if (hovering()) {
 				state = State::Hover;
 			} else {
-				fadeColor(getBackgroundColor(), normal_color, 0.15f);
+				fadeColor(getBackgroundColor(), normal_color);
 				state = State::Normal;
 			}
 
 		}
 
 		bool onKeyDown(ui::Key key) override {
-			if (key == ui::Key::Return && callback) {
+			if ((key == ui::Key::Return || key == ui::Key::Space) && callback) {
 				callback();
-				fadeColor(active_color, hovering() ? hover_color : normal_color, 0.15f);
+				fadeColor(active_color, hovering() ? hover_color : normal_color);
+				return true;
 			}
-			return true;
+			return false;
 		}
 
 		void onMouseOver() override {
 			if (state == State::Normal) {
 				state = State::Hover;
-				fadeColor(getBackgroundColor(), hover_color, 0.15f);
+				fadeColor(getBackgroundColor(), hover_color);
 			}
 		}
 		void onMouseOut() override {
 			if (state == State::Hover) {
 				state = State::Normal;
-				fadeColor(getBackgroundColor(), normal_color, 0.15f);
+				fadeColor(getBackgroundColor(), normal_color);
 			}
 		}
 
@@ -99,9 +101,9 @@ namespace ui {
 		sf::Color normal_color, hover_color, active_color;
 		State state;
 
-		void fadeColor(sf::Color from, sf::Color to, float seconds) {
+		void fadeColor(sf::Color from, sf::Color to) {
 			auto self = getThisAs<CallbackButton>();
-			startTransition(seconds, [=](float t) {
+			startTransition(0.25f, [=](float t) {
 				auto color = sf::Color(
 					(uint8_t)(from.r * (1.0f - t) + to.r * t),
 					(uint8_t)(from.g * (1.0f - t) + to.g * t),

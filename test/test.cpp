@@ -30,9 +30,16 @@ struct TestElement : ui::FreeElement {
 		std::cout << name << " was constructed" << std::endl;
 		changeColor();
 		label = add<ui::Text>(name, getFont());
-		add<ui::CallbackButton>("Change Colour", getFont(), [this] {
+
+		auto colorbtn = add<ui::CallbackButton>("Change Colour", getFont(), [this] {
 			changeColor();
 		});
+
+
+		colorbtn->setNormalColor(sf::Color(0xFF0000FF));
+		colorbtn->setActiveColor(sf::Color(0x00FF00FF));
+		colorbtn->setHoverColor(sf::Color(0x0000FFFF));
+
 		add<ui::PullDownMenu<std::string>>(std::vector<std::string>{"Bread", "Butter", "Apricots", "Orphans", "Oregonians", "Orifices", "Mankind"},
 										   getFont(),
 										   [this](const std::string& s) {
@@ -60,9 +67,13 @@ struct TestElement : ui::FreeElement {
 			{sf::Color(0xd31505ff), "candy"},
 			{sf::Color(0x9c1003ff), "lipstick"}
 		};
-		add<ui::PullDownMenu<sf::Color>>(color_options, getFont(), [this](const sf::Color& color) {
+		auto redmenu = add<ui::PullDownMenu<sf::Color>>(color_options, getFont(), [this](const sf::Color& color) {
 			this->setBackgroundColor(color);
 		});
+
+		redmenu->setNormalColor(sf::Color(0xFF0000FF));
+		redmenu->setActiveColor(sf::Color(0x00FF00FF));
+		redmenu->setHoverColor(sf::Color(0x0000FFFF));
 
 		add<ui::TextEntryHelper>("", getFont(), [this](const std::wstring& text) {
 			this->label->setText(text);
@@ -100,9 +111,10 @@ struct TestElement : ui::FreeElement {
 
 	void changeColor() {
 		std::uniform_int_distribution<unsigned> dist(0, 0xFF);
-		setBackgroundColor(sf::Color(dist(randeng),
-			dist(randeng),
-			dist(randeng),
+		setBackgroundColor(sf::Color(
+			(uint8_t)dist(randeng),
+			(uint8_t)dist(randeng),
+			(uint8_t)dist(randeng),
 			255));
 	}
 
@@ -213,14 +225,14 @@ struct TestElement : ui::FreeElement {
 
 	struct SizeButton : ui::FreeElement {
 		SizeButton(TestElement& _parent) : parent(_parent) {
-			setSize({ 20.0f, 20.0f });
+			setSize({ 20.0f, 20.0f }, true);
 			setBackgroundColor(sf::Color(0x808080FF));
 			setBorderThickness(0.0f);
 			setXPositionStyle(ui::PositionStyle::InsideRight);
 			setYPositionStyle(ui::PositionStyle::InsideBottom);
 		}
 
-		bool onLeftClick(int clicks) override {
+		bool onLeftClick(int) override {
 			startDrag();
 			return true;
 		}
@@ -237,7 +249,7 @@ struct TestElement : ui::FreeElement {
 	};
 };
 
-int main(int argc, char** argcv) {
+int main() {
 
 	ui::init(1000, 800, "Tim's GUI Test", 120);
 

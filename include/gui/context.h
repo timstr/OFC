@@ -36,17 +36,21 @@ namespace ui {
 		// will be called.
 		// Otherwise, if no command matches, propagates onKeyDown
 		// starting with current element
-		void handleKeyPress(Key key);
+		void handleKeyDown(Key key);
 
 		// invokes onKeypUp on the element which last received this key being pressed
-		void handleKeyRelease(Key key);
+		void handleKeyUp(Key key);
 
-		// propagates single- or double-click starting with the element at `pos`
+		// propagates single- or double-click starting with the element at `pos`,
+		// depending on when the last element was clicked
 		void handleMouseDown(sf::Mouse::Button button, vec2 pos);
 
 		// invokes onLeftRelease or onRightRelease the element which was last clicked
 		// with that button
 		void handleMouseUp(sf::Mouse::Button button);
+
+		// calls key up and mouse up handlers on any elements waiting for them
+		void releaseAllButtons();
 
 		// propagates onScroll starting with element at `pos`
 		void handleScroll(vec2 pos, float delta_x, float delta_y);

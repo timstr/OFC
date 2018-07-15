@@ -34,8 +34,8 @@ namespace ui {
 		updateSize();
 	}
 
-	void Text::setCharacterSize(unsigned int size) {
-		text.setCharacterSize(size);
+	void Text::setCharacterSize(unsigned int char_size) {
+		text.setCharacterSize(char_size);
 		updateSize();
 	}
 
@@ -69,11 +69,7 @@ namespace ui {
 		text.setPosition({ ceil((float)getCharacterSize() / 5.0f), ceil((float)getCharacterSize() / 5.0f) });
 		vec2 newsize;
 		newsize.y = std::max((float)text.getCharacterSize(), bounds.height - bounds.top);
-		if (text.getString().isEmpty()) {
-			newsize.x = (float)text.getCharacterSize();
-		} else {
-			newsize.x = bounds.width + bounds.left;
-		}
+		newsize.x = std::max((float)text.getCharacterSize(), bounds.width + bounds.left);
 		setSize({
 			ceil(newsize.x) + ceil((float)getCharacterSize() / 2.5f),
 			ceil(newsize.y) + ceil((float)getCharacterSize() / 2.5f)

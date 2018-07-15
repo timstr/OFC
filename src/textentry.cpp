@@ -35,10 +35,10 @@ namespace ui {
 		return (getContext().getTextEntry() == shared_from_this());
 	}
 
-	void TextEntry::moveTo(vec2 pos) {
+	void TextEntry::moveTo(vec2 cursor_position) {
 		for (int i = 0; i < text.getString().getSize(); i++) {
 			vec2 charpos = text.findCharacterPos(i);
-			if (pos.x < charpos.x) {
+			if (cursor_position.x < charpos.x) {
 				cursor_index = i - 1;
 				updateSize();
 				return;
@@ -74,11 +74,11 @@ namespace ui {
 		}
 	}
 
-	bool TextEntry::onKeyDown(Key key) {
+	bool TextEntry::onKeyDown(Key) {
 		return true;
 	}
 
-	bool TextEntry::onLeftClick(int clicks) {
+	bool TextEntry::onLeftClick(int) {
 		startTyping();
 		moveTo(localMousePos());
 		return true;

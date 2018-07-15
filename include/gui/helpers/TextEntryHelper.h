@@ -13,7 +13,7 @@ namespace ui {
 			textfield = add<TextField>(str, font, on_return, validate, on_change);
 		}
 
-		bool onLeftClick(int clicks) override {
+		bool onLeftClick(int) override {
 			textfield->startTyping();
 			return true;
 		}

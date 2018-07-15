@@ -261,26 +261,26 @@ namespace ui {
 	}
 
 	vec2 Element::localMousePos() const {
-		vec2 pos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
+		vec2 mousepos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
 		std::shared_ptr<const Element> element = shared_this;
 		while (element) {
-			pos -= element->pos;
+			mousepos -= element->pos;
 			element = element->parent.lock();
 		}
-		return pos;
+		return mousepos;
 	}
 
 	vec2 Element::rootPos() const {
-		vec2 pos = { 0, 0 };
+		vec2 rootpos = { 0, 0 };
 		std::shared_ptr<const Element> element = shared_this;
 		while (element) {
-			pos += element->pos;
+			rootpos += element->pos;
 			element = element->parent.lock();
 		}
-		return pos;
+		return rootpos;
 	}
 
-	bool Element::onLeftClick(int clicks) {
+	bool Element::onLeftClick(int) {
 		return false;
 	}
 
@@ -288,7 +288,7 @@ namespace ui {
 
 	}
 
-	bool Element::onRightClick(int clicks) {
+	bool Element::onRightClick(int) {
 		return false;
 	}
 
@@ -312,7 +312,7 @@ namespace ui {
 		}
 	}
 
-	bool Element::onScroll(float delta_x, float delta_y) {
+	bool Element::onScroll(float, float) {
 		return false;
 	}
 
@@ -358,8 +358,8 @@ namespace ui {
 	}
 
 	void Element::drop(vec2 local_pos) {
-		vec2 pos = rootPos() + local_pos;
-		if (auto element = root().findElementAt(pos, shared_this)) {
+		vec2 drop_pos = rootPos() + local_pos;
+		if (auto element = root().findElementAt(drop_pos, shared_this)) {
 			do {
 				if (element->onDrop(shared_this)) {
 					return;
@@ -388,11 +388,11 @@ namespace ui {
 		getContext().focusTo(shared_this);
 	}
 
-	bool Element::onKeyDown(Key key) {
+	bool Element::onKeyDown(Key) {
 		return false;
 	}
 
-	void Element::onKeyUp(Key key) {
+	void Element::onKeyUp(Key) {
 
 	}
 
@@ -621,8 +621,10 @@ namespace ui {
 			}
 		}
 		if (elems.size() == 0) {
-			grabFocus();
-			getContext().highlightCurrentElement();
+			if (!inFocus()) {
+				grabFocus();
+				getContext().highlightCurrentElement();
+			}
 			return true;
 		} else if (elems.size() == 1) {
 			return elems.begin()->second->navigateIn();
@@ -668,8 +670,8 @@ namespace ui {
 					}
 					getContext().translateView(child->pos);
 					sf::FloatRect rect = getContext().getClipRect();
-					vec2 pos = getContext().getViewOffset();
-					getContext().intersectClipRect(sf::FloatRect(-pos, child->size));
+					vec2 offset = getContext().getViewOffset();
+					getContext().intersectClipRect(sf::FloatRect(-offset, child->size));
 					getContext().updateView();
 					child->render(renderwindow);
 					child->renderChildren(renderwindow);
@@ -903,6 +905,9 @@ namespace ui {
 	}
 
 	bool Element::update(float width_avail) {
+		if (this->layout_style == LayoutStyle::Free) {
+			width_avail = size.x;
+		}
 		width_avail = std::min(std::max(width_avail, min_size.x), max_size.x);
 
 		if (layout_style == LayoutStyle::Block) {
@@ -923,40 +928,31 @@ namespace ui {
 			}
 		}
 
-		// at this point, this element is dirty
-		makeClean();
-
 		// calculate own width and arrange children
-		if (layout_style == LayoutStyle::Free) {
-			vec2 contentsize = arrangeChildren(size.x);
-			size = vec2(
-				std::min(std::max({ size.x, contentsize.x, min_size.x }), max_size.x),
-				std::min(std::max({ size.y, contentsize.y, min_size.y }), max_size.y)
-			);
-			display_rect.setSize(size);
-			updateChildPositions();
-			updatePosition();
-			onResize();
-			return false;
-		} else {
-			vec2 newsize = arrangeChildren(width_avail);
-			if (layout_style == LayoutStyle::Block) {
-				newsize.x = std::max(width_avail, newsize.x);
-			}
+		vec2 newsize = arrangeChildren(width_avail);
+		if (layout_style == LayoutStyle::Block) {
+			newsize.x = std::max(width_avail, newsize.x);
+		}
+		size = vec2(
+			std::min(std::max(newsize.x, min_size.x), max_size.x),
+			std::min(std::max(newsize.y, min_size.y), max_size.y)
+		);
+		if (size.x > width_avail) {
+			newsize = arrangeChildren(size.x);
 			size = vec2(
 				std::min(std::max(newsize.x, min_size.x), max_size.x),
 				std::min(std::max(newsize.y, min_size.y), max_size.y)
 			);
-			if (size.x > width_avail) {
-				newsize = arrangeChildren(size.x);
-				size = vec2(
-					std::min(std::max(newsize.x, min_size.x), max_size.x),
-					std::min(std::max(newsize.y, min_size.y), max_size.y)
-				);
-			}
-			display_rect.setSize(size);
-			updateChildPositions();
-			onResize();
+		}
+		display_rect.setSize(size);
+		updateChildPositions();
+		makeClean();
+
+		onResize();
+
+		if (this->layout_style == LayoutStyle::Free) {
+			return false;
+		} else {
 			vec2 new_total_size = size + vec2(2.0f * margin, 2.0f * margin);
 			float diff = abs(old_total_size.x - new_total_size.x) + abs(old_total_size.y - new_total_size.y);
 			old_total_size = new_total_size;

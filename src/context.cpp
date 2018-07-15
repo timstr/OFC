@@ -27,11 +27,11 @@ namespace ui {
 		click_timestamp = clock.getElapsedTime() - sf::seconds(10.0f);
 	}
 
-	void Context::init(unsigned width, unsigned height, std::string title, float _render_delay) {
+	void Context::init(unsigned _width, unsigned _height, std::string title, float _render_delay) {
 		render_delay = _render_delay;
 		sf::ContextSettings settings;
 		settings.antialiasingLevel = 8;
-		getRenderWindow().create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
+		getRenderWindow().create(sf::VideoMode(_width, _height), title, sf::Style::Default, settings);
 		resetView();
 		clock.restart();
 	}
@@ -168,6 +168,26 @@ namespace ui {
 		}
 	}
 
+	void Context::releaseAllButtons() {
+		// release all held keys
+		for (const auto& key_elem : keys_pressed) {
+			key_elem.second->onKeyUp(key_elem.first);
+		}
+		keys_pressed.clear();
+
+		// release left mouse button
+		if (left_clicked_element) {
+			left_clicked_element->onLeftRelease();
+			left_clicked_element = nullptr;
+		}
+
+		// release right mouse button
+		if (right_clicked_element) {
+			right_clicked_element->onRightRelease();
+			right_clicked_element = nullptr;
+		}
+	}
+
 	void Context::addKeyboardCommand(Key trigger_key, std::function<void()> handler) {
 		auto pair = std::pair<Key, std::vector<Key>>(trigger_key, {});
 		commands[pair] = handler;
@@ -182,7 +202,7 @@ namespace ui {
 		quit_handler = handler;
 	}
 
-	void Context::handleKeyPress(Key key) {
+	void Context::handleKeyDown(Key key) {
 		// search for longest matching set of keys in registered commands
 		size_t max = 0;
 		auto current_cmd = commands.end();
@@ -247,7 +267,7 @@ namespace ui {
 		}
 	}
 
-	void Context::handleKeyRelease(Key key) {
+	void Context::handleKeyUp(Key key) {
 		auto it = keys_pressed.find(key);
 		if (it != keys_pressed.end()) {
 			if (it->second && !it->second->isClosed()) {

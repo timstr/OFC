@@ -10,7 +10,7 @@ namespace ui {
 			textfield = add<TextField>(defaultval, _min, _max, font, _callback);
 		}
 
-		bool onLeftClick(int clicks) override {
+		bool onLeftClick(int) override {
 			textfield->startTyping();
 			return true;
 		}
@@ -61,8 +61,8 @@ namespace ui {
 				}
 			}
 
-			bool validate(const std::wstring& text) {
-				auto val = stringTo<NumberType>(text);
+			bool validate(const std::wstring& entered_text) {
+				auto val = stringTo<NumberType>(entered_text);
 				if (!val) {
 					return false;
 				}

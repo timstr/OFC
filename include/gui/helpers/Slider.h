@@ -17,7 +17,7 @@ namespace ui {
 			handle = add<Handle>(*this);
 		}
 
-		bool onLeftClick(int clicks) override {
+		bool onLeftClick(int) override {
 			handle->setPos(localMousePos() - handle->getSize() * 0.5f);
 			handle->startDrag();
 			return true;
@@ -37,7 +37,7 @@ namespace ui {
 		void setMaximum(float max) {
 			maximum = max;
 		}
-		float getMaximum(float max) {
+		float getMaximum() {
 			return maximum;
 		}
 
@@ -83,13 +83,13 @@ namespace ui {
 
 		struct Handle : FreeElement {
 			Handle(Slider& _slider) : slider(_slider) {
-				float size = slider.getSize().y;
-				setSize({ size, size }, true);
+				float s = slider.getSize().y;
+				setSize({ s, s }, true);
 				setBackgroundColor(sf::Color(0x80808080));
 				setBorderThickness(0.0f);
 			}
 
-			bool onLeftClick(int clicks) override {
+			bool onLeftClick(int) override {
 				startDrag();
 				return true;
 			}
@@ -118,13 +118,13 @@ namespace ui {
 			}
 
 			void updateFromPos() {
-				vec2 pos = getPos();
+				vec2 p = getPos();
 				float left = 0.0f;
 				float right = slider.getSize().x - getSize().x;
-				pos.x = std::min(std::max(pos.x, left), right);
-				pos.y = 0.0f;
-				setPos(pos);
-				float x = (pos.x - left) / (right - left);
+				p.x = std::min(std::max(p.x, left), right);
+				p.y = 0.0f;
+				setPos(p);
+				float x = (p.x - left) / (right - left);
 				slider.value = x * (slider.maximum - slider.minimum) + slider.minimum;
 				slider.label->setText(std::to_string(slider.value));
 				slider.onChange(slider.value);

@@ -1,33 +1,37 @@
 #pragma once
 
-#include "gui/element.h"
+#include "gui/helpers/CallbackButton.h"
 
 namespace ui {
 
 	template<typename Type>
-	struct PullDownMenu : InlineElement {
+	struct PullDownMenu : CallbackButton {
 		PullDownMenu(std::vector<std::pair<Type, std::string>> options, sf::Font& font, std::function<void(const Type&)> _onSelect)
-			: onSelect(_onSelect) {
+			: CallbackButton(
+				options.empty() ? "" : options.front().second,
+				font,
+				[this] { this->showList(); }
+			),
+			onSelect(_onSelect) {
 
 			setMinSize({ 0.0f, 20.0f });
 			setBackgroundColor(sf::Color(0xBBBBBBFF));
 			setBorderColor(sf::Color(0xFF));
 			setBorderThickness(1.0f);
 
-			caption = add<Text>(options.empty() ? "" : options.front().second, font);
-
 			list = add<FreeElement>();
 			for (const auto& option : options) {
 				Type value = option.first;
 				std::string desc = option.second;
-				list->add<ListItem>(desc, font, [this, desc, value] {
-					this->caption->setText(desc);
+				auto item = list->add<ListItem>(desc, font, [this, desc, value] {
+					this->setCaption(desc);
 					if (this->onSelect) {
 						this->onSelect(value);
 					}
 					this->hideList();
 					this->grabFocus();
 				});
+				list_items.push_back(item);
 			}
 			hideList();
 		}
@@ -42,13 +46,18 @@ namespace ui {
 			bringToFront();
 			adopt(list);
 			list->grabFocus();
+			for (const auto& item : list_items) {
+				item->setNormalColor(getNormalColor());
+				item->setHoverColor(getHoverColor());
+				item->setActiveColor(getActiveColor());
+			}
 		}
 
 		void hideList() {
 			release(list);
 		}
 
-		bool onLeftClick(int clicks) override {
+		bool onLeftClick(int) override {
 			showList();
 			return true;
 		}
@@ -82,34 +91,16 @@ namespace ui {
 			return res;
 		}
 
-		struct ListItem : BlockElement {
-			ListItem(std::string _text, sf::Font& _font, std::function<void()> _callback) : callback(_callback) {
-				add<Text>(_text, _font);
+		struct ListItem : ui::CallbackButton {
+			ListItem(std::string text, sf::Font& font, std::function<void()> callback) :
+				CallbackButton(text, font, callback) {
+
+				setLayoutStyle(LayoutStyle::Block);
 				setMinSize({ 0.0f, 20.0f });
-				setBorderColor(sf::Color(0xFF));
-				setBorderThickness(1.0f);
-				setBackgroundColor(sf::Color(0xBBBBBBFF));
-			}
-
-			void onMouseOver() override {
-				fadeColor(getBackgroundColor(), sf::Color(0xDDDDDDFF), 0.15f);
-			}
-			void onMouseOut() override {
-				fadeColor(getBackgroundColor(), sf::Color(0xBBBBBBFF), 0.15f);
-			}
-
-			bool onLeftClick(int clicks) override {
-				if (callback) {
-					callback();
-				}
-				return true;
 			}
 
 			bool onKeyDown(ui::Key key) override {
-				if (key == ui::Key::Return) {
-					if (callback) {
-						callback();
-					}
+				if (CallbackButton::onKeyDown(key)) {
 					return true;
 				}
 				if (key == ui::Key::Left || key == ui::Key::Up) {
@@ -122,25 +113,10 @@ namespace ui {
 				}
 				return false;
 			}
-
-			void fadeColor(sf::Color from, sf::Color to, float seconds) {
-				auto self = getThisAs<ListItem>();
-				startTransition(seconds, [=](float t) {
-					auto color = sf::Color(
-						(uint8_t)(from.r * (1.0f - t) + to.r * t),
-						(uint8_t)(from.g * (1.0f - t) + to.g * t),
-						(uint8_t)(from.b * (1.0f - t) + to.b * t),
-						255
-					);
-					self->setBackgroundColor(color);
-				});
-			}
-
-			const std::function<void()> callback;
 		};
 
-		std::shared_ptr<Text> caption;
 		std::shared_ptr<FreeElement> list;
+		std::vector<std::shared_ptr<ListItem>> list_items;
 		std::function<void(const Type&)> onSelect;
 	};
 
