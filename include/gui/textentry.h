@@ -18,7 +18,7 @@ namespace ui {
 		virtual void onReturn(std::wstring entered_text);
 		virtual void onType(std::wstring full_text);
 
-		void render(sf::RenderWindow& renderwindow) const override;
+		void render(sf::RenderWindow& renderwindow) override;
 
 		bool onKeyDown(Key key) override;
 		bool onLeftClick(int clicks) override;

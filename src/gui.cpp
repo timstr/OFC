@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gui/gui.h"
-#include <SFML\Graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include <map>
 #include <set>
 #include <functional>
@@ -9,7 +9,7 @@
 namespace ui {
 
 	namespace {
-		std::shared_ptr<Element> root_ptr;
+		Ref<Element> root_ptr;
 	}
 
 	Element& root() {

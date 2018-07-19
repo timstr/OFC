@@ -50,7 +50,7 @@ namespace ui {
 			return value;
 		}
 
-		const std::shared_ptr<Element>& getHandle() const {
+		const Ref<Element>& getHandle() const {
 			return handle;
 		}
 
@@ -133,8 +133,8 @@ namespace ui {
 			Slider& slider;
 		};
 
-		std::shared_ptr<Handle> handle;
-		std::shared_ptr<Text> label;
+		Ref<Handle> handle;
+		Ref<Text> label;
 		float minimum, maximum, value;
 		std::function<void(float)> onChange;
 	};

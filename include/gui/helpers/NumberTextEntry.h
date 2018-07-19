@@ -75,7 +75,7 @@ namespace ui {
 			NumberType maximum;
 		};
 
-		std::shared_ptr<TextField> textfield;
+		Ref<TextField> textfield;
 
 	};
 

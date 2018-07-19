@@ -6,7 +6,7 @@ namespace ui {
 
 	// calls `function` on `element` and all its ancestors until one returns true, and that element is returned
 	template<typename ...ArgsT>
-	std::shared_ptr<Element> propagate(std::shared_ptr<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args) {
+	Ref<Element> propagate(Ref<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args) {
 		while (element) {
 			if (((*element).*function)(std::forward<ArgsT>(args)...)) {
 				return element;
@@ -51,7 +51,7 @@ namespace ui {
 		}
 	}
 
-	void Context::focusTo(std::shared_ptr<Element> element) {
+	void Context::focusTo(Ref<Element> element) {
 		if (element) {
 			if (current_element) {
 				// if the element is already in focus, no work to do here
@@ -65,17 +65,17 @@ namespace ui {
 				}
 
 				// paths to old and new focused element
-				std::vector<std::shared_ptr<Element>> oldpath, newpath;
+				std::vector<Ref<Element>> oldpath, newpath;
 
 				// populate old
-				std::shared_ptr<Element> old = current_element;
+				Ref<Element> old = current_element;
 				while (old) {
 					oldpath.push_back(old);
 					old = old->parent.lock();
 				}
 
 				// populate new
-				std::shared_ptr<Element> nu = element;
+				Ref<Element> nu = element;
 				while (nu) {
 					newpath.push_back(nu);
 					nu = nu->parent.lock();
@@ -110,7 +110,7 @@ namespace ui {
 	}
 
 	void Context::handleMouseDown(sf::Mouse::Button button, vec2 pos) {
-		std::shared_ptr<Element> hit_element = root().findElementAt(pos);
+		Ref<Element> hit_element = root().findElementAt(pos);
 
 		if (!hit_element) {
 			return;
@@ -295,7 +295,7 @@ namespace ui {
 		if (element != hover_element) {
 			// if the mouse is moved onto a new element
 
-			std::vector<std::shared_ptr<Element>> oldpath, newpath;
+			std::vector<Ref<Element>> oldpath, newpath;
 			auto oldelem = hover_element;
 			auto newelem = element;
 			hover_element = element;
@@ -398,28 +398,28 @@ namespace ui {
 		return program_time;
 	}
 
-	std::shared_ptr<Element> Context::getDraggingElement() const {
+	Ref<Element> Context::getDraggingElement() const {
 		return dragging_element;
 	}
 
-	void Context::setDraggingElement(std::shared_ptr<Element> element, vec2 offset) {
+	void Context::setDraggingElement(Ref<Element> element, vec2 offset) {
 		dragging_element = element;
 		drag_offset = offset;
 	}
 
-	std::shared_ptr<Element> Context::getCurrentElement() const {
+	Ref<Element> Context::getCurrentElement() const {
 		return current_element;
 	}
 
-	std::shared_ptr<Element> Context::getHoverElement() const {
+	Ref<Element> Context::getHoverElement() const {
 		return hover_element;
 	}
 
-	std::shared_ptr<TextEntry> Context::getTextEntry() const {
+	Ref<TextEntry> Context::getTextEntry() const {
 		return text_entry;
 	}
 
-	void Context::setTextEntry(std::shared_ptr<TextEntry> textentry) {
+	void Context::setTextEntry(Ref<TextEntry> textentry) {
 		text_entry = textentry;
 	}
 

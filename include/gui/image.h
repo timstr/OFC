@@ -16,10 +16,10 @@ namespace ui {
 		Image(const sf::Image& img, bool auto_size = true);
 
 		// use an existing shared texture
-		Image(const std::shared_ptr<sf::Texture>& _texture, bool autosize = true);
+		Image(const Ref<sf::Texture>& _texture, bool autosize = true);
 
 		// get the shared texture
-		const std::shared_ptr<sf::Texture>& getTexture() const;
+		const Ref<sf::Texture>& getTexture() const;
 
 		// load an image from a file path
 		bool loadFromFile(const std::string& path, bool auto_size = true);
@@ -40,15 +40,15 @@ namespace ui {
 		bool copyFrom(const sf::Image& img, bool auto_size = true);
 
 		// use a shared texture
-		bool setTexture(const std::shared_ptr<sf::Texture>& _texture, bool auto_size = true);
+		bool setTexture(const Ref<sf::Texture>& _texture, bool auto_size = true);
 
 	private:
 
 		void onResize() override;
 
-		void render(sf::RenderWindow& rw) const override;
+		void render(sf::RenderWindow& rw) override;
 
-		std::shared_ptr<sf::Texture> texture;
+		Ref<sf::Texture> texture;
 		sf::Sprite sprite;
 	};
 

@@ -27,6 +27,8 @@ namespace ui {
 	// duration		- the length of the transition, in seconds
 	// transitionFn	- the function to be invoked during every tick of the animation,
 	//				  with an argument of 0 at the very beginning to 1 at the very end
+	//				  The actual transition depends on what this function does. Typically,
+	//				  it will use the argument to interpolate and assign a desired quantity
 	// onComplete	- option function to be invoked when the transition is complete
 	void startTransition(float duration, std::function<void(float)> transitionFn, std::function<void()> onComplete = {});
 

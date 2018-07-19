@@ -8,11 +8,11 @@ ui::Image::Image(const sf::Image& img, bool auto_size) {
 	copyFrom(img, auto_size);
 }
 
-ui::Image::Image(const std::shared_ptr<sf::Texture>& _texture, bool auto_size) {
+ui::Image::Image(const Ref<sf::Texture>& _texture, bool auto_size) {
 	setTexture(_texture, auto_size);
 }
 
-const std::shared_ptr<sf::Texture>& ui::Image::getTexture() const {
+const ui::Ref<sf::Texture>& ui::Image::getTexture() const {
 	return texture;
 }
 
@@ -50,7 +50,7 @@ bool ui::Image::copyFrom(const sf::Image& image, bool auto_size) {
 	return setTexture(tex, auto_size);
 }
 
-bool ui::Image::setTexture(const std::shared_ptr<sf::Texture>& _texture, bool auto_size) {
+bool ui::Image::setTexture(const Ref<sf::Texture>& _texture, bool auto_size) {
 	texture = _texture;
 	if (!texture) {
 		return false;
@@ -70,6 +70,6 @@ void ui::Image::onResize() {
 	});
 }
 
-void ui::Image::render(sf::RenderWindow& rw) const {
+void ui::Image::render(sf::RenderWindow& rw) {
 	rw.draw(sprite);
 }

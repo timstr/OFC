@@ -108,27 +108,27 @@ namespace ui {
 		float getProgramTime() const;
 
 		// get the dragging element
-		std::shared_ptr<Element> getDraggingElement() const;
+		Ref<Element> getDraggingElement() const;
 
 		// set the dragging element
-		void setDraggingElement(std::shared_ptr<Element> element, vec2 offset = vec2(0, 0));
+		void setDraggingElement(Ref<Element> element, vec2 offset = vec2(0, 0));
 
 		// call onLoseFocus on last current element and its ancestors until common ancestor with
 		// `element`, onFocus is then called on the ancesters of `element`, which becomes the new
 		// current element
-		void focusTo(std::shared_ptr<Element> element);
+		void focusTo(Ref<Element> element);
 
 		// get the current element
-		std::shared_ptr<Element> getCurrentElement() const;
+		Ref<Element> getCurrentElement() const;
 
 		// get the element currently being hovered over
-		std::shared_ptr<Element> getHoverElement() const;
+		Ref<Element> getHoverElement() const;
 
 		// get the text entry currently being typed into
-		std::shared_ptr<TextEntry> getTextEntry() const;
+		Ref<TextEntry> getTextEntry() const;
 
 		// set the current text entry
-		void setTextEntry(std::shared_ptr<TextEntry> textentry);
+		void setTextEntry(Ref<TextEntry> textentry);
 
 		// highlight the current element
 		void highlightCurrentElement();
@@ -150,25 +150,25 @@ namespace ui {
 		sf::RenderWindow renderwindow;
 
 		// the element currently being dragged
-		std::shared_ptr<Element> dragging_element;
+		Ref<Element> dragging_element;
 
 		// the mouse's relative position while dragging
 		vec2 drag_offset;
 
 		// the element currently being hovered over
-		std::shared_ptr<Element> hover_element;
+		Ref<Element> hover_element;
 
 		// the element currently in focus
-		std::shared_ptr<Element> current_element;
+		Ref<Element> current_element;
 
 		// time when current element was highlighted
 		sf::Time highlight_timestamp;
 
 		// the text entry currently being typed into
-		std::shared_ptr<TextEntry> text_entry;
+		Ref<TextEntry> text_entry;
 
 		// the element that was last clicked
-		std::shared_ptr<Element> left_clicked_element, right_clicked_element;
+		Ref<Element> left_clicked_element, right_clicked_element;
 		// maximum time between clicks of a double-click, in seconds
 		const float doubleclicktime;
 		// time of last click
@@ -183,7 +183,7 @@ namespace ui {
 		sf::Clock clock;
 
 		// keys that were pressed and which element handled them
-		std::map<Key, std::shared_ptr<Element>> keys_pressed;
+		std::map<Key, Ref<Element>> keys_pressed;
 
 		// set of callback functions to be called during keystroke patterns
 		std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> commands;

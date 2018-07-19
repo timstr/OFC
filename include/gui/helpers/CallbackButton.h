@@ -97,7 +97,7 @@ namespace ui {
 	private:
 
 		std::function<void()> callback;
-		std::shared_ptr<Text> label;
+		Ref<Text> label;
 		sf::Color normal_color, hover_color, active_color;
 		State state;
 

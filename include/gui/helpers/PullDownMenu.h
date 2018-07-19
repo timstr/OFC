@@ -115,8 +115,8 @@ namespace ui {
 			}
 		};
 
-		std::shared_ptr<FreeElement> list;
-		std::vector<std::shared_ptr<ListItem>> list_items;
+		Ref<FreeElement> list;
+		std::vector<Ref<ListItem>> list_items;
 		std::function<void(const Type&)> onSelect;
 	};
 

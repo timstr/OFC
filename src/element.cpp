@@ -262,7 +262,7 @@ namespace ui {
 
 	vec2 Element::localMousePos() const {
 		vec2 mousepos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
-		std::shared_ptr<const Element> element = shared_this;
+		Ref<const Element> element = shared_this;
 		while (element) {
 			mousepos -= element->pos;
 			element = element->parent.lock();
@@ -272,7 +272,7 @@ namespace ui {
 
 	vec2 Element::rootPos() const {
 		vec2 rootpos = { 0, 0 };
-		std::shared_ptr<const Element> element = shared_this;
+		Ref<const Element> element = shared_this;
 		while (element) {
 			rootpos += element->pos;
 			element = element->parent.lock();
@@ -353,7 +353,7 @@ namespace ui {
 		return false;
 	}
 
-	bool Element::onHoverWith(std::shared_ptr<Element> element) {
+	bool Element::onHoverWith(Ref<Element> element) {
 		return false;
 	}
 
@@ -368,7 +368,7 @@ namespace ui {
 		}
 	}
 
-	bool Element::onDrop(std::shared_ptr<Element> element) {
+	bool Element::onDrop(Ref<Element> element) {
 		return false;
 	}
 
@@ -450,7 +450,7 @@ namespace ui {
 		makeDirty();
 	}
 
-	void Element::adopt(std::shared_ptr<Element> child) {
+	void Element::adopt(Ref<Element> child) {
 		if (auto p = child->parent.lock()) {
 			if (p.get() == this) {
 				return;
@@ -467,7 +467,7 @@ namespace ui {
 			}
 	}
 
-	void Element::remove(std::shared_ptr<Element> element) {
+	void Element::remove(Ref<Element> element) {
 		if (element) {
 			for (auto it = children.begin(); it != children.end(); ++it) {
 				if (*it == element) {
@@ -485,7 +485,7 @@ namespace ui {
 		}
 	}
 
-	std::shared_ptr<Element> Element::release(std::shared_ptr<Element> element) {
+	Ref<Element> Element::release(Ref<Element> element) {
 		if (element) {
 			for (auto it = children.begin(); it != children.end(); ++it) {
 				if (*it == element) {
@@ -520,7 +520,7 @@ namespace ui {
 		makeDirty();
 	}
 
-	std::shared_ptr<Element> Element::findElementAt(vec2 _pos, std::shared_ptr<Element> exclude) {
+	Ref<Element> Element::findElementAt(vec2 _pos, Ref<Element> exclude) {
 		if (!visible || disabled) {
 			return nullptr;
 		}
@@ -533,7 +533,7 @@ namespace ui {
 			return nullptr;
 		}
 
-		std::shared_ptr<Element> element;
+		Ref<Element> element;
 		for (auto it = children.rbegin(); it != children.rend(); ++it) {
 			element = (*it)->findElementAt(_pos - (*it)->pos, exclude);
 			if (element) {
@@ -548,7 +548,7 @@ namespace ui {
 		return nullptr;
 	}
 
-	void Element::render(sf::RenderWindow& rw) const {
+	void Element::render(sf::RenderWindow& rw) {
 		rw.draw(display_rect);
 	}
 
@@ -560,7 +560,7 @@ namespace ui {
 		if (!par) {
 			return false;
 		}
-		std::map<LayoutIndex, std::shared_ptr<Element>> siblings;
+		std::map<LayoutIndex, Ref<Element>> siblings;
 		for (const auto& sib : par->getChildren()) {
 			if (!sib->disabled) {
 				siblings[sib->layout_index] = sib;
@@ -589,7 +589,7 @@ namespace ui {
 		if (!par) {
 			return false;
 		}
-		std::map<LayoutIndex, std::shared_ptr<Element>> siblings;
+		std::map<LayoutIndex, Ref<Element>> siblings;
 		for (const auto& sib : par->getChildren()) {
 			if (!sib->disabled) {
 				siblings[sib->layout_index] = sib;
@@ -614,7 +614,7 @@ namespace ui {
 		if (!inFocus()) {
 			return false;
 		}
-		std::map<LayoutIndex, std::shared_ptr<Element>> elems;
+		std::map<LayoutIndex, Ref<Element>> elems;
 		for (const auto& child : getChildren()) {
 			if (!child->disabled) {
 				elems[child->layout_index] = child;
@@ -661,7 +661,7 @@ namespace ui {
 
 	void Element::renderChildren(sf::RenderWindow& renderwindow) {
 		for (auto it = children.begin(); it != children.end(); ++it) {
-			const std::shared_ptr<Element>& child = *it;
+			const Ref<Element>& child = *it;
 			if (child->visible) {
 				if (child->clipping) {
 					auto childrect = sf::FloatRect(getContext().getViewOffset() + child->pos, child->size);
@@ -702,7 +702,7 @@ namespace ui {
 	}
 
 	void Element::organizeLayoutIndices() {
-		using ElementOrSpace = std::pair<std::shared_ptr<Element>, WhiteSpace*>;
+		using ElementOrSpace = std::pair<Ref<Element>, WhiteSpace*>;
 
 		std::set<std::pair<LayoutIndex, ElementOrSpace>> index_set;
 		for (const auto& child : children) {
@@ -734,8 +734,8 @@ namespace ui {
 		return false;
 	}
 
-	std::vector<std::pair<std::shared_ptr<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const {
-		std::vector<std::pair<std::shared_ptr<Element>, Element::WhiteSpace>> sorted_elements;
+	std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const {
+		std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> sorted_elements;
 
 		sorted_elements.reserve(children.size() + white_spaces.size());
 
@@ -749,7 +749,7 @@ namespace ui {
 		return sorted_elements;
 	}
 
-	const std::vector<std::shared_ptr<Element>>& Element::getChildren() const {
+	const std::vector<Ref<Element>>& Element::getChildren() const {
 		return children;
 	}
 
@@ -757,7 +757,7 @@ namespace ui {
 		return parent;
 	}
 
-	void Element::layoutBefore(const std::shared_ptr<Element>& sibling) {
+	void Element::layoutBefore(const Ref<Element>& sibling) {
 		if (!sibling || isClosed()) {
 			return;
 		}
@@ -772,7 +772,7 @@ namespace ui {
 		}
 	}
 
-	void Element::layoutAfter(const std::shared_ptr<Element>& sibling) {
+	void Element::layoutAfter(const Ref<Element>& sibling) {
 		if (!sibling || isClosed()) {
 			return;
 		}
@@ -963,7 +963,7 @@ namespace ui {
 
 	struct LayoutData {
 
-		using Child = std::pair<std::shared_ptr<Element>, Element::WhiteSpace>;
+		using Child = std::pair<Ref<Element>, Element::WhiteSpace>;
 
 		LayoutData(Element& _self, float _width_avail)
 			: self(_self),
@@ -987,7 +987,7 @@ namespace ui {
 		float left_edge, right_edge;
 		bool emptyline;
 		std::vector<Child> sorted_elements;
-		std::vector<std::shared_ptr<Element>> floatingleft, floatingright;
+		std::vector<Ref<Element>> floatingleft, floatingright;
 
 		void reset() {
 			xpos = self.padding;
@@ -1000,10 +1000,10 @@ namespace ui {
 		}
 
 		void layoutElements() {
-			std::vector<std::shared_ptr<Element>> left_elems, right_elems;
+			std::vector<Ref<Element>> left_elems, right_elems;
 			std::vector<Child> inline_children;
 
-			auto horizontalAlign = [&, this](const std::vector<std::shared_ptr<Element>>& line, float left_limit, float right_limit, bool full) {
+			auto horizontalAlign = [&, this](const std::vector<Ref<Element>>& line, float left_limit, float right_limit, bool full) {
 				if (line.size() == 0 || self.content_align == ContentAlign::Left) {
 					return;
 				}
@@ -1063,7 +1063,7 @@ namespace ui {
 				// width of the largest element
 				float largest_width = 0.0f;
 
-				std::vector<std::shared_ptr<Element>> line;
+				std::vector<Ref<Element>> line;
 
 				for (const auto& elem : left_elems) {
 					if (arrangeFloatingLeft(elem)) {
@@ -1082,7 +1082,7 @@ namespace ui {
 					largest_width = std::max(largest_width, elem->size.x);
 				}
 				for (const auto& child : inline_children) {
-					const std::shared_ptr<Element>& elem = child.first;
+					const Ref<Element>& elem = child.first;
 					float left = left_edge, right = right_edge;
 					if (elem) {
 						if (arrangeInline(elem)) {
@@ -1138,7 +1138,7 @@ namespace ui {
 						break;
 					}
 
-					std::shared_ptr<Element> elem = it->first;
+					Ref<Element> elem = it->first;
 
 					if (elem) {
 						// child element
@@ -1187,7 +1187,7 @@ namespace ui {
 			}
 		}
 
-		void arrangeBlock(const std::shared_ptr<Element>& element) {
+		void arrangeBlock(const Ref<Element>& element) {
 			Element& elem = *element;
 
 			while (nextWiderLine()) {
@@ -1205,7 +1205,7 @@ namespace ui {
 		// flowing around floating elements.
 		// returns true if the available width was exceeded and the element
 		// broke onto a new line
-		bool arrangeInline(const std::shared_ptr<Element>& element) {
+		bool arrangeInline(const Ref<Element>& element) {
 			Element& elem = *element;
 			bool broke_line = false;
 			do {
@@ -1244,7 +1244,7 @@ namespace ui {
 		// and any current left-floating elements.
 		// returns true if the available width was exceeded and the element
 		// broke onto a new line
-		bool arrangeFloatingLeft(const std::shared_ptr<Element>& element) {
+		bool arrangeFloatingLeft(const Ref<Element>& element) {
 			if (!emptyline) {
 				newLine();
 			}
@@ -1276,7 +1276,7 @@ namespace ui {
 		// other current right-floating elements.
 		// return true if the available width was exceeded and the element
 		// broke onto a new line
-		bool arrangeFloatingRight(const std::shared_ptr<Element>& element) {
+		bool arrangeFloatingRight(const Ref<Element>& element) {
 			Element& elem = *element;
 			bool broke_line = false;
 			do {
@@ -1333,7 +1333,7 @@ namespace ui {
 		void newLine() {
 			ypos = next_ypos;
 
-			auto aboveNewLine = [=](const std::shared_ptr<Element>& elem) {
+			auto aboveNewLine = [=](const Ref<Element>& elem) {
 				return ypos >= elem->getPos().y + elem->getSize().y + elem->getMargin();
 			};
 

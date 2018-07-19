@@ -2,7 +2,7 @@
 
 #include "gui/roundrectangle.h"
 
-#include <SFML\Graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include <vector>
 #include <functional>
 #include <memory>
@@ -97,6 +97,9 @@ namespace ui {
 		StrikeThrough = sf::Text::Text::Style::StrikeThrough,
 	};
 
+	template<typename ElementType>
+	using Ref = std::shared_ptr<ElementType>;
+
 	struct Element : std::enable_shared_from_this<Element> {
 
 		// default constructor
@@ -115,7 +118,7 @@ namespace ui {
 		virtual void onClose();
 
 		template<typename ElementType>
-		std::shared_ptr<ElementType> getThisAs() {
+		Ref<ElementType> getThisAs() {
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from ui::Element");
 			return std::dynamic_pointer_cast<ElementType, Element>(shared_from_this());
 		}
@@ -337,7 +340,7 @@ namespace ui {
 
 		// called when the mouse is over the element with another element being dragged
 		// if false is returned, call will propagate to the parent
-		virtual bool onHoverWith(std::shared_ptr<Element> element);
+		virtual bool onHoverWith(Ref<Element> element);
 
 		// drop the element (via the point local_pos, in local coordinates) onto the element below it
 		void drop(vec2 local_pos);
@@ -345,7 +348,7 @@ namespace ui {
 		// called when a dragged element is released over the element
 		// shall return false if the parent's method is to be invoked
 		// if false is returned, call will propagate to the parent
-		virtual bool onDrop(std::shared_ptr<Element> element);
+		virtual bool onDrop(Ref<Element> element);
 
 		// called when the element gains focus
 		virtual void onFocus();
@@ -387,37 +390,37 @@ namespace ui {
 
 		// add a new child element
 		template<typename ElementType, typename... ArgsT>
-		std::shared_ptr<ElementType> add(ArgsT&&... args) {
+		Ref<ElementType> add(ArgsT&&... args) {
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
 			// This may look strange, but the child creates the first shared_ptr to itself
 			// (so that shared_from_this is valid in the constructor) and this is how that is dealt with.
 			auto rawchild = new ElementType(std::forward<ArgsT>(args)...);
-			std::shared_ptr<ElementType> child = rawchild->getThisAs<ElementType>();
+			Ref<ElementType> child = rawchild->getThisAs<ElementType>();
 			adopt(child);
 			return child;
 		}
 
 		// adopt an existing child element
-		void adopt(std::shared_ptr<Element> child);
+		void adopt(Ref<Element> child);
 
 		// remove and destroy a child element
-		void remove(std::shared_ptr<Element> element);
+		void remove(Ref<Element> element);
 
 		// release a child element, possibly to add to another element
 		// returns nullptr if the element is not found
-		std::shared_ptr<Element> release(std::shared_ptr<Element> element);
+		Ref<Element> release(Ref<Element> element);
 
 		// get all children
-		const std::vector<std::shared_ptr<Element>>& getChildren() const;
+		const std::vector<Ref<Element>>& getChildren() const;
 
 		// get the parent element
 		std::weak_ptr<Element> getParent() const;
 
 		// layout the element before the given sibling
-		void layoutBefore(const std::shared_ptr<Element>& sibling);
+		void layoutBefore(const Ref<Element>& sibling);
 
 		// layout the element after the given sibling
-		void layoutAfter(const std::shared_ptr<Element>& sibling);
+		void layoutAfter(const Ref<Element>& sibling);
 
 		// render the element in front of its siblings, regardless of layout
 		void bringToFront();
@@ -426,14 +429,14 @@ namespace ui {
 		void clear();
 
 		// find the element at the given local coordinates, optionally excluding a given element and all its children
-		std::shared_ptr<Element> findElementAt(vec2 _pos, std::shared_ptr<Element> exclude = nullptr);
+		Ref<Element> findElementAt(vec2 _pos, Ref<Element> exclude = nullptr);
 
 		// render the element
-		virtual void render(sf::RenderWindow& renderwindow) const;
+		virtual void render(sf::RenderWindow& renderwindow);
 
 	private:
 
-		std::shared_ptr<Element> shared_this;
+		Ref<Element> shared_this;
 
 		LayoutStyle layout_style;
 		ContentAlign content_align;
@@ -500,10 +503,10 @@ namespace ui {
 			unsigned charsize;
 		};
 
-		std::vector<std::pair<std::shared_ptr<Element>, WhiteSpace>> sortChildrenByLayoutIndex() const;
+		std::vector<std::pair<Ref<Element>, WhiteSpace>> sortChildrenByLayoutIndex() const;
 
 		std::weak_ptr<Element> parent;
-		std::vector<std::shared_ptr<Element>> children;
+		std::vector<Ref<Element>> children;
 		std::vector<WhiteSpace> white_spaces;
 
 		friend struct Context;

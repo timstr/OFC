@@ -56,7 +56,7 @@ namespace ui {
 
 	}
 
-	void TextEntry::render(sf::RenderWindow& renderwindow) const {
+	void TextEntry::render(sf::RenderWindow& renderwindow) {
 		Text::render(renderwindow);
 		if (typing()) {
 			updateCursorPosition();

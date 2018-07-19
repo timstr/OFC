@@ -55,7 +55,7 @@ namespace ui {
 			std::function<void(const std::wstring&)> on_change;
 		};
 
-		std::shared_ptr<TextField> textfield;
+		Ref<TextField> textfield;
 
 	};
 } // namespace ui

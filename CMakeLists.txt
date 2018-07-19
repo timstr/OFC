@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-project(tims_gui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library using SFML")
+project(tims-gui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library using SFML")
 
 set(SFML_STATIC_LIBRARIES TRUE)
 find_package(SFML 2.4 COMPONENTS system window graphics audio main REQUIRED)
@@ -9,7 +9,7 @@ if (NOT SFML_FOUND)
 	message(FATAL_ERROR "Could not find SFML. Please install SFML.")
 endif()
 
-set(headers
+set(tims-gui_headers
 	include/gui/context.h
 	include/gui/gui.h
 	include/gui/helpers.h
@@ -29,7 +29,7 @@ set(headers
 	include/gui/helpers/pi.h
 )
 
-set(srcs
+set(tims-gui_srcs
 	src/context.cpp
 	src/gui.cpp
 	src/stringhelpers.cpp
@@ -40,11 +40,17 @@ set(srcs
 	src/image.cpp
 )
 	
-add_library(tims_gui STATIC ${headers} ${srcs})
+add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})
 
-target_link_libraries(tims_gui sfml-system sfml-window sfml-graphics sfml-audio sfml-main)
+target_link_libraries(tims-gui
+	PUBLIC sfml-system
+	PUBLIC sfml-window
+	PUBLIC sfml-graphics
+	PUBLIC sfml-audio
+	PUBLIC sfml-main
+)
 
-target_include_directories(tims_gui PUBLIC "include")
+target_include_directories(tims-gui PUBLIC "include")
 
 set(BUILD_EXAMPLE OFF CACHE BOOL "When set to ON, the example gui target will be built")
 
@@ -55,9 +61,9 @@ if(BUILD_EXAMPLE)
 		"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h"
 	)
 
-	add_executable(tims_gui_example test/tims_gui_example.cpp test/fontspath.h)
+	add_executable(tims-gui-example test/tims_gui_example.cpp test/fontspath.h)
 
-	target_link_libraries(tims_gui_example
-		PUBLIC tims_gui
+	target_link_libraries(tims-gui-example
+		PUBLIC tims-gui
 	)
 endif()
