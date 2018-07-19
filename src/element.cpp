@@ -945,6 +945,7 @@ namespace ui {
 			);
 		}
 		display_rect.setSize(size);
+		updatePosition();
 		updateChildPositions();
 		makeClean();
 

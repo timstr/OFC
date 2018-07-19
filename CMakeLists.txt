@@ -46,16 +46,18 @@ target_link_libraries(tims_gui sfml-system sfml-window sfml-graphics sfml-audio 
 
 target_include_directories(tims_gui PUBLIC "include")
 
-# Testing below
+set(BUILD_EXAMPLE OFF CACHE BOOL "When set to ON, the example gui target will be built")
 
-set(FONTS_PATH "${CMAKE_SOURCE_DIR}/test/fonts")
-configure_file(
-	"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h.in"
-	"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h"
-)
+if(BUILD_EXAMPLE)
+	set(FONTS_PATH "${CMAKE_SOURCE_DIR}/test/fonts")
+	configure_file(
+		"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h.in"
+		"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h"
+	)
 
-add_executable(tims_gui_test test/test.cpp test/fontspath.h)
+	add_executable(tims_gui_example test/tims_gui_example.cpp test/fontspath.h)
 
-target_link_libraries(tims_gui_test
-	PUBLIC tims_gui
-)
+	target_link_libraries(tims_gui_example
+		PUBLIC tims_gui
+	)
+endif()
