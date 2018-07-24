@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gui/element.h"
-#include "gui/helpers/CallbackButton.h"
+#include "GUI/Element.hpp"
+#include "GUI/helpers/CallbackButton.hpp"
 
 namespace ui {
 

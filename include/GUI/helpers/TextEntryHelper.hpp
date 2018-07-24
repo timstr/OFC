@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gui/textentry.h"
+#include "GUI/TextEntry.hpp"
 
 namespace ui {
 

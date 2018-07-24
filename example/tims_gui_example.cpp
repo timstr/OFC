@@ -1,13 +1,13 @@
-﻿#include "gui/gui.h"
-#include "gui/helpers.h"
+﻿#include "gui/GUI.hpp"
+#include "gui/Helpers.hpp"
 
-#include "gui/roundrectangle.h"
+#include "gui/RoundedRectangle.hpp"
 
 #include <iostream>
 #include <random>
 #include <sstream>
 
-#include "fontspath.h"
+#include "fontspath.hpp"
 
 std::random_device randdev;
 std::mt19937 randeng { randdev() };
@@ -144,11 +144,11 @@ struct TestElement : ui::FreeElement {
 			std::uniform_int_distribution<int> sdist { 20, 300 };
 			std::uniform_int_distribution<int> mdist { 0, 20 };
 			auto self = shared_from_this();
-			vec2 oldsize = getSize();
+			vec2 oldsize = size();
 			vec2 newsize = { (float)sdist(randeng), (float)sdist(randeng) };
-			float oldmargin = getMargin();
+			float oldmargin = margin();
 			float newmargin = (float)mdist(randeng);
-			float oldpadding = getPadding();
+			float oldpadding = padding();
 			float newpadding = (float)mdist(randeng);
 			ui::startTransition(1.0, [=](float t) {
 				float x = 0.5f - 0.5f * cos(t * 3.141592654f);
@@ -165,6 +165,15 @@ struct TestElement : ui::FreeElement {
 
 	void onRightRelease() override {
 		std::cout << name << " was right released" << std::endl;
+	}
+
+	bool onMiddleClick(int clicks) override {
+		std::cout << name << " was " << (clicks == 2 ? "double-" : "") << "middle clicked" << std::endl;
+		return true;
+	}
+
+	void onMiddleRelease() override {
+		std::cout << name << " was middle released" << std::endl;
 	}
 
 	void onFocus() override {
@@ -242,7 +251,7 @@ struct TestElement : ui::FreeElement {
 		}
 
 		void onDrag() override {
-			parent.setSize(getPos() + getSize());
+			parent.setSize(pos() + size());
 		}
 
 		TestElement& parent;
@@ -309,36 +318,38 @@ int main() {
 		auto blob = block->add<ui::RightFloatingElement>();
 		blob->setBackgroundColor(sf::Color(0xBBBBBBFF));
 
-		auto output = block->add<ui::BlockElement>();
-		output->setBackgroundColor(sf::Color(0xFF));
-		output->setBorderRadius(10.0f);
+		auto output = block->add<ui::ScrollPanel>();
+		output->setLayoutStyle(ui::LayoutStyle::Block);
 		output->setMargin(10.0f);
 		output->setHeight(100.0f, true);
-		output->setClipping(true);
+		output->setBorderRadius(10.0f);
+		output->setBorderThickness(10.0f);
+		output->setBorderColor(sf::Color(0xFF));
+		output->inner()->setBackgroundColor(sf::Color(0xFF));
 
-		auto textcont = output->add<ui::FreeElement>();
-		textcont->setXPositionStyle(ui::PositionStyle::InsideLeft, 5.0f);
-		textcont->setYPositionStyle(ui::PositionStyle::InsideBottom, 5.0f);
-
-		auto log = [textcont](const std::string& str) {
-			textcont->write(str + "\n", getFont(), sf::Color(0xFFFFFFFF), 12);
+		auto log = [output](const std::string& str) {
+			output->inner()->write(str, getFont(), sf::Color(0xFFFFFFFF), 12);
 		};
 
 		blob->write("float:\n", getFont());
-		blob->add<ui::NumberTextEntry<float>>(50.0f, 0.0f, 100.0f, getFont(), [&](float val) {
-			log(std::to_string(val));
+		blob->add<ui::NumberTextEntry<float>>(50.0f, 0.0f, 100.0f, getFont(), [log](float val) {
+			log(std::to_string(val) + "\n");
 		});
 		blob->writeLineBreak();
 
 		blob->write("double:\n", getFont());
-		blob->add<ui::NumberTextEntry<double>>(50.0, 0.0, 100.0, getFont(), [&](double val) {
-			log(std::to_string(val));
+		blob->add<ui::NumberTextEntry<double>>(50.0, 0.0, 100.0, getFont(), [log](double val) {
+			log(std::to_string(val) + "\n");
 		});
 		blob->writeLineBreak();
 
 		blob->write("int:\n", getFont());
-		blob->add<ui::NumberTextEntry<int>>(50, 0, 100, getFont(), [&](int val) {
-			log(std::to_string(val));
+		blob->add<ui::NumberTextEntry<int>>(50, 0, 100, getFont(), [log](int val) {
+			log(std::to_string(val) + "\n");
+		});
+
+		blob->add<ui::CallbackButton>("spam", getFont(), [log] {
+			log("SpammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmapS");
 		});
 	}
 

@@ -1,5 +1,5 @@
-#include "gui/transition.h"
-#include "gui/gui.h"
+#include "GUI/Transition.hpp"
+#include "GUI/GUI.hpp"
 
 namespace ui {
 

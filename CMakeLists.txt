@@ -10,34 +10,35 @@ if (NOT SFML_FOUND)
 endif()
 
 set(tims-gui_headers
-	include/gui/context.h
-	include/gui/gui.h
-	include/gui/helpers.h
-	include/gui/roundrectangle.h
-	include/gui/stringhelpers.h
-	include/gui/text.h
-	include/gui/textentry.h
-	include/gui/transition.h
-	include/gui/element.h
-	include/gui/image.h
-	include/gui/helpers/CallbackButton.h
-	include/gui/helpers/NumberTextEntry.h
-	include/gui/helpers/PullDownMenu.h
-	include/gui/helpers/Slider.h
-	include/gui/helpers/TextEntryHelper.h
-	include/gui/helpers/ToggleButton.h
-	include/gui/helpers/pi.h
+	include/GUI/Context.hpp
+	include/GUI/Element.hpp
+	include/GUI/GUI.hpp
+	include/GUI/Helpers.hpp
+	include/GUI/Image.hpp
+	include/GUI/RoundedRectangle.hpp
+	include/GUI/Text.hpp
+	include/GUI/TextEntry.hpp
+	include/GUI/Transition.hpp
+	include/GUI/helpers/CallbackButton.hpp
+	include/GUI/helpers/NumberTextEntry.hpp
+	include/GUI/helpers/pi.hpp
+	include/GUI/helpers/PullDownMenu.hpp
+	include/GUI/helpers/ScrollPanel.hpp
+	include/GUI/helpers/Slider.hpp
+	include/GUI/helpers/StringHelpers.hpp
+	include/GUI/helpers/TextEntryHelper.hpp
+	include/GUI/helpers/ToggleButton.hpp
 )
 
 set(tims-gui_srcs
-	src/context.cpp
-	src/gui.cpp
-	src/stringhelpers.cpp
-	src/text.cpp
-	src/textentry.cpp
-	src/transition.cpp
-	src/element.cpp
-	src/image.cpp
+	src/Context.cpp
+	src/Gui.cpp
+	src/StringHelpers.cpp
+	src/Text.cpp
+	src/TextEntry.cpp
+	src/Transition.cpp
+	src/Element.cpp
+	src/Image.cpp
 )
 	
 add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})
@@ -55,13 +56,13 @@ target_include_directories(tims-gui PUBLIC "include")
 set(BUILD_EXAMPLE OFF CACHE BOOL "When set to ON, the example gui target will be built")
 
 if(BUILD_EXAMPLE)
-	set(FONTS_PATH "${CMAKE_SOURCE_DIR}/test/fonts")
+	set(FONTS_PATH "${CMAKE_SOURCE_DIR}/example/fonts")
 	configure_file(
-		"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h.in"
-		"${CMAKE_CURRENT_SOURCE_DIR}/test/fontspath.h"
+		"${CMAKE_CURRENT_SOURCE_DIR}/example/fontspath.hpp.in"
+		"${CMAKE_CURRENT_SOURCE_DIR}/example/fontspath.hpp"
 	)
 
-	add_executable(tims-gui-example test/tims_gui_example.cpp test/fontspath.h)
+	add_executable(tims-gui-example example/tims_gui_example.cpp example/fontspath.hpp)
 
 	target_link_libraries(tims-gui-example
 		PUBLIC tims-gui

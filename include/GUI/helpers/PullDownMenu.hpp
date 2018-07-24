@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gui/helpers/CallbackButton.h"
+#include "GUI/helpers/CallbackButton.hpp"
 
 namespace ui {
 

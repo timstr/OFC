@@ -1,5 +1,5 @@
-#include "gui/context.h"
-#include "gui/gui.h"
+#include "GUI/Context.hpp"
+#include "GUI/GUI.hpp"
 #include <iostream>
 
 namespace ui {
@@ -11,7 +11,7 @@ namespace ui {
 			if (((*element).*function)(std::forward<ArgsT>(args)...)) {
 				return element;
 			}
-			element = element->getParent().lock();
+			element = element->parent().lock();
 		}
 		return nullptr;
 	}
@@ -20,7 +20,7 @@ namespace ui {
 		quit(false),
 		render_delay(1.0f / 30.0f),
 		doubleclicktime(0.25f),
-		current_element(root().shared_this) {
+		current_element(root().m_sharedthis) {
 
 		program_time = clock.getElapsedTime().asSeconds();
 		highlight_timestamp = clock.getElapsedTime() - sf::seconds(10.0f);
@@ -71,14 +71,14 @@ namespace ui {
 				Ref<Element> old = current_element;
 				while (old) {
 					oldpath.push_back(old);
-					old = old->parent.lock();
+					old = old->parent().lock();
 				}
 
 				// populate new
 				Ref<Element> nu = element;
 				while (nu) {
 					newpath.push_back(nu);
-					nu = nu->parent.lock();
+					nu = nu->parent().lock();
 				}
 
 				// remove common parts
@@ -121,10 +121,16 @@ namespace ui {
 		bool same_button = click_button == button;
 
 		bool same_element = false;
-		if (click_button == sf::Mouse::Left) {
-			same_element = left_clicked_element == hit_element;
-		} else if (click_button == sf::Mouse::Right) {
-			same_element = right_clicked_element == hit_element;
+		switch (click_button) {
+			case sf::Mouse::Left:
+				same_element = left_clicked_element == hit_element;
+				break;
+			case sf::Mouse::Right:
+				same_element = right_clicked_element == hit_element;
+				break;
+			case sf::Mouse::Middle:
+				same_element = middle_clicked_element == hit_element;
+				break;
 		}
 
 		// with the same button, on the same element:
@@ -135,6 +141,8 @@ namespace ui {
 				left_clicked_element = propagate(hit_element, &Element::onLeftClick, 2);
 			} else if (button == sf::Mouse::Right) {
 				right_clicked_element = propagate(hit_element, &Element::onRightClick, 2);
+			} else if (button == sf::Mouse::Middle) {
+				middle_clicked_element = propagate(hit_element, &Element::onMiddleClick, 2);
 			}
 
 			// don't let it be double clicked again until after it gets single clicked again
@@ -148,6 +156,8 @@ namespace ui {
 				left_clicked_element = propagate(hit_element, &Element::onLeftClick, 1);
 			} else if (button == sf::Mouse::Right) {
 				right_clicked_element = propagate(hit_element, &Element::onRightClick, 1);
+			} else if (button == sf::Mouse::Middle) {
+				middle_clicked_element = propagate(hit_element, &Element::onMiddleClick, 1);
 			}
 
 			click_timestamp = clock.getElapsedTime();
@@ -165,13 +175,19 @@ namespace ui {
 			if (right_clicked_element && !right_clicked_element->isClosed()) {
 				right_clicked_element->onRightRelease();
 			}
+		} else if (button == sf::Mouse::Middle) {
+			if (middle_clicked_element && !middle_clicked_element->isClosed()) {
+				middle_clicked_element->onRightRelease();
+			}
 		}
 	}
 
 	void Context::releaseAllButtons() {
 		// release all held keys
 		for (const auto& key_elem : keys_pressed) {
-			key_elem.second->onKeyUp(key_elem.first);
+			if (key_elem.second) {
+				key_elem.second->onKeyUp(key_elem.first);
+			}
 		}
 		keys_pressed.clear();
 
@@ -185,6 +201,12 @@ namespace ui {
 		if (right_clicked_element) {
 			right_clicked_element->onRightRelease();
 			right_clicked_element = nullptr;
+		}
+
+		// release middle mouse button
+		if (middle_clicked_element) {
+			middle_clicked_element->onMiddleRelease();
+			middle_clicked_element = nullptr;
 		}
 	}
 
@@ -235,13 +257,13 @@ namespace ui {
 				key_it->second->onKeyUp(key);
 				key_it->second = elem;
 			}
-		} else {
+		} else if (elem) {
 			keys_pressed[key] = elem;
 		}
 
 		// keyboard navigation
-		auto parent = current_element->parent.lock();
-		if (parent && parent->keyboard_navigation) {
+		auto parent = current_element->parent().lock();
+		if (parent && parent->keyboardNavigable()) {
 			if (key == ui::Key::Tab && (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift))) {
 				// navigate to previous element
 				if (current_element->navigateToPreviousElement()) {
@@ -284,7 +306,7 @@ namespace ui {
 
 	void Context::handleDrag() {
 		if (dragging_element) {
-			dragging_element->pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
+			dragging_element->m_pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
 			dragging_element->onDrag();
 		}
 	}
@@ -302,12 +324,12 @@ namespace ui {
 
 			while (oldelem) {
 				oldpath.push_back(oldelem);
-				oldelem = oldelem->parent.lock();
+				oldelem = oldelem->parent().lock();
 			}
 
 			while (newelem) {
 				newpath.push_back(newelem);
-				newelem = newelem->parent.lock();
+				newelem = newelem->parent().lock();
 			}
 
 			while (!oldpath.empty() && !newpath.empty() && oldpath.back() == newpath.back()) {

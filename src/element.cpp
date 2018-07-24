@@ -1,7 +1,7 @@
-#include "gui/element.h"
-#include "gui/gui.h"
-#include "gui/text.h"
-#include "gui/roundrectangle.h"
+#include "GUI/Element.hpp"
+#include "GUI/GUI.hpp"
+#include "GUI/Text.hpp"
+#include "GUI/RoundedRectangle.hpp"
 
 #include <algorithm>
 #include <set>
@@ -14,162 +14,221 @@ namespace ui {
 	}
 
 	Element::Element(LayoutStyle _display_style) :
-		shared_this(this),
-		layout_style(_display_style),
-		content_align(ContentAlign::Left),
-		pos({ 0.0f, 0.0f }),
-		size({ 100.0f, 100.0f }),
-		min_size({ 0.0f, 0.0f }),
-		max_size({ far_away, far_away }),
-		old_total_size({ 0.0f, 0.0f }),
-		disabled(false),
-		visible(true),
-		clipping(false),
-		keyboard_navigation(true),
-		dirty(true),
-		layout_index(0.0f),
-		padding(0.0f),
-		margin(0.0f) {
+		m_sharedthis(this),
+		m_layoutstyle(_display_style),
+		m_contentalign(ContentAlign::Left),
+		m_pos({ 0.0f, 0.0f }),
+		m_size({ 100.0f, 100.0f }),
+		m_minsize({ 0.0f, 0.0f }),
+		m_maxsize({ far_away, far_away }),
+		m_oldtotalsize({ 0.0f, 0.0f }),
+		m_disabled(false),
+		m_visible(true),
+		m_clipping(false),
+		m_keyboard_navigable(true),
+		m_isdirty(true),
+		m_layoutindex(0.0f),
+		m_padding(0.0f),
+		m_margin(0.0f),
+		m_pstyle_x(PositionStyle::None),
+		m_pstyle_y(PositionStyle::None),
+		m_spacing_x(0.0f),
+		m_spacing_y(0.0f) {
 
-		display_rect.setSize(size);
-		display_rect.setFillColor(sf::Color(0));
-		display_rect.setOutlineThickness(0.0f);
-		display_rect.setOutlineColor(sf::Color(0xFF));
+		m_displayrect.setSize(size());
+		m_displayrect.setFillColor(sf::Color(0));
+		m_displayrect.setOutlineThickness(0.0f);
+		m_displayrect.setOutlineColor(sf::Color(0xFF));
 	}
 
-	void Element::disable() {
-		disabled = true;
+	Element& Element::disable() {
+		m_disabled = true;
+		return *this;
 	}
 
-	void Element::enable() {
-		disabled = false;
+	Element& Element::enable() {
+		m_disabled = false;
+		return *this;
 	}
 
 	bool Element::isEnabled() const {
-		return !disabled;
+		return !m_disabled;
 	}
 
-	void Element::enableKeyboardNavigation() {
-		keyboard_navigation = true;
+	Element& Element::enableKeyboardNavigation() {
+		m_keyboard_navigable = true;
+		return *this;
 	}
 
-	void Element::disableKeyboardNavigation() {
-		keyboard_navigation = false;
+	Element& Element::disableKeyboardNavigation() {
+		m_keyboard_navigable = false;
+		return *this;
 	}
 
-	bool Element::isKeyboardNavigable() const {
-		return keyboard_navigation;
+	bool Element::keyboardNavigable() const {
+		return m_keyboard_navigable;
 	}
 
-	void Element::setVisible(bool is_visible) {
-		if (visible != is_visible && layout_style != LayoutStyle::Free) {
+	Element& Element::setVisible(bool is_visible) {
+		if (isVisible() != is_visible && layoutStyle() != LayoutStyle::Free) {
 			makeDirty();
 		}
-		visible = is_visible;
+		m_visible = is_visible;
+		return *this;
 	}
 
 	bool Element::isVisible() const {
-		return visible;
+		return m_visible;
 	}
 
-	void Element::setClipping(bool _clipping) {
-		clipping = _clipping;
+	Element& Element::setClipping(bool _clipping) {
+		m_clipping = _clipping;
+		return *this;
 	}
 
-	vec2 Element::getPos() const {
-		return pos;
+	bool Element::clipping() const {
+		return m_clipping;
 	}
 
-	void Element::setPos(vec2 _pos) {
-		if (abs(pos.x - _pos.x) + abs(pos.y - _pos.y) > epsilon) {
-			pos = _pos;
+	vec2 Element::pos() const {
+		return m_pos;
+	}
+
+	float Element::left() const {
+		return m_pos.x;
+	}
+
+	float Element::top() const {
+		return m_pos.y;
+	}
+
+	Element& Element::setPos(vec2 _pos) {
+		if (abs(left() - _pos.x) + abs(top() - _pos.y) > epsilon) {
+			m_pos = _pos;
 		}
+		return *this;
 	}
 
-	vec2 Element::getSize() const {
-		return size;
+	Element & Element::setLeft(float x) {
+		return setPos({ x, top() });
 	}
 
-	void Element::setSize(vec2 _size, bool force) {
+	Element & Element::setTop(float y) {
+		return setPos({ left(), y });
+	}
+
+	vec2 Element::size() const {
+		return m_size;
+	}
+
+	Element& Element::setSize(vec2 _size, bool force) {
 		_size = vec2(std::max(_size.x, 0.0f), std::max(_size.y, 0.0f));
-		if (abs(size.x - _size.x) + abs(size.y - _size.y) > epsilon) {
-			size = _size;
+		if (abs(width() - _size.x) + abs(height() - _size.y) > epsilon) {
+			m_size = _size;
 			makeDirty();
 		}
 		if (force) {
-			if (min_size.x > size.x || min_size.y > size.y || max_size.x < size.x || max_size.y < size.y) {
+			if (minWidth() > width() || minHeight() > height() || maxWidth() < width() || maxHeight() < height()) {
 				makeDirty();
 			}
-			min_size = _size;
-			max_size = _size;
+			m_minsize = _size;
+			m_maxsize = _size;
 		}
+		return *this;
 	}
 
-	void Element::setMinSize(vec2 _min_size) {
+	Element& Element::setMinSize(vec2 _min_size) {
 		_min_size = vec2(std::max(_min_size.x, 0.0f), std::max(_min_size.y, 0.0f));
-		min_size = _min_size;
-		if (min_size.x > size.x || min_size.y > size.y) {
-			makeDirty();
-		}
+		m_minsize = _min_size;
+		makeDirty();
+		return *this;
 	}
 
-	vec2 Element::getMaxSize() const {
-		return max_size;
+	vec2 Element::maxSize() const {
+		return m_maxsize;
 	}
 
-	vec2 Element::getMinSize() const {
-		return min_size;
+	vec2 Element::minSize() const {
+		return m_minsize;
 	}
 
-	void Element::setMinWidth(float width) {
-		setMinSize({ width, min_size.y });
-	}
-	void Element::setMinHeight(float height) {
-		setMinSize({ min_size.x, height });
+	Element& Element::setMinWidth(float width) {
+		return setMinSize({ width, minHeight() });
 	}
 
-	void Element::setMaxSize(vec2 _max_size) {
+	Element& Element::setMinHeight(float height) {
+		return setMinSize({ minWidth(), height });
+	}
+
+	Element& Element::setMaxSize(vec2 _max_size) {
 		_max_size = vec2(std::max(_max_size.x, 0.0f), std::max(_max_size.y, 0.0f));
-		max_size = _max_size;
-		if (max_size.x < size.x || max_size.y < size.y) {
-			makeDirty();
-		}
+		m_maxsize = _max_size;
+		makeDirty();
+		return *this;
 	}
 
-	void Element::setMaxWidth(float width) {
-		setMaxSize({ width, max_size.y });
+	Element& Element::setMaxWidth(float width) {
+		return setMaxSize({ width, maxHeight() });
 	}
-	void Element::setWidth(float width, bool force) {
-		width = std::max(0.0f, width);
-		if (abs(size.x - width) > epsilon) {
-			size.x = width;
+
+	Element& Element::setWidth(float _width, bool force) {
+		_width = std::max(0.0f, _width);
+		if (abs(width() - _width) > epsilon) {
+			m_size.x = _width;
 			makeDirty();
 		}
 		if (force) {
-			if (size.x < min_size.x || size.x > max_size.x) {
+			if (width() < minWidth() || width() > maxWidth()) {
 				makeDirty();
 			}
-			min_size.x = width;
-			max_size.x = width;
+			m_minsize.x = _width;
+			m_maxsize.x = _width;
 		}
-	}
-	void Element::setMaxHeight(float height) {
-		setMaxSize({ max_size.x, height });
+		return *this;
 	}
 
-	void Element::setHeight(float height, bool force) {
-		height = std::max(0.0f, height);
-		if (abs(size.y - height) > epsilon) {
-			size.y = height;
+	float Element::minWidth() const {
+		return m_minsize.x;
+	}
+
+	float Element::maxWidth() const {
+		return m_maxsize.x;
+	}
+
+	float Element::width() const {
+		return m_size.x;
+	}
+
+	Element& Element::setMaxHeight(float height) {
+		return setMaxSize({ maxWidth(), height });
+	}
+
+	Element& Element::setHeight(float _height, bool force) {
+		_height = std::max(0.0f, _height);
+		if (abs(height() - _height) > epsilon) {
+			m_size.y = _height;
 			makeDirty();
 		}
 		if (force) {
-			if (size.y < min_size.y || size.y > max_size.y) {
+			if (height() < minHeight() || height() > maxHeight()) {
 				makeDirty();
 			}
-			min_size.y = height;
-			max_size.y = height;
+			m_minsize.y = _height;
+			m_maxsize.y = _height;
 		}
+		return *this;
+	}
+
+	float Element::maxHeight() const {
+		return m_maxsize.y;
+	}
+
+	float Element::minHeight() const {
+		return m_minsize.y;
+	}
+
+	float Element::height() const {
+		return m_size.y;
 	}
 
 	void Element::onResize() {
@@ -177,53 +236,54 @@ namespace ui {
 	}
 
 	void Element::setLayoutStyle(LayoutStyle style) {
-		if (layout_style != style) {
-			layout_style = style;
-			if (auto par = parent.lock()) {
+		if (layoutStyle() != style) {
+			m_layoutstyle = style;
+			if (auto par = parent().lock()) {
 				par->makeDirty();
 			}
 		}
 	}
 
-	LayoutStyle Element::getLayoutStyle() const {
-		return layout_style;
+	LayoutStyle Element::layoutStyle() const {
+		return m_layoutstyle;
 	}
 
-	void Element::setContentAlign(ContentAlign style) {
-		if (content_align != style) {
-			content_align = style;
+	Element& Element::setContentAlign(ContentAlign style) {
+		if (contentAlign() != style) {
+			m_contentalign = style;
 			makeDirty();
 		}
+		return *this;
 	}
 
-	ContentAlign Element::getContentAlign() const {
-		return content_align;
+	ContentAlign Element::contentAlign() const {
+		return m_contentalign;
 	}
 
 	void Element::setXPositionStyle(PositionStyle style, float spacing) {
-		x_position_style = style;
-		x_spacing = spacing;
+		m_pstyle_x = style;
+		m_spacing_x = spacing;
 	}
 
-	PositionStyle Element::getXPositionStyle() const {
-		return x_position_style;
+	PositionStyle Element::xPositionStyle() const {
+		return m_pstyle_x;
 	}
 
-	float Element::getXPositionSpacing() const {
-		return x_spacing;
+	float Element::xPositionSpacing() const {
+		return m_spacing_x;
 	}
 
 	void Element::setYPositionStyle(PositionStyle style, float spacing) {
-		y_position_style = style;
-		y_spacing = spacing;
+		m_pstyle_y = style;
+		m_spacing_y = spacing;
 	}
 
-	PositionStyle Element::getYPositionStyle() const {
-		return y_position_style;
+	PositionStyle Element::yPositionStyle() const {
+		return m_pstyle_y;
 	}
 
-	float Element::getYPositionSpacing() const {
-		return y_spacing;
+	float Element::yPositionSpacing() const {
+		return m_spacing_y;
 	}
 
 	Element::~Element() {
@@ -235,21 +295,21 @@ namespace ui {
 			return;
 		}
 		onClose();
-		while (!children.empty()) {
-			if (children.back()->inFocus()) {
+		while (!m_children.empty()) {
+			if (m_children.back()->inFocus()) {
 				grabFocus();
 			}
-			children.back()->close();
+			m_children.back()->close();
 		}
-		auto self = shared_this;
-		shared_this = nullptr;
-		if (auto p = parent.lock()) {
+		auto self = m_sharedthis;
+		m_sharedthis = nullptr;
+		if (auto p = parent().lock()) {
 			p->remove(self);
 		}
 	}
 
 	bool Element::isClosed() const {
-		return !static_cast<bool>(shared_this);
+		return !static_cast<bool>(m_sharedthis);
 	}
 
 	void Element::onClose() {
@@ -257,25 +317,25 @@ namespace ui {
 	}
 
 	bool Element::hit(vec2 testpos) const {
-		return ((testpos.x >= 0.0f) && (testpos.x < size.x) && (testpos.y >= 0.0f) && (testpos.y < size.y));
+		return ((testpos.x >= 0.0f) && (testpos.x < width()) && (testpos.y >= 0.0f) && (testpos.y < height()));
 	}
 
 	vec2 Element::localMousePos() const {
 		vec2 mousepos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
-		Ref<const Element> element = shared_this;
+		Ref<const Element> element = m_sharedthis;
 		while (element) {
-			mousepos -= element->pos;
-			element = element->parent.lock();
+			mousepos -= element->pos();
+			element = element->parent().lock();
 		}
 		return mousepos;
 	}
 
-	vec2 Element::rootPos() const {
+	vec2 Element::absPos() const {
 		vec2 rootpos = { 0, 0 };
-		Ref<const Element> element = shared_this;
+		Ref<const Element> element = m_sharedthis;
 		while (element) {
-			rootpos += element->pos;
-			element = element->parent.lock();
+			rootpos += element->pos();
+			element = element->parent().lock();
 		}
 		return rootpos;
 	}
@@ -296,6 +356,14 @@ namespace ui {
 
 	}
 
+	bool Element::onMiddleClick(int clicks) {
+		return false;
+	}
+
+	void Element::onMiddleRelease() {
+
+	}
+
 	bool Element::leftMouseDown() const {
 		if (inFocus()) {
 			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
@@ -312,14 +380,22 @@ namespace ui {
 		}
 	}
 
+	bool Element::middleMouseDown() const {
+		if (inFocus()) {
+			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle);
+		} else {
+			return false;
+		}
+	}
+
 	bool Element::onScroll(float, float) {
 		return false;
 	}
 
 	void Element::startDrag() {
-		if (layout_style == LayoutStyle::Free) {
+		if (layoutStyle() == LayoutStyle::Free) {
 			grabFocus();
-			getContext().setDraggingElement(shared_this, (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos);
+			getContext().setDraggingElement(m_sharedthis, (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos());
 		}
 	}
 
@@ -358,13 +434,13 @@ namespace ui {
 	}
 
 	void Element::drop(vec2 local_pos) {
-		vec2 drop_pos = rootPos() + local_pos;
-		if (auto element = root().findElementAt(drop_pos, shared_this)) {
+		vec2 drop_pos = absPos() + local_pos;
+		if (auto element = root().findElementAt(drop_pos, m_sharedthis)) {
 			do {
-				if (element->onDrop(shared_this)) {
+				if (element->onDrop(m_sharedthis)) {
 					return;
 				}
-			} while (element = element->parent.lock());
+			} while (element = element->parent().lock());
 		}
 	}
 
@@ -385,7 +461,7 @@ namespace ui {
 	}
 
 	void Element::grabFocus() {
-		getContext().focusTo(shared_this);
+		getContext().focusTo(m_sharedthis);
 	}
 
 	bool Element::onKeyDown(Key) {
@@ -431,7 +507,7 @@ namespace ui {
 	}
 
 	void Element::writeLineBreak(unsigned charsize) {
-		white_spaces.push_back(WhiteSpace(WhiteSpace::LineBreak, getNextLayoutIndex(), charsize));
+		m_whitespaces.push_back(WhiteSpace(WhiteSpace::LineBreak, getNextLayoutIndex(), charsize));
 		makeDirty();
 	}
 
@@ -446,36 +522,36 @@ namespace ui {
 
 	void Element::writeTab(float width) {
 		unsigned charsize = static_cast<unsigned>(floor(width / 50.0f * 15.0f));
-		white_spaces.push_back(WhiteSpace(WhiteSpace::Tab, getNextLayoutIndex(), charsize));
+		m_whitespaces.push_back(WhiteSpace(WhiteSpace::Tab, getNextLayoutIndex(), charsize));
 		makeDirty();
 	}
 
 	void Element::adopt(Ref<Element> child) {
-		if (auto p = child->parent.lock()) {
+		if (auto p = child->parent().lock()) {
 			if (p.get() == this) {
 				return;
 			}
 			p->release(child);
 		}
-		children.push_back(child);
-		child->parent = shared_this;
-		child->layout_index = getNextLayoutIndex();
+		m_children.push_back(child);
+		child->m_parent = m_sharedthis;
+		child->m_layoutindex = getNextLayoutIndex();
 		makeDirty();
-		if (layout_style != LayoutStyle::Free)
-			if (auto p = parent.lock()) {
+		if (layoutStyle() != LayoutStyle::Free)
+			if (auto p = parent().lock()) {
 				p->makeDirty();
 			}
 	}
 
 	void Element::remove(Ref<Element> element) {
 		if (element) {
-			for (auto it = children.begin(); it != children.end(); ++it) {
+			for (auto it = m_children.begin(); it != m_children.end(); ++it) {
 				if (*it == element) {
 					if (element->ancestorInFocus()) {
 						grabFocus();
 					}
-					children.erase(it);
-					element->parent = {};
+					m_children.erase(it);
+					element->m_parent = {};
 					element->close();
 					organizeLayoutIndices();
 					makeDirty();
@@ -487,13 +563,13 @@ namespace ui {
 
 	Ref<Element> Element::release(Ref<Element> element) {
 		if (element) {
-			for (auto it = children.begin(); it != children.end(); ++it) {
+			for (auto it = m_children.begin(); it != m_children.end(); ++it) {
 				if (*it == element) {
 					if (element->ancestorInFocus()) {
 						grabFocus();
 					}
-					children.erase(it);
-					element->parent = {};
+					m_children.erase(it);
+					element->m_parent = {};
 					organizeLayoutIndices();
 					makeDirty();
 					return element;
@@ -504,11 +580,11 @@ namespace ui {
 	}
 
 	void Element::bringToFront() {
-		if (auto p = parent.lock()) {
-			for (auto it = p->children.begin(); it != p->children.end(); ++it) {
+		if (auto p = parent().lock()) {
+			for (auto it = p->m_children.begin(); it != p->m_children.end(); ++it) {
 				if ((*it).get() == this) {
-					p->children.erase(it);
-					p->children.push_back(shared_this);
+					p->m_children.erase(it);
+					p->m_children.push_back(m_sharedthis);
 					return;
 				}
 			}
@@ -516,16 +592,19 @@ namespace ui {
 	}
 
 	void Element::clear() {
-		children.clear();
+		while (m_children.size() > 0) {
+			m_children.back()->close();
+		}
+		m_children.clear();
 		makeDirty();
 	}
 
 	Ref<Element> Element::findElementAt(vec2 _pos, Ref<Element> exclude) {
-		if (!visible || disabled) {
+		if (!isVisible() || !isEnabled()) {
 			return nullptr;
 		}
 
-		if (clipping && ((_pos.x < 0.0f) || (_pos.x > size.x) || (_pos.y < 0.0) || (_pos.y > size.y))) {
+		if (clipping() && ((_pos.x < 0.0f) || (_pos.x > width()) || (_pos.y < 0.0) || (_pos.y > height()))) {
 			return nullptr;
 		}
 
@@ -534,43 +613,43 @@ namespace ui {
 		}
 
 		Ref<Element> element;
-		for (auto it = children.rbegin(); it != children.rend(); ++it) {
-			element = (*it)->findElementAt(_pos - (*it)->pos, exclude);
+		for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+			element = (*it)->findElementAt(_pos - (*it)->pos(), exclude);
 			if (element) {
 				return element;
 			}
 		}
 
 		if (this->hit(_pos)) {
-			return shared_this;
+			return m_sharedthis;
 		}
 
 		return nullptr;
 	}
 
 	void Element::render(sf::RenderWindow& rw) {
-		rw.draw(display_rect);
+		rw.draw(m_displayrect);
 	}
 
 	bool Element::navigateToPreviousElement() {
 		if (!inFocus()) {
 			return false;
 		}
-		auto par = parent.lock();
+		auto par = parent().lock();
 		if (!par) {
 			return false;
 		}
 		std::map<LayoutIndex, Ref<Element>> siblings;
-		for (const auto& sib : par->getChildren()) {
-			if (!sib->disabled) {
-				siblings[sib->layout_index] = sib;
+		for (const auto& sib : par->children()) {
+			if (sib->isEnabled() && sib->isVisible()) {
+				siblings[sib->m_layoutindex] = sib;
 			}
 		}
 		if (siblings.size() < 2) {
 			return par->navigateToPreviousElement();
 		}
 
-		auto self = siblings.find(this->layout_index);
+		auto self = siblings.find(this->m_layoutindex);
 
 		if (self == siblings.begin()) {
 			self = siblings.end();
@@ -585,21 +664,21 @@ namespace ui {
 		if (!inFocus()) {
 			return false;
 		}
-		auto par = parent.lock();
+		auto par = parent().lock();
 		if (!par) {
 			return false;
 		}
 		std::map<LayoutIndex, Ref<Element>> siblings;
-		for (const auto& sib : par->getChildren()) {
-			if (!sib->disabled) {
-				siblings[sib->layout_index] = sib;
+		for (const auto& sib : par->children()) {
+			if (sib->isEnabled() && sib->isVisible()) {
+				siblings[sib->m_layoutindex] = sib;
 			}
 		}
 		if (siblings.size() < 2) {
 			return par->navigateToNextElement();
 		}
 
-		auto self = siblings.find(this->layout_index);
+		auto self = siblings.find(this->m_layoutindex);
 
 		++self;
 		if (self == siblings.end()) {
@@ -615,9 +694,9 @@ namespace ui {
 			return false;
 		}
 		std::map<LayoutIndex, Ref<Element>> elems;
-		for (const auto& child : getChildren()) {
-			if (!child->disabled) {
-				elems[child->layout_index] = child;
+		for (const auto& child : children()) {
+			if (child->isEnabled() && child->isVisible()) {
+				elems[child->m_layoutindex] = child;
 			}
 		}
 		if (elems.size() == 0) {
@@ -640,13 +719,13 @@ namespace ui {
 		if (!inFocus()) {
 			return false;
 		}
-		auto par = parent.lock();
+		auto par = parent().lock();
 		if (!par) {
 			return false;
 		}
 		int count = 0;
-		for (const auto& sib : par->getChildren()) {
-			if (!sib->disabled) {
+		for (const auto& sib : par->children()) {
+			if (sib->isEnabled() && sib->isVisible()) {
 				++count;
 			}
 		}
@@ -660,30 +739,30 @@ namespace ui {
 	}
 
 	void Element::renderChildren(sf::RenderWindow& renderwindow) {
-		for (auto it = children.begin(); it != children.end(); ++it) {
+		for (auto it = m_children.begin(); it != m_children.end(); ++it) {
 			const Ref<Element>& child = *it;
-			if (child->visible) {
-				if (child->clipping) {
-					auto childrect = sf::FloatRect(getContext().getViewOffset() + child->pos, child->size);
+			if (child->isVisible() && child) {
+				if (child->clipping()) {
+					auto childrect = sf::FloatRect(getContext().getViewOffset() + child->pos(), child->size());
 					if (!getContext().getClipRect().intersects(childrect)) {
 						continue;
 					}
-					getContext().translateView(child->pos);
+					getContext().translateView(child->pos());
 					sf::FloatRect rect = getContext().getClipRect();
 					vec2 offset = getContext().getViewOffset();
-					getContext().intersectClipRect(sf::FloatRect(-offset, child->size));
+					getContext().intersectClipRect(sf::FloatRect(-offset, child->size()));
 					getContext().updateView();
 					child->render(renderwindow);
 					child->renderChildren(renderwindow);
 					getContext().setClipRect(rect);
-					getContext().translateView(-child->pos);
+					getContext().translateView(-child->pos());
 					getContext().updateView();
 				} else {
-					getContext().translateView(child->pos);
+					getContext().translateView(child->pos());
 					getContext().updateView();
 					child->render(renderwindow);
 					child->renderChildren(renderwindow);
-					getContext().translateView(-child->pos);
+					getContext().translateView(-child->pos());
 					getContext().updateView();
 				}
 			}
@@ -692,10 +771,10 @@ namespace ui {
 
 	Element::LayoutIndex Element::getNextLayoutIndex() const {
 		LayoutIndex max = 0.0f;
-		for (const auto& child : children) {
-			max = std::max(child->layout_index, max);
+		for (const auto& child : m_children) {
+			max = std::max(child->m_layoutindex, max);
 		}
-		for (const auto& space : white_spaces) {
+		for (const auto& space : m_whitespaces) {
 			max = std::max(space.layout_index, max);
 		}
 		return max + 1.0f;
@@ -705,17 +784,17 @@ namespace ui {
 		using ElementOrSpace = std::pair<Ref<Element>, WhiteSpace*>;
 
 		std::set<std::pair<LayoutIndex, ElementOrSpace>> index_set;
-		for (const auto& child : children) {
-			index_set.insert({ child->layout_index, {child, nullptr} });
+		for (const auto& child : m_children) {
+			index_set.insert({ child->m_layoutindex, {child, nullptr} });
 		}
-		for (auto& space : white_spaces) {
+		for (auto& space : m_whitespaces) {
 			index_set.insert({ space.layout_index, {nullptr, &space} });
 		}
 
 		LayoutIndex i = 0.0f;
 		for (const auto& mapping : index_set) {
 			if (mapping.second.first) {
-				mapping.second.first->layout_index = i;
+				mapping.second.first->m_layoutindex = i;
 			} else if (mapping.second.second) {
 				mapping.second.second->layout_index = i;
 			}
@@ -729,7 +808,7 @@ namespace ui {
 			if (elem.get() == this) {
 				return true;
 			}
-			elem = elem->parent.lock();
+			elem = elem->parent().lock();
 		}
 		return false;
 	}
@@ -737,36 +816,36 @@ namespace ui {
 	std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const {
 		std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> sorted_elements;
 
-		sorted_elements.reserve(children.size() + white_spaces.size());
+		sorted_elements.reserve(m_children.size() + m_whitespaces.size());
 
-		for (const auto& child : children) {
+		for (const auto& child : m_children) {
 			sorted_elements.push_back({ child, Element::WhiteSpace(Element::WhiteSpace::None, 0.0f) });
 		}
-		for (const auto& space : white_spaces) {
+		for (const auto& space : m_whitespaces) {
 			sorted_elements.push_back({ nullptr, space });
 		}
 
 		return sorted_elements;
 	}
 
-	const std::vector<Ref<Element>>& Element::getChildren() const {
-		return children;
+	const std::vector<Ref<Element>>& Element::children() const {
+		return m_children;
 	}
 
-	std::weak_ptr<Element> Element::getParent() const {
-		return parent;
+	std::weak_ptr<Element> Element::parent() const {
+		return m_parent;
 	}
 
 	void Element::layoutBefore(const Ref<Element>& sibling) {
 		if (!sibling || isClosed()) {
 			return;
 		}
-		if (auto mypar = parent.lock()) {
-			if (auto otherpar = sibling->parent.lock()) {
+		if (auto mypar = parent().lock()) {
+			if (auto otherpar = sibling->parent().lock()) {
 				if (mypar != otherpar) {
 					return;
 				}
-				layout_index = sibling->layout_index - 0.5f;
+				m_layoutindex = sibling->m_layoutindex - 0.5f;
 				organizeLayoutIndices();
 			}
 		}
@@ -776,150 +855,147 @@ namespace ui {
 		if (!sibling || isClosed()) {
 			return;
 		}
-		if (auto mypar = parent.lock()) {
-			if (auto otherpar = sibling->parent.lock()) {
+		if (auto mypar = parent().lock()) {
+			if (auto otherpar = sibling->parent().lock()) {
 				if (mypar != otherpar) {
 					return;
 				}
-				layout_index = sibling->layout_index + 0.5f;
+				m_layoutindex = sibling->m_layoutindex + 0.5f;
 				organizeLayoutIndices();
 			}
 		}
 	}
 
 	void Element::setPadding(float _padding) {
-		if (abs(padding - _padding) > epsilon) {
-			padding = std::max(_padding, 0.0f);
+		if (abs(padding() - _padding) > epsilon) {
+			m_padding = std::max(_padding, 0.0f);
 			makeDirty();
 		}
 	}
 
-	float Element::getPadding() const {
-		return padding;
+	float Element::padding() const {
+		return m_padding;
 	}
 
 	void Element::setMargin(float _margin) {
 		_margin = std::max(_margin, 0.0f);
-		if (abs(margin - _margin) > epsilon) {
-			margin = _margin;
+		if (abs(margin() - _margin) > epsilon) {
+			m_margin = _margin;
 			makeDirty();
 		}
 	}
 
-	float Element::getMargin() const {
-		return margin;
+	float Element::margin() const {
+		return m_margin;
 	}
 
-	sf::Color Element::getBackgroundColor() const {
-		return display_rect.getFillColor();
+	sf::Color Element::backgroundColor() const {
+		return m_displayrect.getFillColor();
 	}
 
 	void Element::setBackgroundColor(sf::Color color) {
-		display_rect.setFillColor(color);
+		m_displayrect.setFillColor(color);
 	}
 
-	sf::Color Element::getBorderColor() const {
-		return display_rect.getOutlineColor();
+	sf::Color Element::borderColor() const {
+		return m_displayrect.getOutlineColor();
 	}
 
 	void Element::setBorderColor(sf::Color color) {
-		display_rect.setOutlineColor(color);
+		m_displayrect.setOutlineColor(color);
 	}
 
-	float Element::getBorderRadius() const {
-		return display_rect.getRadius();
+	float Element::borderRadius() const {
+		return m_displayrect.getRadius();
 	}
 
 	void Element::setBorderRadius(float radius) {
-		display_rect.setRadius(radius);
+		m_displayrect.setRadius(radius);
 	}
 
-	float Element::getBorderThickness() const {
-		return display_rect.getOutlineThickness();
+	float Element::borderThickness() const {
+		return m_displayrect.getOutlineThickness();
 	}
 
 	void Element::setBorderThickness(float thickness) {
-		display_rect.setOutlineThickness(std::max(0.0f, thickness));
+		m_displayrect.setOutlineThickness(std::max(0.0f, thickness));
 	}
 
 	void Element::updatePosition() {
-		if (layout_style != LayoutStyle::Free) {
+		if (layoutStyle() != LayoutStyle::Free) {
 			return;
 		}
-		auto par = parent.lock();
+		auto par = parent().lock();
 		if (!par) {
 			return;
 		}
-		switch (x_position_style) {
+		switch (xPositionStyle()) {
 			case PositionStyle::OutsideBegin:
-				pos.x = -x_spacing - size.x;
+				m_pos.x = -xPositionSpacing() - width();
 				break;
 			case PositionStyle::InsideBegin:
-				pos.x = x_spacing;
+				m_pos.x = xPositionSpacing();
 				break;
 			case PositionStyle::Center:
-				pos.x = (par->size.x - size.x) * 0.5f;
+				m_pos.x = (par->width() - width()) * 0.5f;
 				break;
 			case PositionStyle::InsideEnd:
-				pos.x = par->size.x - size.x - x_spacing;
+				m_pos.x = par->width() - width() - xPositionSpacing();
 				break;
 			case PositionStyle::OutsideEnd:
-				pos.x = par->size.x + x_spacing;
+				m_pos.x = par->width() + xPositionSpacing();
 				break;
 		}
-		switch (y_position_style) {
+		switch (yPositionStyle()) {
 			case PositionStyle::OutsideBegin:
-				pos.y = -y_spacing - size.y;
+				m_pos.y = -yPositionSpacing() - height();
 				break;
 			case PositionStyle::InsideBegin:
-				pos.y = y_spacing;
+				m_pos.y = yPositionSpacing();
 				break;
 			case PositionStyle::Center:
-				pos.y = (par->size.y - size.y) * 0.5f;
+				m_pos.y = (par->height() - height()) * 0.5f;
 				break;
 			case PositionStyle::InsideEnd:
-				pos.y = par->size.y - size.y - y_spacing;
+				m_pos.y = par->height() - height() - yPositionSpacing();
 				break;
 			case PositionStyle::OutsideEnd:
-				pos.y = par->size.y + y_spacing;
+				m_pos.y = par->height() + yPositionSpacing();
 				break;
 		}
 	}
 
 	void Element::updateChildPositions() {
-		for (const auto& child : children) {
+		for (const auto& child : m_children) {
 			child->updatePosition();
 		}
 	}
 
 	void Element::makeDirty() {
-		dirty = true;
+		m_isdirty = true;
 	}
 
 	bool Element::isDirty() const {
-		return dirty;
+		return m_isdirty;
 	}
 
 	void Element::makeClean() {
-		dirty = false;
+		m_isdirty = false;
 	}
 
 	bool Element::update(float width_avail) {
-		if (this->layout_style == LayoutStyle::Free) {
-			width_avail = size.x;
+		if (this->layoutStyle() == LayoutStyle::Free) {
+			width_avail = width();
 		}
-		width_avail = std::min(std::max(width_avail, min_size.x), max_size.x);
+		width_avail = std::min(std::max(width_avail, minWidth()), maxWidth());
 
-		if (layout_style == LayoutStyle::Block) {
-			setSize({
-				width_avail,
-				size.y
-			});
+		if (layoutStyle() == LayoutStyle::Block) {
+			setWidth(width_avail);
 		}
 
 		if (!isDirty()) {
-			for (auto child = children.begin(); !isDirty() && child != children.end(); ++child) {
-				if ((*child)->update((*child)->size.x)) {
+			for (auto child = m_children.begin(); !isDirty() && child != m_children.end(); ++child) {
+				if ((*child)->update((*child)->width())) {
 					makeDirty();
 				}
 			}
@@ -930,33 +1006,33 @@ namespace ui {
 
 		// calculate own width and arrange children
 		vec2 newsize = arrangeChildren(width_avail);
-		if (layout_style == LayoutStyle::Block) {
+		if (layoutStyle() == LayoutStyle::Block) {
 			newsize.x = std::max(width_avail, newsize.x);
 		}
-		size = vec2(
-			std::min(std::max(newsize.x, min_size.x), max_size.x),
-			std::min(std::max(newsize.y, min_size.y), max_size.y)
+		m_size = vec2(
+			std::min(std::max(newsize.x, minWidth()), maxWidth()),
+			std::min(std::max(newsize.y, minHeight()), maxHeight())
 		);
-		if (size.x > width_avail) {
-			newsize = arrangeChildren(size.x);
-			size = vec2(
-				std::min(std::max(newsize.x, min_size.x), max_size.x),
-				std::min(std::max(newsize.y, min_size.y), max_size.y)
+		if (width() > width_avail) {
+			newsize = arrangeChildren(width());
+			m_size = vec2(
+				std::min(std::max(newsize.x, minWidth()), maxWidth()),
+				std::min(std::max(newsize.y, minHeight()), maxHeight())
 			);
 		}
-		display_rect.setSize(size);
+		m_displayrect.setSize(size());
 		updatePosition();
 		updateChildPositions();
 		makeClean();
 
 		onResize();
 
-		if (this->layout_style == LayoutStyle::Free) {
+		if (this->layoutStyle() == LayoutStyle::Free) {
 			return false;
 		} else {
-			vec2 new_total_size = size + vec2(2.0f * margin, 2.0f * margin);
-			float diff = abs(old_total_size.x - new_total_size.x) + abs(old_total_size.y - new_total_size.y);
-			old_total_size = new_total_size;
+			vec2 new_total_size = size() + vec2(2.0f * margin(), 2.0f * margin());
+			float diff = abs(m_oldtotalsize.x - new_total_size.x) + abs(m_oldtotalsize.y - new_total_size.y);
+			m_oldtotalsize = new_total_size;
 			return diff > epsilon;
 		}
 	}
@@ -973,7 +1049,7 @@ namespace ui {
 
 			reset();
 			auto comp = [](const Child& l, const Child& r) {
-				return (l.first ? l.first->layout_index : l.second.layout_index) < (r.first ? r.first->layout_index : r.second.layout_index);
+				return (l.first ? l.first->m_layoutindex : l.second.layout_index) < (r.first ? r.first->m_layoutindex : r.second.layout_index);
 			};
 			std::sort(sorted_elements.begin(), sorted_elements.end(), comp);
 		}
@@ -990,12 +1066,12 @@ namespace ui {
 		std::vector<Ref<Element>> floatingleft, floatingright;
 
 		void reset() {
-			xpos = self.padding;
-			ypos = self.padding;
-			next_ypos = self.padding;
-			contentsize = { 2.0f * self.padding, 2.0f * self.padding };
-			left_edge = self.padding;
-			right_edge = width_avail - self.padding;
+			xpos = self.padding();
+			ypos = self.padding();
+			next_ypos = self.padding();
+			contentsize = { 2.0f * self.padding(), 2.0f * self.padding() };
+			left_edge = self.padding();
+			right_edge = width_avail - self.padding();
 			emptyline = true;
 		}
 
@@ -1004,37 +1080,37 @@ namespace ui {
 			std::vector<Child> inline_children;
 
 			auto horizontalAlign = [&, this](const std::vector<Ref<Element>>& line, float left_limit, float right_limit, bool full) {
-				if (line.size() == 0 || self.content_align == ContentAlign::Left) {
+				if (line.size() == 0 || self.contentAlign() == ContentAlign::Left) {
 					return;
 				}
 
-				if (self.content_align == ContentAlign::Right) {
+				if (self.contentAlign() == ContentAlign::Right) {
 
-					float offset = right_limit - (line.back()->pos.x + line.back()->size.x + line.back()->margin);
+					float offset = right_limit - (line.back()->left() + line.back()->width() + line.back()->margin());
 					for (const auto& elem : line) {
-						elem->pos.x = elem->pos.x + offset;
+						elem->m_pos.x += offset;
 					}
 
-				} else if (self.content_align == ContentAlign::Center) {
+				} else if (self.contentAlign() == ContentAlign::Center) {
 
-					float width = line.back()->pos.x + line.back()->size.x + line.back()->margin - line.front()->pos.x - line.front()->margin;
+					float width = line.back()->left() + line.back()->width() + line.back()->margin() - line.front()->left() - line.front()->margin();
 					float left_wanted = (width_avail - width) * 0.5f;
 					float left = std::min(std::max(left_wanted, left_limit), right_limit - width);
-					float offset = left - line.front()->pos.x;
+					float offset = left - line.front()->left();
 
 					for (const auto& elem : line) {
-						elem->pos.x += offset;
+						elem->m_pos.x += offset;
 					}
 
-				} else if (self.content_align == ContentAlign::Justify) {
+				} else if (self.contentAlign() == ContentAlign::Justify) {
 					if (line.size() <= 1 || !full) {
 						return;
 					}
 
-					float offset = (right_limit - (line.back()->pos.x + line.back()->size.x + line.back()->margin)) / (float)(line.size() - 1);
+					float offset = (right_limit - (line.back()->left() + line.back()->width() + line.back()->margin())) / (float)(line.size() - 1);
 					float acc = 0;
 					for (const auto& elem : line) {
-						elem->pos.x += acc;
+						elem->m_pos.x += acc;
 						acc += offset;
 					}
 				}
@@ -1069,17 +1145,17 @@ namespace ui {
 					if (arrangeFloatingLeft(elem)) {
 						exceeded_width = true;
 					} else {
-						lwidth += elem->size.x + 2.0f * elem->margin;
+						lwidth += elem->width() + 2.0f * elem->margin();
 					}
-					largest_width = std::max(largest_width, elem->size.x);
+					largest_width = std::max(largest_width, elem->width());
 				}
 				for (const auto& elem : right_elems) {
 					if (arrangeFloatingRight(elem)) {
 						exceeded_width = true;
 					} else {
-						lwidth += elem->size.x + 2.0f * elem->margin;
+						lwidth += elem->width() + 2.0f * elem->margin();
 					}
-					largest_width = std::max(largest_width, elem->size.x);
+					largest_width = std::max(largest_width, elem->width());
 				}
 				for (const auto& child : inline_children) {
 					const Ref<Element>& elem = child.first;
@@ -1090,10 +1166,10 @@ namespace ui {
 							line.clear();
 							exceeded_width = true;
 						} else {
-							iwidth_current += elem->size.x + 2.0f * elem->margin;
+							iwidth_current += elem->width() + 2.0f * elem->margin();
 						}
 						line.push_back(elem);
-						largest_width = std::max(largest_width, elem->size.x);
+						largest_width = std::max(largest_width, elem->width());
 					} else {
 						const Element::WhiteSpace& space = child.second;
 						if (space.type == Element::WhiteSpace::LineBreak) {
@@ -1121,7 +1197,7 @@ namespace ui {
 				if (exceeded_width) {
 					return std::max(this->width_avail, largest_width);
 				} else {
-					return lwidth + rwidth + iwidth + 2.0f * self.padding;
+					return lwidth + rwidth + iwidth + 2.0f * self.padding();
 				}
 			};
 
@@ -1142,8 +1218,8 @@ namespace ui {
 
 					if (elem) {
 						// child element
-						if (elem->visible) {
-							switch (elem->layout_style) {
+						if (elem->isVisible()) {
+							switch (elem->layoutStyle()) {
 								case LayoutStyle::Block:
 									max_width = std::max(max_width, layoutBatch());
 									arrangeBlock(elem);
@@ -1176,11 +1252,11 @@ namespace ui {
 
 			float max_width = layoutEverything();
 
-			bool should_shrink = self.layout_style == LayoutStyle::Inline ||
-				self.layout_style == LayoutStyle::FloatLeft ||
-				self.layout_style == LayoutStyle::FloatRight;
+			bool should_shrink = self.layoutStyle() == LayoutStyle::Inline ||
+				self.layoutStyle() == LayoutStyle::FloatLeft ||
+				self.layoutStyle() == LayoutStyle::FloatRight;
 
-			if ((should_shrink && max_width < width_avail) || (max_width > width_avail && (max_width <= self.max_size.x))) {
+			if ((should_shrink && max_width < width_avail) || (max_width > width_avail && (max_width <= self.maxWidth()))) {
 				width_avail = max_width;
 				reset();
 				layoutEverything();
@@ -1194,9 +1270,9 @@ namespace ui {
 
 			}
 
-			elem.setPos({ self.padding + elem.margin, next_ypos + elem.margin });
-			elem.update(right_edge - left_edge - 2.0f * elem.margin);
-			next_ypos = elem.pos.y + elem.size.y + elem.margin;
+			elem.setPos({ self.padding() + elem.margin(), next_ypos + elem.margin() });
+			elem.update(right_edge - left_edge - 2.0f * elem.margin());
+			next_ypos = elem.top() + elem.height() + elem.margin();
 			fitContents(elem);
 			newLine();
 		}
@@ -1210,10 +1286,10 @@ namespace ui {
 			bool broke_line = false;
 			do {
 				// position the element
-				elem.setPos({ xpos + elem.margin, ypos + elem.margin });
-				elem.update(right_edge - xpos - 2.0f * elem.margin - self.padding);
+				elem.setPos({ xpos + elem.margin(), ypos + elem.margin() });
+				elem.update(right_edge - xpos - 2.0f * elem.margin() - self.padding());
 
-				if (elem.pos.x + elem.size.x + elem.margin > right_edge) {
+				if (elem.left() + elem.width() + elem.margin() > right_edge) {
 					broke_line = true;
 					// if it goes past the edge
 					if (emptyline) {
@@ -1233,8 +1309,8 @@ namespace ui {
 
 			} while (true);
 
-			xpos = elem.pos.x + elem.size.x + elem.margin;
-			next_ypos = std::max(next_ypos, elem.pos.y + elem.size.y + elem.margin);
+			xpos = elem.left() + elem.width() + elem.margin();
+			next_ypos = std::max(next_ypos, elem.top() + elem.height() + elem.margin());
 			fitContents(elem);
 			emptyline = false;
 			return broke_line;
@@ -1251,9 +1327,9 @@ namespace ui {
 			Element& elem = *element;
 			bool broke_line = false;
 			do {
-				elem.setPos({ left_edge + elem.margin, ypos + elem.margin });
-				elem.update(right_edge - left_edge - 2.0f * elem.margin);
-				if (elem.pos.x + elem.size.x + elem.padding > right_edge) {
+				elem.setPos({ left_edge + elem.margin(), ypos + elem.margin() });
+				elem.update(right_edge - left_edge - 2.0f * elem.margin());
+				if (elem.left() + elem.width() + elem.padding() > right_edge) {
 					broke_line = true;
 					// if the element doesn't fit
 					if (!nextWiderLine()) {
@@ -1280,9 +1356,9 @@ namespace ui {
 			Element& elem = *element;
 			bool broke_line = false;
 			do {
-				float avail = right_edge - left_edge - elem.margin * 2.0f;
+				float avail = right_edge - left_edge - elem.margin() * 2.0f;
 				elem.update(avail);
-				if (elem.getSize().x > avail) {
+				if (elem.width() > avail) {
 					broke_line = true;
 					if (!nextWiderLine()) {
 						// if a wider line can't be found
@@ -1293,7 +1369,7 @@ namespace ui {
 				}
 			} while (true);
 
-			elem.setPos({ right_edge - elem.size.x - elem.margin, ypos + elem.margin });
+			elem.setPos({ right_edge - elem.width() - elem.margin(), ypos + elem.margin() });
 			floatingright.push_back(element);
 			right_edge = getRightEdge();
 			fitContents(elem);
@@ -1303,8 +1379,8 @@ namespace ui {
 		// adjusts `contentsize` to include the element
 		void fitContents(const Element& elem) {
 			contentsize = vec2(
-				std::max(contentsize.x, elem.pos.x + elem.size.x + elem.margin + self.padding),
-				std::max(contentsize.y, elem.pos.y + elem.size.y + elem.margin + self.padding)
+				std::max(contentsize.x, elem.left() + elem.width() + elem.margin() + self.padding()),
+				std::max(contentsize.y, elem.top() + elem.height() + elem.margin() + self.padding())
 			);
 		}
 
@@ -1315,11 +1391,11 @@ namespace ui {
 			if (floatingleft.size() > 0 || floatingright.size() > 0) {
 				float next_y = far_away;
 				for (const auto& elem : floatingleft) {
-					next_y = std::min(next_y, elem->pos.y + elem->size.y + elem->margin);
+					next_y = std::min(next_y, elem->top() + elem->height() + elem->margin());
 				}
 
 				for (const auto& elem : floatingright) {
-					next_y = std::min(next_y, elem->pos.y + elem->size.y + elem->margin);
+					next_y = std::min(next_y, elem->top() + elem->height() + elem->margin());
 				}
 
 				next_ypos = std::max(next_y, next_ypos);
@@ -1334,7 +1410,7 @@ namespace ui {
 			ypos = next_ypos;
 
 			auto aboveNewLine = [=](const Ref<Element>& elem) {
-				return ypos >= elem->getPos().y + elem->getSize().y + elem->getMargin();
+				return ypos >= elem->top() + elem->height() + elem->margin();
 			};
 
 			floatingleft.erase(
@@ -1363,26 +1439,26 @@ namespace ui {
 
 		float getLeftEdge() const {
 			// Assumption: all elements in `floatingleft` pass through ypos
-			float extent = self.padding;
+			float extent = self.padding();
 			for (const auto& elem : floatingleft) {
-				extent = std::max(extent, elem->getPos().x + elem->getSize().x + elem->getMargin());
+				extent = std::max(extent, elem->left() + elem->width() + elem->margin());
 			}
 			return extent;
 		}
 
 		float getRightEdge() const {
 			// Assumption: all elements in `floatingright` pass through ypos
-			float extent = width_avail - self.padding;
+			float extent = width_avail - self.padding();
 			for (const auto& elem : floatingright) {
-				extent = std::min(extent, elem->getPos().x - elem->getMargin());
+				extent = std::min(extent, elem->left() - elem->margin());
 			}
 			return extent;
 		}
 	};
 
 	vec2 Element::arrangeChildren(float width_avail) {
-		if (children.size() == 0 && white_spaces.size() == 0) {
-			return { padding, padding };
+		if (m_children.size() == 0 && m_whitespaces.size() == 0) {
+			return { padding(), padding() };
 		}
 
 		LayoutData layout(*this, width_avail);

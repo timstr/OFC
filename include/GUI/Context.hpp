@@ -1,8 +1,8 @@
 #pragma once
 
-#include "element.h"
-#include "transition.h"
-#include "textentry.h"
+#include "Element.hpp"
+#include "Transition.hpp"
+#include "TextEntry.hpp"
 #include <map>
 
 namespace ui {
@@ -168,7 +168,7 @@ namespace ui {
 		Ref<TextEntry> text_entry;
 
 		// the element that was last clicked
-		Ref<Element> left_clicked_element, right_clicked_element;
+		Ref<Element> left_clicked_element, right_clicked_element, middle_clicked_element;
 		// maximum time between clicks of a double-click, in seconds
 		const float doubleclicktime;
 		// time of last click
@@ -205,4 +205,5 @@ namespace ui {
 
 	// get the global context
 	Context& getContext();
-}
+
+} // namespace ui

@@ -1,4 +1,4 @@
-#include "gui/image.h"
+#include "GUI/Image.hpp"
 
 ui::Image::Image(const std::string& path, bool auto_size) {
 	loadFromFile(path, auto_size);
@@ -65,8 +65,8 @@ bool ui::Image::setTexture(const Ref<sf::Texture>& _texture, bool auto_size) {
 
 void ui::Image::onResize() {
 	sprite.setScale({
-		getSize().x / (float)texture->getSize().x,
-		getSize().y / (float)texture->getSize().y
+		width() / (float)texture->getSize().x,
+		height() / (float)texture->getSize().y
 	});
 }
 

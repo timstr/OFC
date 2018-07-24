@@ -1,11 +1,11 @@
 #pragma once
 
 #include <SFML/Main.hpp>
-#include "element.h"
-#include "text.h"
-#include "textentry.h"
-#include "context.h"
-#include "image.h"
+#include "Element.hpp"
+#include "Text.hpp"
+#include "TextEntry.hpp"
+#include "Context.hpp"
+#include "Image.hpp"
 
 namespace ui {
 
@@ -49,4 +49,5 @@ namespace ui {
 
 	// run the application
 	void run();
-}
+
+} // namespace ui

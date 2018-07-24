@@ -1,6 +1,6 @@
-#include "gui/textentry.h"
-#include "gui/context.h"
-#include "gui/gui.h"
+#include "GUI/TextEntry.hpp"
+#include "GUI/Context.hpp"
+#include "GUI/GUI.hpp"
 
 namespace ui {
 

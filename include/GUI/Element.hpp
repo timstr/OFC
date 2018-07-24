@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gui/roundrectangle.h"
+#include "GUI/RoundedRectangle.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <vector>
@@ -114,32 +114,36 @@ namespace ui {
 		// returns true if the element has been closed
 		bool isClosed() const;
 
-		// called when the element is closed; to be used for releasing resources reliably
+		// called when the element is closed
+		// can be used for releasing resources predictably, since destruction
+		// may be delayed by other references to this element
 		virtual void onClose();
 
+		// Returns a strongly-typed Ref to this of the desired type
+		// or null if the conversion fails
 		template<typename ElementType>
-		Ref<ElementType> getThisAs() {
+		Ref<ElementType> thisAs() {
 			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from ui::Element");
 			return std::dynamic_pointer_cast<ElementType, Element>(shared_from_this());
 		}
 
 		// prevent the element from receiving input
-		void disable();
+		Element& disable();
 
 		// allow the element the receive input
-		void enable();
+		Element& enable();
 
 		// returns true if the element can receive input
 		bool isEnabled() const;
 
 		// allow child elements to be navigated using the keyboard
-		void enableKeyboardNavigation();
+		Element& enableKeyboardNavigation();
 
 		// prevent child elements from being navigated using the keyboard
-		void disableKeyboardNavigation();
+		Element& disableKeyboardNavigation();
 
 		// returns true if child elements can be navigated using the keyboard
-		bool isKeyboardNavigable() const;
+		bool keyboardNavigable() const;
 
 		// navigate to the first non-disabled element before this
 		bool navigateToPreviousElement();
@@ -154,55 +158,88 @@ namespace ui {
 		bool navigateOut();
 
 		// set the visibility of the element
-		void setVisible(bool is_visible);
+		Element& setVisible(bool _visible);
 
-		// returns true if the element is visible
+		// returns true if the element is isVisible
 		bool isVisible() const;
 
 		// when true, limits rendering and input to within the bounding rectangle
-		void setClipping(bool _clipping);
+		Element& setClipping(bool _clipping);
+
+		// returns true if clipping is enabled
+		bool clipping() const;
+
+		// set the position (from paren't origin to top-left corner of the element)
+		Element& setPos(vec2 _pos);
+
+		// set the horizontal distance from the parent's origin to left edge
+		Element& setLeft(float x);
+
+		// set the vertical distance from the parent's origin to the top edge
+		Element& setTop(float y);
 
 		// get the position (top-left corner of the element)
-		vec2 getPos() const;
+		vec2 pos() const;
 
-		// set the position (top-left corner of the element)
-		void setPos(vec2 _pos);
+		// get the horizontal distance from the parent's origin to the left edge
+		float left() const;
 
-		// get the width and height of the element
-		vec2 getSize() const;
+		// get the vertical distance from the parent's origin to the top edge
+		float top() const;
 
 		// set the size. Choosing force = true will set both the min and max size
-		void setSize(vec2 _size, bool force = false);
+		Element& setSize(vec2 _size, bool force = false);
+
+		// get the width and height of the element
+		vec2 size() const;
 
 		// set the maximum size
-		void setMaxSize(vec2 _max_size);
+		Element& setMaxSize(vec2 _max_size);
 
 		// set the minimum size
-		void setMinSize(vec2 _min_size);
+		Element& setMinSize(vec2 _min_size);
 
 		// get the maximum size
-		vec2 getMaxSize() const;
+		vec2 maxSize() const;
 
 		// get the minimum size
-		vec2 getMinSize() const;
+		vec2 minSize() const;
 
 		// set the minimum width
-		void setMinWidth(float width);
+		Element& setMinWidth(float width);
 
 		// set the maximum width
-		void setMaxWidth(float width);
+		Element& setMaxWidth(float width);
 
 		// set the current size. Choosing force = true will set both the min and max width
-		void setWidth(float width, bool force = false);
+		Element& setWidth(float width, bool force = false);
+
+		// get the minimum width
+		float minWidth() const;
+
+		// get the maximum width
+		float maxWidth() const;
+
+		// get the current width
+		float width() const;
 
 		// set the minimum height
-		void setMinHeight(float height);
+		Element& setMinHeight(float height);
 
 		// set the maximum height
-		void setMaxHeight(float height);
+		Element& setMaxHeight(float height);
 
 		// set the current height. Choosing force = true will set the both the min and max height.
-		void setHeight(float height, bool force = false);
+		Element& setHeight(float height, bool force = false);
+
+		// get the maximum height
+		float maxHeight() const;
+
+		// get the minimum height
+		float minHeight() const;
+
+		// get the current height
+		float height() const;
 
 		// called when the window changes size. Useful for size-dependent updates
 		// that should happen after the window resizes due to layout or other cause
@@ -212,13 +249,13 @@ namespace ui {
 		void setLayoutStyle(LayoutStyle style);
 
 		// get the display style
-		LayoutStyle getLayoutStyle() const;
+		LayoutStyle layoutStyle() const;
 
 		// set the horizontal alignment style
-		void setContentAlign(ContentAlign style);
+		Element& setContentAlign(ContentAlign style);
 
 		// get the horizontal alignment style
-		ContentAlign getContentAlign() const;
+		ContentAlign contentAlign() const;
 
 		// Set the horizontal position style, which only applies to Free elements
 		// Determines how the element is positioned relative to the edges of the parent
@@ -226,10 +263,10 @@ namespace ui {
 		void setXPositionStyle(PositionStyle style, float spacing = 0.0f);
 
 		// get the horizontal position style
-		PositionStyle getXPositionStyle() const;
+		PositionStyle xPositionStyle() const;
 
 		// get the spacing for the horizontal position style
-		float getXPositionSpacing() const;
+		float xPositionSpacing() const;
 
 		// Set the vertical position style, which only applies to Free elements
 		// Determines how the element is positioned relative to the edges of the parent
@@ -237,43 +274,43 @@ namespace ui {
 		void setYPositionStyle(PositionStyle style, float spacing = 0.0f);
 
 		// get the horizontal position style
-		PositionStyle getYPositionStyle() const;
+		PositionStyle yPositionStyle() const;
 
 		// get the spacing for the horizontal position style
-		float getYPositionSpacing() const;
+		float yPositionSpacing() const;
 
 		// set the padding; spacing between content and border
 		void setPadding(float _padding);
 
 		// get the padding; spacing between content and border
-		float getPadding() const;
+		float padding() const;
 
 		// set the margin; spacing between other self and other elements
 		void setMargin(float _margin);
 
 		// get the margin; spacing between other self and other elements
-		float getMargin() const;
+		float margin() const;
 
 		// get the background color
-		sf::Color getBackgroundColor() const;
+		sf::Color backgroundColor() const;
 
 		// set the background color
 		void setBackgroundColor(sf::Color color);
 
 		// get the border color
-		sf::Color getBorderColor() const;
+		sf::Color borderColor() const;
 
 		// set the border color
 		void setBorderColor(sf::Color color);
 
 		// get the border radius
-		float getBorderRadius() const;
+		float borderRadius() const;
 
 		// set the border radius
 		void setBorderRadius(float radius);
 
 		// get the border thickness
-		float getBorderThickness() const;
+		float borderThickness() const;
 
 		// set the border thickness
 		void setBorderThickness(float thickness);
@@ -285,7 +322,7 @@ namespace ui {
 		vec2 localMousePos() const;
 
 		// the element's position relative to the root element
-		vec2 rootPos() const;
+		vec2 absPos() const;
 
 		// called when the element is clicked on with the left mouse button
 		// if false is returned, call will propagate to the parent
@@ -303,11 +340,23 @@ namespace ui {
 		// called when the right mouse button is released
 		virtual void onRightRelease();
 
+		// called when the element is clicked on with the middle mouse button
+		// if false is returned, call will propagate to the parent
+		// if true is returned, onRightRelease will be invoked when the button is released
+		virtual bool onMiddleClick(int clicks);
+
+
+		// called when the middle mouse button is released
+		virtual void onMiddleRelease();
+
 		// true if the left mouse button is down and the element is in focus
 		bool leftMouseDown() const;
 
 		// true if the right mouse button is down and the element is in focus
 		bool rightMouseDown() const;
+
+		// true if the middle mouse button is down and the element is in focus
+		bool middleMouseDown() const;
 
 		// called when the mouse is scrolled and the element is in focus
 		// if false is returned, call will propagate to the parent
@@ -395,7 +444,7 @@ namespace ui {
 			// This may look strange, but the child creates the first shared_ptr to itself
 			// (so that shared_from_this is valid in the constructor) and this is how that is dealt with.
 			auto rawchild = new ElementType(std::forward<ArgsT>(args)...);
-			Ref<ElementType> child = rawchild->getThisAs<ElementType>();
+			Ref<ElementType> child = rawchild->thisAs<ElementType>();
 			adopt(child);
 			return child;
 		}
@@ -411,10 +460,10 @@ namespace ui {
 		Ref<Element> release(Ref<Element> element);
 
 		// get all children
-		const std::vector<Ref<Element>>& getChildren() const;
+		const std::vector<Ref<Element>>& children() const;
 
 		// get the parent element
-		std::weak_ptr<Element> getParent() const;
+		std::weak_ptr<Element> parent() const;
 
 		// layout the element before the given sibling
 		void layoutBefore(const Ref<Element>& sibling);
@@ -436,40 +485,40 @@ namespace ui {
 
 	private:
 
-		Ref<Element> shared_this;
+		Ref<Element> m_sharedthis;
 
-		LayoutStyle layout_style;
-		ContentAlign content_align;
+		LayoutStyle m_layoutstyle;
+		ContentAlign m_contentalign;
 
-		bool disabled;
-		bool visible;
-		bool clipping;
+		bool m_disabled;
+		bool m_visible;
+		bool m_clipping;
 
-		bool keyboard_navigation;
+		bool m_keyboard_navigable;
 
-		vec2 pos;
-		vec2 size;
-		vec2 min_size;
-		vec2 max_size;
-		vec2 old_total_size;
+		vec2 m_pos;
+		vec2 m_size;
+		vec2 m_minsize;
+		vec2 m_maxsize;
+		vec2 m_oldtotalsize;
 
-		float layout_index;
-		float padding;
-		float margin;
+		float m_layoutindex;
+		float m_padding;
+		float m_margin;
 
 		void updatePosition();
 		void updateChildPositions();
 
-		PositionStyle x_position_style, y_position_style;
-		float x_spacing, y_spacing;
+		PositionStyle m_pstyle_x, m_pstyle_y;
+		float m_spacing_x, m_spacing_y;
 
-		RoundedRectangle display_rect;
+		RoundedRectangle m_displayrect;
 
 		void makeDirty();
 		bool isDirty() const;
 		void makeClean();
 
-		bool dirty;
+		bool m_isdirty;
 
 		using LayoutIndex = float;
 
@@ -505,9 +554,9 @@ namespace ui {
 
 		std::vector<std::pair<Ref<Element>, WhiteSpace>> sortChildrenByLayoutIndex() const;
 
-		std::weak_ptr<Element> parent;
-		std::vector<Ref<Element>> children;
-		std::vector<WhiteSpace> white_spaces;
+		std::weak_ptr<Element> m_parent;
+		std::vector<Ref<Element>> m_children;
+		std::vector<WhiteSpace> m_whitespaces;
 
 		friend struct Context;
 		friend void run();

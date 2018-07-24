@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gui/gui.h"
+#include "GUI/GUI.hpp"
 #include <SFML/Graphics.hpp>
 #include <map>
 #include <set>
@@ -135,9 +135,9 @@ namespace ui {
 							(float)event.mouseWheelScroll.y
 						};
 						if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel) {
-							getContext().handleScroll(pos, event.mouseWheelScroll.delta, 0.0f);
-						} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel) {
 							getContext().handleScroll(pos, 0.0f, event.mouseWheelScroll.delta);
+						} else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel) {
+							getContext().handleScroll(pos, event.mouseWheelScroll.delta, 0.0f);
 						}
 					}
 					break;
@@ -158,7 +158,7 @@ namespace ui {
 
 			// update elements
 			root().setSize(getScreenSize(), true);
-			root().update(root().getSize().x);
+			root().update(root().width());
 
 			// clear the screen
 			getContext().getRenderWindow().clear();
@@ -181,8 +181,8 @@ namespace ui {
 					sf::Color color { 0xFFFF00FF };
 					color.a = (uint8_t)(std::min(value, 1.0f) * 255.0f);
 
-					sf::RectangleShape rect(curr->getSize());
-					rect.setPosition(curr->rootPos());
+					sf::RectangleShape rect(curr->size());
+					rect.setPosition(curr->absPos());
 					rect.setFillColor(sf::Color(0));
 					rect.setOutlineColor(color);
 					rect.setOutlineThickness(2);

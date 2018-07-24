@@ -1,4 +1,4 @@
-#include "gui/text.h"
+#include "GUI/Text.hpp"
 
 namespace ui {
 
