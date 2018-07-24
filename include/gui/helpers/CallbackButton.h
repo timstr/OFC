@@ -66,7 +66,7 @@ namespace ui {
 			if (hovering()) {
 				state = State::Hover;
 			} else {
-				fadeColor(getBackgroundColor(), normal_color);
+				fadeColor(backgroundColor(), normal_color);
 				state = State::Normal;
 			}
 
@@ -84,13 +84,13 @@ namespace ui {
 		void onMouseOver() override {
 			if (state == State::Normal) {
 				state = State::Hover;
-				fadeColor(getBackgroundColor(), hover_color);
+				fadeColor(backgroundColor(), hover_color);
 			}
 		}
 		void onMouseOut() override {
 			if (state == State::Hover) {
 				state = State::Normal;
-				fadeColor(getBackgroundColor(), normal_color);
+				fadeColor(backgroundColor(), normal_color);
 			}
 		}
 
@@ -102,15 +102,14 @@ namespace ui {
 		State state;
 
 		void fadeColor(sf::Color from, sf::Color to) {
-			auto self = getThisAs<CallbackButton>();
+			auto self = thisAs<CallbackButton>();
 			startTransition(0.25f, [=](float t) {
-				auto color = sf::Color(
+				self->setBackgroundColor(sf::Color(
 					(uint8_t)(from.r * (1.0f - t) + to.r * t),
 					(uint8_t)(from.g * (1.0f - t) + to.g * t),
 					(uint8_t)(from.b * (1.0f - t) + to.b * t),
-					255
-				);
-				setBackgroundColor(color);
+					(uint8_t)(from.a * (1.0f - t) + to.a * t)
+				));
 			});
 		}
 	};

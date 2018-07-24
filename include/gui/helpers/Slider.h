@@ -18,7 +18,7 @@ namespace ui {
 		}
 
 		bool onLeftClick(int) override {
-			handle->setPos(localMousePos() - handle->getSize() * 0.5f);
+			handle->setPos(localMousePos() - handle->size() * 0.5f);
 			handle->startDrag();
 			return true;
 		}
@@ -57,24 +57,24 @@ namespace ui {
 	private:
 
 		void onResize() override {
-			handle->setSize({ getSize().y, getSize().y });
+			handle->setSize({ height(), height() });
 			moveHandleTo(value);
 		}
 
 		void moveHandleTo(float val) {
-			float x = (val - minimum) / (maximum - minimum) * (getSize().x - handle->getSize().x);
+			float x = (val - minimum) / (maximum - minimum) * (width() - handle->width());
 			handle->setPos({ x, 0 });
 		}
 
 		bool onKeyDown(ui::Key key) override {
 			vec2 delta = (keyDown(ui::Key::LShift) || keyDown(ui::Key::RShift)) ? vec2(0.1f, 0.0f) : vec2(1.0f, 0.0f);
 			if (key == ui::Key::Left) {
-				handle->setPos(handle->getPos() - delta);
+				handle->setPos(handle->pos() - delta);
 				handle->updateFromPos();
 				return true;
 			}
 			if (key == ui::Key::Right) {
-				handle->setPos(handle->getPos() + delta);
+				handle->setPos(handle->pos() + delta);
 				handle->updateFromPos();
 				return true;
 			}
@@ -83,7 +83,7 @@ namespace ui {
 
 		struct Handle : FreeElement {
 			Handle(Slider& _slider) : slider(_slider) {
-				float s = slider.getSize().y;
+				float s = slider.height();
 				setSize({ s, s }, true);
 				setBackgroundColor(sf::Color(0x80808080));
 				setBorderThickness(0.0f);
@@ -105,12 +105,12 @@ namespace ui {
 			bool onKeyDown(ui::Key key) override {
 				vec2 delta = (keyDown(ui::Key::LShift) || keyDown(ui::Key::RShift)) ? vec2(0.1f, 0.0f) : vec2(1.0f, 0.0f);
 				if (key == ui::Key::Left) {
-					setPos(getPos() - delta);
+					setPos(pos() - delta);
 					updateFromPos();
 					return true;
 				}
 				if (key == ui::Key::Right) {
-					setPos(getPos() + delta);
+					setPos(pos() + delta);
 					updateFromPos();
 					return true;
 				}
@@ -118,9 +118,9 @@ namespace ui {
 			}
 
 			void updateFromPos() {
-				vec2 p = getPos();
+				vec2 p = pos();
 				float left = 0.0f;
-				float right = slider.getSize().x - getSize().x;
+				float right = slider.width() - width();
 				p.x = std::min(std::max(p.x, left), right);
 				p.y = 0.0f;
 				setPos(p);
