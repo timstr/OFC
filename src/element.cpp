@@ -106,6 +106,9 @@ namespace ui {
 		if (abs(left() - _pos.x) + abs(top() - _pos.y) > epsilon) {
 			m_pos = _pos;
 		}
+		if (m_layoutstyle == LayoutStyle::Free) {
+			updatePosition();
+		}
 		return *this;
 	}
 
@@ -365,27 +368,15 @@ namespace ui {
 	}
 
 	bool Element::leftMouseDown() const {
-		if (inFocus()) {
-			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
-		} else {
-			return false;
-		}
+		return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 	}
 
 	bool Element::rightMouseDown() const {
-		if (inFocus()) {
-			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
-		} else {
-			return false;
-		}
+		return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 	}
 
 	bool Element::middleMouseDown() const {
-		if (inFocus()) {
-			return sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle);
-		} else {
-			return false;
-		}
+		return sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle);
 	}
 
 	bool Element::onScroll(float, float) {
@@ -399,7 +390,7 @@ namespace ui {
 		}
 	}
 
-	void Element::onDrag() {
+	void Element::onDrag(vec2) {
 
 	}
 
@@ -473,7 +464,7 @@ namespace ui {
 	}
 
 	bool Element::keyDown(Key key) const {
-		return inFocus() && sf::Keyboard::isKeyPressed(key);
+		return sf::Keyboard::isKeyPressed(key);
 	}
 
 	void Element::write(const std::string& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) {
@@ -577,6 +568,10 @@ namespace ui {
 			}
 		}
 		return nullptr;
+	}
+
+	bool Element::has(const Ref<Element>& child) const {
+		return child->parent().lock().get() == this;
 	}
 
 	void Element::bringToFront() {

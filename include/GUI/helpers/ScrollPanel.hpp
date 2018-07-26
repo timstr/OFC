@@ -9,16 +9,100 @@ namespace ui {
 		ScrollPanel(bool horizontal_scrolling = true, bool vertical_scrolling = true, bool resize_button = false) {
 			setClipping(true);
 			innercontent = add<InnerContent>(*this);
-			if (horizontal_scrolling) {
-				xscrollbar = add<HorizontalScrollBar>(*this);
+			xscrollbar = add<HorizontalScrollBar>(*this);
+			yscrollbar = add<VerticalScrollBar>(*this);
+			resizebtn = add<ResizeButton>(*this);
+			if (!horizontal_scrolling) {
+				release(xscrollbar);
 			}
-			if (vertical_scrolling) {
-				yscrollbar = add<VerticalScrollBar>(*this);
+			if (!vertical_scrolling) {
+				release(yscrollbar);
+			}
+			if (!resizebtn) {
+				release(resizebtn);
 			}
 		}
 
 		Ref<Element> inner() const {
 			return innercontent;
+		}
+
+		void showHorizontalScrollBar() {
+			adopt(xscrollbar);
+		}
+
+		void hideHorizontalScrollBar() {
+			release(xscrollbar);
+		}
+
+		void showVerticalScrollBar() {
+			adopt(yscrollbar);
+		}
+
+		void hideVerticalScrollBar() {
+			release(yscrollbar);
+		}
+
+		void showResizeButton() {
+			adopt(resizebtn);
+		}
+
+		void hideResizeButton() {
+			release(resizebtn);
+		}
+
+		void setButtonNormalColor(sf::Color color) {
+			ScrollButton::normal_color = color;
+			xscrollbar->setBackgroundColor(color);
+			yscrollbar->setBackgroundColor(color);
+			resizebtn->setBackgroundColor(color);
+		}
+
+		sf::Color getButtonNormalColor() const {
+			return ScrollButton::normal_color;
+		}
+
+		void setButtonHoverColor(sf::Color color) {
+			ScrollButton::hover_color = color;
+		}
+
+		sf::Color getButtonHoverColor() const {
+			return ScrollButton::hover_color;
+		}
+
+		void setButtonThickness(float thickness) {
+			thickness = std::max(thickness, 2.0f);
+			ScrollButton::thickness = thickness;
+			xscrollbar->setHeight(thickness, true);
+			xscrollbar->updateFromPanel();
+			yscrollbar->setWidth(thickness, true);
+			yscrollbar->updateFromPanel();
+			resizebtn->setSize({ thickness, thickness }, true);
+		}
+
+		float getButtonThickness() const {
+			return ScrollButton::thickness;
+		}
+
+		void setButtonSpacing(float spacing) {
+			spacing = std::max(spacing, 0.0f);
+			ScrollButton::spacing = spacing;
+			xscrollbar->setYPositionStyle(PositionStyle::InsideBottom, spacing);
+			xscrollbar->updateFromPanel();
+			yscrollbar->setXPositionStyle(PositionStyle::InsideRight, spacing);
+			yscrollbar->updateFromPanel();
+		}
+
+		float getButtonSpacing() const {
+			return ScrollButton::spacing;
+		}
+
+		void setScrollSpeed(float speed) {
+			scrollspeed = std::max(1.0f, speed);
+		}
+
+		float getScrollSpeed() const {
+			return scrollspeed;
 		}
 
 	private:
@@ -50,10 +134,54 @@ namespace ui {
 		}
 
 		bool onScroll(float x, float y) override {
+			moveInner(-x * scrollspeed, -y * scrollspeed);
+			return true;
+		}
+
+		bool onKeyDown(Key key) override {
+			switch (key) {
+				case Key::Left:
+					moveInner(-scrollspeed, 0.0f);
+					return true;
+				case Key::Right:
+					moveInner(scrollspeed, 0.0f);
+					return true;
+				case Key::Up:
+					moveInner(0.0f, -scrollspeed);
+					return true;
+				case Key::Down:
+					moveInner(0.0f, scrollspeed);
+					return true;
+				case Key::PageUp:
+					if (keyDown(Key::LShift) || keyDown(Key::RShift)) {
+						moveInner(-width(), 0.0f);
+					} else {
+						moveInner(0.0f, -height());
+					}
+					return true;
+				case Key::PageDown:
+					if (keyDown(Key::LShift) || keyDown(Key::RShift)) {
+						moveInner(width(), 0.0f);
+					} else {
+						moveInner(0.0f, height());
+					}
+					return true;
+				case Key::Home:
+					gotoHome(keyDown(Key::LShift) || keyDown(Key::RShift));
+					return true;
+				case Key::End:
+					gotoEnd(keyDown(Key::LShift) || keyDown(Key::RShift));
+					return true;
+				default:
+					return false;
+			}
+		}
+
+		void moveInner(float x, float y) {
 			if (innercontent->width() > width()) {
 				innercontent->setLeft(
 					std::max(
-						std::min(innercontent->left() + x * scrollspeed, 0.0f),
+						std::min(innercontent->left() - x, 0.0f),
 						width() - innercontent->width()
 					)
 				);
@@ -64,7 +192,7 @@ namespace ui {
 			if (innercontent->height() > height()) {
 				innercontent->setTop(
 					std::max(
-						std::min(innercontent->top() + y * scrollspeed, 0.0f),
+						std::min(innercontent->top() - y, 0.0f),
 						height() - innercontent->height()
 					)
 				);
@@ -74,12 +202,38 @@ namespace ui {
 
 			xscrollbar->updateFromPanel();
 			yscrollbar->updateFromPanel();
-
-			return true;
 		}
 
-		struct ScrollBar : ui::FreeElement {
-			ScrollBar() {
+		void gotoHome(bool horizontal) {
+			if (horizontal) {
+				if (innercontent->width() > width()) {
+					innercontent->setLeft(0.0f);
+				}
+			} else {
+				if (innercontent->height() > height()) {
+					innercontent->setTop(0.0f);
+				}
+			}
+			xscrollbar->updateFromPanel();
+			yscrollbar->updateFromPanel();
+		}
+
+		void gotoEnd(bool horizontal) {
+			if (horizontal) {
+				if (innercontent->width() > width()) {
+					innercontent->setLeft(width() - innercontent->width());
+				}
+			} else {
+				if (innercontent->height() > height()) {
+					innercontent->setTop(height() - innercontent->height());
+				}
+			}
+			xscrollbar->updateFromPanel();
+			yscrollbar->updateFromPanel();
+		}
+
+		struct ScrollButton : ui::FreeElement {
+			ScrollButton() {
 				setBackgroundColor(normal_color);
 			}
 
@@ -112,20 +266,20 @@ namespace ui {
 				});
 			}
 
-			static const float thickness;
-			static const float spacing;
-			static const sf::Color hover_color;
-			static const sf::Color normal_color;
+			static float thickness;
+			static float spacing;
+			static sf::Color hover_color;
+			static sf::Color normal_color;
 		};
 
-		struct VerticalScrollBar : ScrollBar {
+		struct VerticalScrollBar : ScrollButton {
 			VerticalScrollBar(ScrollPanel& _panel) : panel(_panel) {
-				setXPositionStyle(PositionStyle::InsideLeft, spacing);
+				setXPositionStyle(PositionStyle::InsideRight, spacing);
 				setWidth(thickness, true);
 				updateFromPanel();
 			}
 
-			void onDrag() override {
+			void onDrag(vec2) override {
 				movePanel();
 			}
 
@@ -139,28 +293,27 @@ namespace ui {
 				setVisible(true);
 				float height_ratio = panel.height() / panel.innercontent->height();
 				float pos_ratio = -panel.innercontent->top() / (panel.innercontent->height() - panel.height());
-				setHeight(panel.height() * height_ratio, true);
-				setTop(pos_ratio * (panel.height() - height()));
+				setHeight(panel.height() * height_ratio - thickness - 2.0f * spacing, true);
+				setTop(spacing + pos_ratio * (panel.height() - height() - thickness - 2.0f * spacing));
 			}
 
 			void movePanel() {
-				setLeft(spacing);
-				setTop(std::min(std::max(top(), 0.0f), panel.height() - height()));
-				float pos_ratio = top() / (panel.height() - height());
+				setTop(std::min(std::max(top(), spacing), panel.height() - height() - thickness - spacing));
+				float pos_ratio = (top() - spacing) / (panel.height() - height() - thickness - 2.0f * spacing);
 				panel.innercontent->setTop(-pos_ratio * (panel.innercontent->height() - panel.height()));
 			}
 
 			ScrollPanel& panel;
 		};
 
-		struct HorizontalScrollBar : ScrollBar {
+		struct HorizontalScrollBar : ScrollButton {
 			HorizontalScrollBar(ScrollPanel& _panel) : panel(_panel) {
 				setYPositionStyle(PositionStyle::InsideBottom, spacing);
 				setHeight(thickness, true);
 				updateFromPanel();
 			}
 
-			void onDrag() override {
+			void onDrag(vec2) override {
 				movePanel();
 			}
 
@@ -174,14 +327,13 @@ namespace ui {
 				setVisible(true);
 				float width_ratio = panel.width() / panel.innercontent->width();
 				float pos_ratio = -panel.innercontent->left() / (panel.innercontent->width() - panel.width());
-				setWidth(panel.width() * width_ratio, true);
-				setLeft(pos_ratio * (panel.width() - width()));
+				setWidth(panel.width() * width_ratio - thickness - 2.0f * spacing, true);
+				setLeft(spacing + pos_ratio * (panel.width() - width() - thickness - 2.0f * spacing));
 			}
 
 			void movePanel() {
-				setLeft(std::min(std::max(left(), 0.0f), panel.width() - width()));
-				setTop(panel.height() - height() - spacing);
-				float pos_ratio = left() / (panel.width() - width());
+				setLeft(std::min(std::max(left(), spacing), panel.width() - width() - thickness - spacing));
+				float pos_ratio = (left() - spacing) / (panel.width() - width() - thickness - 2.0f * spacing);
 				panel.innercontent->setLeft(-pos_ratio * (panel.innercontent->width() - panel.width()));
 			}
 
@@ -189,6 +341,19 @@ namespace ui {
 		};
 
 		// TODO: size dragger (add if show_resizebtn)
+		struct ResizeButton : ScrollButton {
+			ResizeButton(ScrollPanel& _panel) : panel(_panel) {
+				setXPositionStyle(PositionStyle::InsideRight, 0.0f);
+				setYPositionStyle(PositionStyle::InsideBottom, 0.0f);
+				setSize({ thickness, thickness }, true);
+			}
+
+			void onDrag(vec2) override {
+				panel.setSize(pos() + size(), true);
+			}
+
+			ScrollPanel& panel;
+		};
 
 		struct InnerContent : ui::FreeElement {
 			InnerContent(ScrollPanel& _panel) : panel(_panel) {
@@ -205,14 +370,15 @@ namespace ui {
 		Ref<InnerContent> innercontent;
 		Ref<VerticalScrollBar> yscrollbar;
 		Ref<HorizontalScrollBar> xscrollbar;
+		Ref<ResizeButton> resizebtn;
 
-		static const float scrollspeed;
+		static float scrollspeed;
 	};
 
-	const float ScrollPanel::scrollspeed = 10.0f;
-	const float ScrollPanel::ScrollBar::thickness = 10.0f;
-	const float ScrollPanel::ScrollBar::spacing = 5.0f;
-	const sf::Color ScrollPanel::ScrollBar::hover_color { 0x808080FF };
-	const sf::Color ScrollPanel::ScrollBar::normal_color { 0x80808080 };
+	float ScrollPanel::scrollspeed = 10.0f;
+	float ScrollPanel::ScrollButton::thickness = 10.0f;
+	float ScrollPanel::ScrollButton::spacing = 5.0f;
+	sf::Color ScrollPanel::ScrollButton::hover_color { 0x808080FF };
+	sf::Color ScrollPanel::ScrollButton::normal_color { 0x80808080 };
 
 } // namespace ui

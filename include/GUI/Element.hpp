@@ -349,13 +349,13 @@ namespace ui {
 		// called when the middle mouse button is released
 		virtual void onMiddleRelease();
 
-		// true if the left mouse button is down and the element is in focus
+		// true if the left mouse button is down
 		bool leftMouseDown() const;
 
-		// true if the right mouse button is down and the element is in focus
+		// true if the right mouse button is down
 		bool rightMouseDown() const;
 
-		// true if the middle mouse button is down and the element is in focus
+		// true if the middle mouse button is down
 		bool middleMouseDown() const;
 
 		// called when the mouse is scrolled and the element is in focus
@@ -366,7 +366,8 @@ namespace ui {
 		void startDrag();
 
 		// called when the element is being dragged
-		virtual void onDrag();
+		// previous_position is the position before being dragged, after any layout events
+		virtual void onDrag(vec2 previous_position);
 
 		// stops the mouse dragging the element
 		void stopDrag();
@@ -419,7 +420,7 @@ namespace ui {
 		// called when the key is released and the element last handled this key being pressed
 		virtual void onKeyUp(Key key);
 
-		// true if 'key' is currently being pressed and the element is in focus
+		// true if 'key' is currently being pressed
 		bool keyDown(Key key) const;
 
 		// write a sequence of text
@@ -439,15 +440,7 @@ namespace ui {
 
 		// add a new child element
 		template<typename ElementType, typename... ArgsT>
-		Ref<ElementType> add(ArgsT&&... args) {
-			static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
-			// This may look strange, but the child creates the first shared_ptr to itself
-			// (so that shared_from_this is valid in the constructor) and this is how that is dealt with.
-			auto rawchild = new ElementType(std::forward<ArgsT>(args)...);
-			Ref<ElementType> child = rawchild->thisAs<ElementType>();
-			adopt(child);
-			return child;
-		}
+		Ref<ElementType> add(ArgsT&&... args);
 
 		// adopt an existing child element
 		void adopt(Ref<Element> child);
@@ -458,6 +451,9 @@ namespace ui {
 		// release a child element, possibly to add to another element
 		// returns nullptr if the element is not found
 		Ref<Element> release(Ref<Element> element);
+
+		// returns true if `child` directly belongs to this element
+		bool has(const Ref<Element>& child) const;
 
 		// get all children
 		const std::vector<Ref<Element>>& children() const;
@@ -583,5 +579,16 @@ namespace ui {
 	struct RightFloatingElement : Element {
 		RightFloatingElement();
 	};
+
+	template<typename ElementType, typename ...ArgsT>
+	inline Ref<ElementType> Element::add(ArgsT && ...args) {
+		static_assert(std::is_base_of<Element, ElementType>::value, "ElementType must derive from Element");
+		// This may look strange, but the child creates the first shared_ptr to itself
+		// (so that shared_from_this is valid in the constructor) and this is how that is dealt with.
+		auto rawchild = new ElementType(std::forward<ArgsT>(args)...);
+		Ref<ElementType> child = rawchild->thisAs<ElementType>();
+		adopt(child);
+		return child;
+	}
 
 } // namespace ui

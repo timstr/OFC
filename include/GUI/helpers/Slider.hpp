@@ -98,7 +98,7 @@ namespace ui {
 				stopDrag();
 			}
 
-			void onDrag() override {
+			void onDrag(vec2) override {
 				updateFromPos();
 			}
 

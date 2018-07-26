@@ -202,7 +202,7 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	void onDrag() override {
+	void onDrag(vec2) override {
 
 	}
 
@@ -250,7 +250,7 @@ struct TestElement : ui::FreeElement {
 			stopDrag();
 		}
 
-		void onDrag() override {
+		void onDrag(vec2) override {
 			parent.setSize(pos() + size());
 		}
 
@@ -318,7 +318,7 @@ int main() {
 		auto blob = block->add<ui::RightFloatingElement>();
 		blob->setBackgroundColor(sf::Color(0xBBBBBBFF));
 
-		auto output = block->add<ui::ScrollPanel>();
+		auto output = block->add<ui::ScrollPanel>(true, true, true);
 		output->setLayoutStyle(ui::LayoutStyle::Block);
 		output->setMargin(10.0f);
 		output->setHeight(100.0f, true);
