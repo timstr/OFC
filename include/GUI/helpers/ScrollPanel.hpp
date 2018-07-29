@@ -7,8 +7,9 @@ namespace ui {
 
 	struct ScrollPanel : ui::InlineElement {
 		ScrollPanel(bool horizontal_scrolling = true, bool vertical_scrolling = true, bool resize_button = false) {
-			setClipping(true);
-			innercontent = add<InnerContent>(*this);
+			clipping_container = add<FreeElement>();
+			clipping_container->setClipping(true);
+			innercontent = clipping_container->add<InnerContent>(*this);
 			xscrollbar = add<HorizontalScrollBar>(*this);
 			yscrollbar = add<VerticalScrollBar>(*this);
 			resizebtn = add<ResizeButton>(*this);
@@ -108,8 +109,14 @@ namespace ui {
 	private:
 
 		void onResize() override {
+			clipping_container->setSize(size(), true);
+			innercontent->setSize(size());
 			innercontent->setMinSize(size());
-			if (innercontent->width() > width()) {
+		}
+
+		void updatePositions() {
+			clipping_container->setSize(size(), true);
+			if (innercontent->width() >= width()) {
 				innercontent->setLeft(std::max(
 					innercontent->left(),
 					-innercontent->width() + width()
@@ -117,7 +124,7 @@ namespace ui {
 			} else {
 				innercontent->setLeft(0.0f);
 			}
-			if (innercontent->height() > height()) {
+			if (innercontent->height() >= height()) {
 				innercontent->setTop(std::max(
 					innercontent->top(),
 					-innercontent->height() + height()
@@ -125,16 +132,16 @@ namespace ui {
 			} else {
 				innercontent->setTop(0.0f);
 			}
-			if (xscrollbar) {
-				xscrollbar->updateFromPanel();
-			}
-			if (yscrollbar) {
-				yscrollbar->updateFromPanel();
-			}
+			xscrollbar->updateFromPanel();
+			yscrollbar->updateFromPanel();
 		}
 
 		bool onScroll(float x, float y) override {
-			moveInner(-x * scrollspeed, -y * scrollspeed);
+			if (keyDown(Key::LShift) || keyDown(Key::RShift)) {
+				moveInner(-y * scrollspeed, -x * scrollspeed);
+			} else {
+				moveInner(-x * scrollspeed, -y * scrollspeed);
+			}
 			return true;
 		}
 
@@ -293,14 +300,16 @@ namespace ui {
 				setVisible(true);
 				float height_ratio = panel.height() / panel.innercontent->height();
 				float pos_ratio = -panel.innercontent->top() / (panel.innercontent->height() - panel.height());
-				setHeight(panel.height() * height_ratio - thickness - 2.0f * spacing, true);
-				setTop(spacing + pos_ratio * (panel.height() - height() - thickness - 2.0f * spacing));
+				float max_height = panel.height() - thickness - 3.0f * spacing;
+				float min_height = thickness;
+				setHeight(max_height * height_ratio + min_height * (1.0f - height_ratio), true);
+				setTop(spacing + pos_ratio * (panel.height() - height() - thickness - 3.0f * spacing));
 			}
 
 			void movePanel() {
-				setTop(std::min(std::max(top(), spacing), panel.height() - height() - thickness - spacing));
-				float pos_ratio = (top() - spacing) / (panel.height() - height() - thickness - 2.0f * spacing);
-				panel.innercontent->setTop(-pos_ratio * (panel.innercontent->height() - panel.height()));
+				setTop(std::min(std::max(top(), spacing), panel.height() - height() - thickness - 2.0f * spacing));
+				float pos_ratio = (top() - spacing) / (panel.height() - height() - thickness - 3.0f * spacing);
+				panel.innercontent->setTop(round(-pos_ratio * (panel.innercontent->height() - panel.height())));
 			}
 
 			ScrollPanel& panel;
@@ -327,29 +336,30 @@ namespace ui {
 				setVisible(true);
 				float width_ratio = panel.width() / panel.innercontent->width();
 				float pos_ratio = -panel.innercontent->left() / (panel.innercontent->width() - panel.width());
-				setWidth(panel.width() * width_ratio - thickness - 2.0f * spacing, true);
-				setLeft(spacing + pos_ratio * (panel.width() - width() - thickness - 2.0f * spacing));
+				float max_width = panel.width() - thickness - 3.0f * spacing;
+				float min_width = thickness;
+				setWidth(max_width * width_ratio + min_width * (1.0f - width_ratio), true);
+				setLeft(spacing + pos_ratio * (panel.width() - width() - thickness - 3.0f * spacing));
 			}
 
 			void movePanel() {
-				setLeft(std::min(std::max(left(), spacing), panel.width() - width() - thickness - spacing));
-				float pos_ratio = (left() - spacing) / (panel.width() - width() - thickness - 2.0f * spacing);
-				panel.innercontent->setLeft(-pos_ratio * (panel.innercontent->width() - panel.width()));
+				setLeft(std::min(std::max(left(), spacing), panel.width() - width() - thickness - 2.0f * spacing));
+				float pos_ratio = (left() - spacing) / (panel.width() - width() - thickness - 3.0f * spacing);
+				panel.innercontent->setLeft(round(-pos_ratio * (panel.innercontent->width() - panel.width())));
 			}
 
 			ScrollPanel& panel;
 		};
 
-		// TODO: size dragger (add if show_resizebtn)
 		struct ResizeButton : ScrollButton {
 			ResizeButton(ScrollPanel& _panel) : panel(_panel) {
-				setXPositionStyle(PositionStyle::InsideRight, 0.0f);
-				setYPositionStyle(PositionStyle::InsideBottom, 0.0f);
+				setXPositionStyle(PositionStyle::InsideRight, spacing);
+				setYPositionStyle(PositionStyle::InsideBottom, spacing);
 				setSize({ thickness, thickness }, true);
 			}
 
 			void onDrag(vec2) override {
-				panel.setSize(pos() + size(), true);
+				panel.setSize(pos() + size() + vec2(spacing, spacing), true);
 			}
 
 			ScrollPanel& panel;
@@ -361,12 +371,13 @@ namespace ui {
 			}
 
 			void onResize() override {
-				panel.onResize();
+				panel.updatePositions();
 			}
 
 			ScrollPanel& panel;
 		};
 
+		Ref<FreeElement> clipping_container;
 		Ref<InnerContent> innercontent;
 		Ref<VerticalScrollBar> yscrollbar;
 		Ref<HorizontalScrollBar> xscrollbar;
@@ -375,7 +386,7 @@ namespace ui {
 		static float scrollspeed;
 	};
 
-	float ScrollPanel::scrollspeed = 10.0f;
+	float ScrollPanel::scrollspeed = 25.0f;
 	float ScrollPanel::ScrollButton::thickness = 10.0f;
 	float ScrollPanel::ScrollButton::spacing = 5.0f;
 	sf::Color ScrollPanel::ScrollButton::hover_color { 0x808080FF };

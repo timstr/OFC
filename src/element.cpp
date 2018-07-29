@@ -734,32 +734,35 @@ namespace ui {
 	}
 
 	void Element::renderChildren(sf::RenderWindow& renderwindow) {
+		// save view state
+		const vec2 offset = getContext().getViewOffset();
+		const sf::FloatRect cliprect = getContext().getClipRect();
 		for (auto it = m_children.begin(); it != m_children.end(); ++it) {
 			const Ref<Element>& child = *it;
 			if (child->isVisible() && child) {
 				if (child->clipping()) {
-					auto childrect = sf::FloatRect(getContext().getViewOffset() + child->pos(), child->size());
+					auto childrect = sf::FloatRect(-offset + child->pos(), child->size());
 					if (!getContext().getClipRect().intersects(childrect)) {
+						// restore previous view state
+						getContext().setViewOffset(offset);
+						getContext().setClipRect(cliprect);
 						continue;
 					}
-					getContext().translateView(child->pos());
+					getContext().setViewOffset(offset - child->pos());
 					sf::FloatRect rect = getContext().getClipRect();
-					vec2 offset = getContext().getViewOffset();
 					getContext().intersectClipRect(sf::FloatRect(-offset, child->size()));
 					getContext().updateView();
 					child->render(renderwindow);
 					child->renderChildren(renderwindow);
-					getContext().setClipRect(rect);
-					getContext().translateView(-child->pos());
-					getContext().updateView();
 				} else {
-					getContext().translateView(child->pos());
+					getContext().setViewOffset(offset - child->pos());
 					getContext().updateView();
 					child->render(renderwindow);
 					child->renderChildren(renderwindow);
-					getContext().translateView(-child->pos());
-					getContext().updateView();
 				}
+				// restore previous view state
+				getContext().setViewOffset(offset);
+				getContext().setClipRect(cliprect);
 			}
 		}
 	}

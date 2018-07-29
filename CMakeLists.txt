@@ -53,9 +53,9 @@ target_link_libraries(tims-gui
 
 target_include_directories(tims-gui PUBLIC "include")
 
-set(BUILD_EXAMPLE OFF CACHE BOOL "When set to ON, the example gui target will be built")
+set(TIMS_GUI_GENERATE_EXAMPLE OFF CACHE BOOL "When set to ON, the example gui target will be generated")
 
-if(BUILD_EXAMPLE)
+if(TIMS_GUI_GENERATE_EXAMPLE)
 	set(FONTS_PATH "${CMAKE_SOURCE_DIR}/example/fonts")
 	configure_file(
 		"${CMAKE_CURRENT_SOURCE_DIR}/example/fontspath.hpp.in"

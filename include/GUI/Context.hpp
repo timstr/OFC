@@ -77,8 +77,8 @@ namespace ui {
 		// get the desired time between renders
 		float getRenderDelay();
 
-		// translate the rendering context
-		void translateView(vec2 offset);
+		// set the rendering context's displacement from the top left corner
+		void setViewOffset(vec2 offset);
 
 		// get the rendering context's displacement from the top left corner
 		vec2 getViewOffset();

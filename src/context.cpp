@@ -376,9 +376,8 @@ namespace ui {
 		return render_delay;
 	}
 
-	void Context::translateView(vec2 offset) {
-		view_offset.x -= offset.x;
-		view_offset.y -= offset.y;
+	void Context::setViewOffset(vec2 offset) {
+		view_offset = offset;
 	}
 
 	vec2 Context::getViewOffset() {
