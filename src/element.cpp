@@ -390,7 +390,7 @@ namespace ui {
 		}
 	}
 
-	void Element::onDrag(vec2) {
+	void Element::onDrag() {
 
 	}
 

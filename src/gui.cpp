@@ -172,7 +172,7 @@ namespace ui {
 				getContext().highlightCurrentElement();
 			}
 
-			// highlight
+			// draw highlight around highlighted element
 			if (auto curr = getContext().getCurrentElement()) {
 				float elapsed = getContext().timeSinceHighlight();
 

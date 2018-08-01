@@ -366,8 +366,7 @@ namespace ui {
 		void startDrag();
 
 		// called when the element is being dragged
-		// previous_position is the position before being dragged, after any layout events
-		virtual void onDrag(vec2 previous_position);
+		virtual void onDrag();
 
 		// stops the mouse dragging the element
 		void stopDrag();

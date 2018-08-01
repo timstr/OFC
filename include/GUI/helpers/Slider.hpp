@@ -82,7 +82,7 @@ namespace ui {
 		}
 
 		struct Handle : FreeElement {
-			Handle(Slider& _slider) : slider(_slider) {
+			Handle(Slider& _slider) : slider(_slider), reference_position(0.0f), fine_dragging(false) {
 				float s = slider.height();
 				setSize({ s, s }, true);
 				setBackgroundColor(sf::Color(0x80808080));
@@ -90,6 +90,7 @@ namespace ui {
 			}
 
 			bool onLeftClick(int) override {
+				fine_dragging = false;
 				startDrag();
 				return true;
 			}
@@ -98,7 +99,22 @@ namespace ui {
 				stopDrag();
 			}
 
-			void onDrag(vec2) override {
+			bool onRightClick(int) override {
+				fine_dragging = true;
+				reference_position = left();
+				startDrag();
+				return true;
+			}
+
+			void onRightRelease() override {
+				stopDrag();
+			}
+
+			void onDrag() override {
+				if (fine_dragging) {
+					float diff = left() - reference_position;
+					setLeft(reference_position + fine_speed * diff);
+				}
 				updateFromPos();
 			}
 
@@ -131,6 +147,9 @@ namespace ui {
 			}
 
 			Slider& slider;
+			float reference_position;
+			bool fine_dragging;
+			static const float fine_speed;
 		};
 
 		Ref<Handle> handle;
@@ -138,5 +157,7 @@ namespace ui {
 		float minimum, maximum, value;
 		std::function<void(float)> onChange;
 	};
+
+	const float Slider::Handle::fine_speed = 0.1f;
 
 } // namespace ui

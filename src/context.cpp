@@ -306,9 +306,8 @@ namespace ui {
 
 	void Context::handleDrag() {
 		if (dragging_element) {
-			vec2 prev = dragging_element->pos();
 			dragging_element->m_pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
-			dragging_element->onDrag(prev);
+			dragging_element->onDrag();
 		}
 	}
 

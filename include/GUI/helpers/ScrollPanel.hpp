@@ -286,7 +286,7 @@ namespace ui {
 				updateFromPanel();
 			}
 
-			void onDrag(vec2) override {
+			void onDrag() override {
 				movePanel();
 			}
 
@@ -322,7 +322,7 @@ namespace ui {
 				updateFromPanel();
 			}
 
-			void onDrag(vec2) override {
+			void onDrag() override {
 				movePanel();
 			}
 
@@ -358,7 +358,7 @@ namespace ui {
 				setSize({ thickness, thickness }, true);
 			}
 
-			void onDrag(vec2) override {
+			void onDrag() override {
 				panel.setSize(pos() + size() + vec2(spacing, spacing), true);
 			}
 
