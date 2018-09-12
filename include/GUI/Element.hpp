@@ -100,6 +100,9 @@ namespace ui {
 	template<typename ElementType>
 	using Ref = std::shared_ptr<ElementType>;
 
+	template<typename ElementType>
+	using WeakRef = std::weak_ptr<ElementType>;
+
 	struct Element : std::enable_shared_from_this<Element> {
 
 		// default constructor
