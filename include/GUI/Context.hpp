@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_CONTEXT_H
+#define TIMSGUI_CONTEXT_H
+
 #include "Element.hpp"
 #include "Transition.hpp"
 #include "TextEntry.hpp"
@@ -207,3 +210,5 @@ namespace ui {
 	Context& getContext();
 
 } // namespace ui
+
+#endif // TIMSGUI_CONTEXT_H

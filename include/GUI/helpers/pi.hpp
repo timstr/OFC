@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_PI_H
+#define TIMSGUI_PI_H
+
 namespace ui {
 
 	template<typename T>
@@ -8,3 +11,5 @@ namespace ui {
 	}
 
 } // namespace ui
+
+#endif // TIMSGUI_PI_H

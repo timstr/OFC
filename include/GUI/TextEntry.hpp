@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_TEXTENTRY_H
+#define TIMSGUI_TEXTENTRY_H
+
 #include "Text.hpp"
 
 namespace ui {
@@ -43,3 +46,5 @@ namespace ui {
 	};
 
 }
+
+#endif // TIMSGUI_TEXTENTRY_H

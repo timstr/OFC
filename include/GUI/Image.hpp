@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_IMAGE_H
+#define TIMSGUI_IMAGE_H
+
 #include <GUI/Element.hpp>
 
 namespace ui {
@@ -53,3 +56,5 @@ namespace ui {
 	};
 
 } // namespace ui
+
+#endif // TIMSGUI_IMAGE_H

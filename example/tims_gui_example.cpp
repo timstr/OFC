@@ -210,11 +210,11 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	bool onHoverWith(std::shared_ptr<Element> element) override {
+	bool onHoverWith(const std::shared_ptr<Element>& element) override {
 		return true;
 	}
 
-	bool onDrop(std::shared_ptr<Element> element) override {
+	bool onDrop(const std::shared_ptr<Element>& element) override {
 		if (element) {
 			if (auto w = std::dynamic_pointer_cast<TestElement, Element>(element)) {
 				adopt(w);

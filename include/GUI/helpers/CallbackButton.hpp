@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_CALLBACKBUTTON_H
+#define TIMSGUI_CALLBACKBUTTON_H
+
 #include "GUI/Element.hpp"
 
 namespace ui {
@@ -116,3 +119,5 @@ namespace ui {
 
 
 } // namespace ui
+
+#endif // TIMSGUI_CALLBACKBUTTON_H

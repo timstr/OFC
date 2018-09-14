@@ -5,10 +5,10 @@
 namespace ui {
 
 	// calls `function` on `element` and all its ancestors until one returns true, and that element is returned
-	template<typename ...ArgsT>
+	template<typename... ArgsT>
 	Ref<Element> propagate(Ref<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args) {
 		while (element) {
-			if (((*element).*function)(std::forward<ArgsT>(args)...)) {
+			if (((*element).*function)(args...)) {
 				return element;
 			}
 			element = element->parent().lock();
@@ -20,7 +20,7 @@ namespace ui {
 		quit(false),
 		render_delay(1.0f / 30.0f),
 		doubleclicktime(0.25f),
-		current_element(root().m_sharedthis) {
+		current_element(root().shared_from_this()) {
 
 		program_time = clock.getElapsedTime().asSeconds();
 		highlight_timestamp = clock.getElapsedTime() - sf::seconds(10.0f);
@@ -348,7 +348,7 @@ namespace ui {
 
 		if (hover_element) {
 			if (dragging_element) {
-				propagate(hover_element, &Element::onHoverWith, dragging_element);
+				propagate<const Ref<Element>&>(hover_element, &Element::onHoverWith, dragging_element);
 			} else {
 				propagate(hover_element, &Element::onHover);
 			}

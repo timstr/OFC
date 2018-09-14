@@ -13,8 +13,8 @@ namespace ui {
 		const float far_away = 1000000.0f;
 	}
 
-	Element::Element(LayoutStyle _display_style) :
-		m_sharedthis(this),
+	Element::Element(LayoutStyle _display_style) noexcept :
+		m_temp_this(this, [](Element* e){ delete e; }),
 		m_layoutstyle(_display_style),
 		m_contentalign(ContentAlign::Left),
 		m_pos({ 0.0f, 0.0f }),
@@ -41,35 +41,35 @@ namespace ui {
 		m_displayrect.setOutlineColor(sf::Color(0xFF));
 	}
 
-	Element& Element::disable() {
+	Element& Element::disable() noexcept {
 		m_disabled = true;
 		return *this;
 	}
 
-	Element& Element::enable() {
+	Element& Element::enable() noexcept {
 		m_disabled = false;
 		return *this;
 	}
 
-	bool Element::isEnabled() const {
+	bool Element::isEnabled() const noexcept {
 		return !m_disabled;
 	}
 
-	Element& Element::enableKeyboardNavigation() {
+	Element& Element::enableKeyboardNavigation() noexcept {
 		m_keyboard_navigable = true;
 		return *this;
 	}
 
-	Element& Element::disableKeyboardNavigation() {
+	Element& Element::disableKeyboardNavigation() noexcept {
 		m_keyboard_navigable = false;
 		return *this;
 	}
 
-	bool Element::keyboardNavigable() const {
+	bool Element::keyboardNavigable() const noexcept {
 		return m_keyboard_navigable;
 	}
 
-	Element& Element::setVisible(bool is_visible) {
+	Element& Element::setVisible(bool is_visible) noexcept {
 		if (isVisible() != is_visible && layoutStyle() != LayoutStyle::Free) {
 			makeDirty();
 		}
@@ -77,32 +77,32 @@ namespace ui {
 		return *this;
 	}
 
-	bool Element::isVisible() const {
+	bool Element::isVisible() const noexcept {
 		return m_visible;
 	}
 
-	Element& Element::setClipping(bool _clipping) {
+	Element& Element::setClipping(bool _clipping) noexcept {
 		m_clipping = _clipping;
 		return *this;
 	}
 
-	bool Element::clipping() const {
+	bool Element::clipping() const noexcept {
 		return m_clipping;
 	}
 
-	vec2 Element::pos() const {
+	vec2 Element::pos() const noexcept {
 		return m_pos;
 	}
 
-	float Element::left() const {
+	float Element::left() const noexcept {
 		return m_pos.x;
 	}
 
-	float Element::top() const {
+	float Element::top() const noexcept {
 		return m_pos.y;
 	}
 
-	Element& Element::setPos(vec2 _pos) {
+	Element& Element::setPos(vec2 _pos) noexcept {
 		if (abs(left() - _pos.x) + abs(top() - _pos.y) > epsilon) {
 			m_pos = _pos;
 		}
@@ -112,19 +112,19 @@ namespace ui {
 		return *this;
 	}
 
-	Element & Element::setLeft(float x) {
+	Element & Element::setLeft(float x) noexcept {
 		return setPos({ x, top() });
 	}
 
-	Element & Element::setTop(float y) {
+	Element & Element::setTop(float y) noexcept {
 		return setPos({ left(), y });
 	}
 
-	vec2 Element::size() const {
+	vec2 Element::size() const noexcept {
 		return m_size;
 	}
 
-	Element& Element::setSize(vec2 _size, bool force) {
+	Element& Element::setSize(vec2 _size, bool force) noexcept {
 		_size = vec2(std::max(_size.x, 0.0f), std::max(_size.y, 0.0f));
 		if (abs(width() - _size.x) + abs(height() - _size.y) > epsilon) {
 			m_size = _size;
@@ -140,41 +140,41 @@ namespace ui {
 		return *this;
 	}
 
-	Element& Element::setMinSize(vec2 _min_size) {
+	Element& Element::setMinSize(vec2 _min_size) noexcept {
 		_min_size = vec2(std::max(_min_size.x, 0.0f), std::max(_min_size.y, 0.0f));
 		m_minsize = _min_size;
 		makeDirty();
 		return *this;
 	}
 
-	vec2 Element::maxSize() const {
+	vec2 Element::maxSize() const noexcept {
 		return m_maxsize;
 	}
 
-	vec2 Element::minSize() const {
+	vec2 Element::minSize() const noexcept {
 		return m_minsize;
 	}
 
-	Element& Element::setMinWidth(float width) {
+	Element& Element::setMinWidth(float width) noexcept {
 		return setMinSize({ width, minHeight() });
 	}
 
-	Element& Element::setMinHeight(float height) {
+	Element& Element::setMinHeight(float height) noexcept {
 		return setMinSize({ minWidth(), height });
 	}
 
-	Element& Element::setMaxSize(vec2 _max_size) {
+	Element& Element::setMaxSize(vec2 _max_size) noexcept {
 		_max_size = vec2(std::max(_max_size.x, 0.0f), std::max(_max_size.y, 0.0f));
 		m_maxsize = _max_size;
 		makeDirty();
 		return *this;
 	}
 
-	Element& Element::setMaxWidth(float width) {
+	Element& Element::setMaxWidth(float width) noexcept {
 		return setMaxSize({ width, maxHeight() });
 	}
 
-	Element& Element::setWidth(float _width, bool force) {
+	Element& Element::setWidth(float _width, bool force) noexcept {
 		_width = std::max(0.0f, _width);
 		if (abs(width() - _width) > epsilon) {
 			m_size.x = _width;
@@ -190,23 +190,23 @@ namespace ui {
 		return *this;
 	}
 
-	float Element::minWidth() const {
+	float Element::minWidth() const noexcept {
 		return m_minsize.x;
 	}
 
-	float Element::maxWidth() const {
+	float Element::maxWidth() const noexcept {
 		return m_maxsize.x;
 	}
 
-	float Element::width() const {
+	float Element::width() const noexcept {
 		return m_size.x;
 	}
 
-	Element& Element::setMaxHeight(float height) {
+	Element& Element::setMaxHeight(float height) noexcept {
 		return setMaxSize({ maxWidth(), height });
 	}
 
-	Element& Element::setHeight(float _height, bool force) {
+	Element& Element::setHeight(float _height, bool force) noexcept {
 		_height = std::max(0.0f, _height);
 		if (abs(height() - _height) > epsilon) {
 			m_size.y = _height;
@@ -222,15 +222,15 @@ namespace ui {
 		return *this;
 	}
 
-	float Element::maxHeight() const {
+	float Element::maxHeight() const noexcept {
 		return m_maxsize.y;
 	}
 
-	float Element::minHeight() const {
+	float Element::minHeight() const noexcept {
 		return m_minsize.y;
 	}
 
-	float Element::height() const {
+	float Element::height() const noexcept {
 		return m_size.y;
 	}
 
@@ -238,7 +238,7 @@ namespace ui {
 
 	}
 
-	void Element::setLayoutStyle(LayoutStyle style) {
+	void Element::setLayoutStyle(LayoutStyle style) noexcept {
 		if (layoutStyle() != style) {
 			m_layoutstyle = style;
 			if (auto par = parent().lock()) {
@@ -247,11 +247,11 @@ namespace ui {
 		}
 	}
 
-	LayoutStyle Element::layoutStyle() const {
+	LayoutStyle Element::layoutStyle() const noexcept {
 		return m_layoutstyle;
 	}
 
-	Element& Element::setContentAlign(ContentAlign style) {
+	Element& Element::setContentAlign(ContentAlign style) noexcept {
 		if (contentAlign() != style) {
 			m_contentalign = style;
 			makeDirty();
@@ -259,41 +259,41 @@ namespace ui {
 		return *this;
 	}
 
-	ContentAlign Element::contentAlign() const {
+	ContentAlign Element::contentAlign() const noexcept {
 		return m_contentalign;
 	}
 
-	void Element::setXPositionStyle(PositionStyle style, float spacing) {
+	void Element::setXPositionStyle(PositionStyle style, float spacing) noexcept {
 		m_pstyle_x = style;
 		m_spacing_x = spacing;
 	}
 
-	PositionStyle Element::xPositionStyle() const {
+	PositionStyle Element::xPositionStyle() const noexcept {
 		return m_pstyle_x;
 	}
 
-	float Element::xPositionSpacing() const {
+	float Element::xPositionSpacing() const noexcept {
 		return m_spacing_x;
 	}
 
-	void Element::setYPositionStyle(PositionStyle style, float spacing) {
+	void Element::setYPositionStyle(PositionStyle style, float spacing) noexcept {
 		m_pstyle_y = style;
 		m_spacing_y = spacing;
 	}
 
-	PositionStyle Element::yPositionStyle() const {
+	PositionStyle Element::yPositionStyle() const noexcept {
 		return m_pstyle_y;
 	}
 
-	float Element::yPositionSpacing() const {
+	float Element::yPositionSpacing() const noexcept {
 		return m_spacing_y;
 	}
 
 	Element::~Element() {
-
+		close();
 	}
 
-	void Element::close() {
+	void Element::close() noexcept {
 		if (isClosed()) {
 			return;
 		}
@@ -304,15 +304,14 @@ namespace ui {
 			}
 			m_children.back()->close();
 		}
-		auto self = m_sharedthis;
-		m_sharedthis = nullptr;
+		auto self = shared_from_this();
 		if (auto p = parent().lock()) {
 			p->remove(self);
 		}
 	}
 
-	bool Element::isClosed() const {
-		return !static_cast<bool>(m_sharedthis);
+	bool Element::isClosed() const noexcept {
+		return !static_cast<bool>(weak_from_this().lock());
 	}
 
 	void Element::onClose() {
@@ -323,9 +322,9 @@ namespace ui {
 		return ((testpos.x >= 0.0f) && (testpos.x < width()) && (testpos.y >= 0.0f) && (testpos.y < height()));
 	}
 
-	vec2 Element::localMousePos() const {
+	vec2 Element::localMousePos() const noexcept {
 		vec2 mousepos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
-		Ref<const Element> element = m_sharedthis;
+		Ref<const Element> element = shared_from_this();
 		while (element) {
 			mousepos -= element->pos();
 			element = element->parent().lock();
@@ -333,9 +332,9 @@ namespace ui {
 		return mousepos;
 	}
 
-	vec2 Element::absPos() const {
+	vec2 Element::absPos() const noexcept {
 		vec2 rootpos = { 0, 0 };
-		Ref<const Element> element = m_sharedthis;
+		Ref<const Element> element = shared_from_this();
 		while (element) {
 			rootpos += element->pos();
 			element = element->parent().lock();
@@ -367,15 +366,15 @@ namespace ui {
 
 	}
 
-	bool Element::leftMouseDown() const {
+	bool Element::leftMouseDown() const noexcept {
 		return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 	}
 
-	bool Element::rightMouseDown() const {
+	bool Element::rightMouseDown() const noexcept {
 		return sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 	}
 
-	bool Element::middleMouseDown() const {
+	bool Element::middleMouseDown() const noexcept {
 		return sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle);
 	}
 
@@ -383,10 +382,10 @@ namespace ui {
 		return false;
 	}
 
-	void Element::startDrag() {
+	void Element::startDrag() noexcept {
 		if (layoutStyle() == LayoutStyle::Free) {
 			grabFocus();
-			getContext().setDraggingElement(m_sharedthis, (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos());
+			getContext().setDraggingElement(shared_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos());
 		}
 	}
 
@@ -394,13 +393,13 @@ namespace ui {
 
 	}
 
-	void Element::stopDrag() {
+	void Element::stopDrag() noexcept {
 		if (dragging()) {
 			getContext().setDraggingElement(nullptr);
 		}
 	}
 
-	bool Element::dragging() const {
+	bool Element::dragging() const noexcept {
 		return (getContext().getDraggingElement().get() == this);
 	}
 
@@ -412,7 +411,7 @@ namespace ui {
 
 	}
 
-	bool Element::hovering() const {
+	bool Element::hovering() const noexcept {
 		return getContext().getHoverElement().get() == this;
 	}
 
@@ -420,22 +419,23 @@ namespace ui {
 		return false;
 	}
 
-	bool Element::onHoverWith(Ref<Element> element) {
+	bool Element::onHoverWith(const Ref<Element>& element) {
 		return false;
 	}
 
-	void Element::drop(vec2 local_pos) {
+	void Element::drop(vec2 local_pos) noexcept {
 		vec2 drop_pos = absPos() + local_pos;
-		if (auto element = root().findElementAt(drop_pos, m_sharedthis)) {
+		auto self = shared_from_this();
+		if (auto element = root().findElementAt(drop_pos, self)) {
 			do {
-				if (element->onDrop(m_sharedthis)) {
+				if (element->onDrop(self)) {
 					return;
 				}
 			} while (element = element->parent().lock());
 		}
 	}
 
-	bool Element::onDrop(Ref<Element> element) {
+	bool Element::onDrop(const Ref<Element>& element) {
 		return false;
 	}
 
@@ -443,7 +443,7 @@ namespace ui {
 
 	}
 
-	bool Element::inFocus() const {
+	bool Element::inFocus() const noexcept {
 		return (getContext().getCurrentElement().get() == this);
 	}
 
@@ -451,8 +451,8 @@ namespace ui {
 
 	}
 
-	void Element::grabFocus() {
-		getContext().focusTo(m_sharedthis);
+	void Element::grabFocus() noexcept {
+		getContext().focusTo(shared_from_this());
 	}
 
 	bool Element::onKeyDown(Key) {
@@ -463,15 +463,15 @@ namespace ui {
 
 	}
 
-	bool Element::keyDown(Key key) const {
+	bool Element::keyDown(Key key) const noexcept {
 		return sf::Keyboard::isKeyPressed(key);
 	}
 
-	void Element::write(const std::string& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) {
+	void Element::write(const std::string& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
 		write(std::wstring { text.begin(), text.end() }, font, color, charsize, style);
 	}
 
-	void Element::write(const std::wstring& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) {
+	void Element::write(const std::wstring& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
 		std::wstring word;
 
 		auto writeWord = [&, this]() {
@@ -497,12 +497,12 @@ namespace ui {
 		writeWord();
 	}
 
-	void Element::writeLineBreak(unsigned charsize) {
+	void Element::writeLineBreak(unsigned charsize) noexcept {
 		m_whitespaces.push_back(WhiteSpace(WhiteSpace::LineBreak, getNextLayoutIndex(), charsize));
 		makeDirty();
 	}
 
-	void Element::writePageBreak(float height) {
+	void Element::writePageBreak(float height) noexcept {
 		auto br = add<BlockElement>();
 		br->setMargin(height * 0.5f);
 		br->setBorderColor(sf::Color(0));
@@ -511,13 +511,13 @@ namespace ui {
 		br->setSize({ 0.0f, 0.0f });
 	}
 
-	void Element::writeTab(float width) {
+	void Element::writeTab(float width) noexcept {
 		unsigned charsize = static_cast<unsigned>(floor(width / 50.0f * 15.0f));
 		m_whitespaces.push_back(WhiteSpace(WhiteSpace::Tab, getNextLayoutIndex(), charsize));
 		makeDirty();
 	}
 
-	void Element::adopt(Ref<Element> child) {
+	void Element::adopt(Ref<Element> child) noexcept {
 		if (auto p = child->parent().lock()) {
 			if (p.get() == this) {
 				return;
@@ -525,16 +525,17 @@ namespace ui {
 			p->release(child);
 		}
 		m_children.push_back(child);
-		child->m_parent = m_sharedthis;
+		child->m_parent = weak_from_this();
 		child->m_layoutindex = getNextLayoutIndex();
 		makeDirty();
-		if (layoutStyle() != LayoutStyle::Free)
+		if (layoutStyle() != LayoutStyle::Free){
 			if (auto p = parent().lock()) {
 				p->makeDirty();
 			}
+		}
 	}
 
-	void Element::remove(Ref<Element> element) {
+	void Element::remove(const Ref<Element>& element) noexcept {
 		if (element) {
 			for (auto it = m_children.begin(); it != m_children.end(); ++it) {
 				if (*it == element) {
@@ -552,7 +553,7 @@ namespace ui {
 		}
 	}
 
-	Ref<Element> Element::release(Ref<Element> element) {
+	Ref<Element> Element::release(const Ref<Element>& element) noexcept {
 		if (element) {
 			for (auto it = m_children.begin(); it != m_children.end(); ++it) {
 				if (*it == element) {
@@ -570,23 +571,20 @@ namespace ui {
 		return nullptr;
 	}
 
-	bool Element::has(const Ref<Element>& child) const {
+	bool Element::has(const Ref<Element>& child) const noexcept {
 		return child->parent().lock().get() == this;
 	}
 
-	void Element::bringToFront() {
+	void Element::bringToFront() noexcept {
 		if (auto p = parent().lock()) {
-			for (auto it = p->m_children.begin(); it != p->m_children.end(); ++it) {
-				if ((*it).get() == this) {
-					p->m_children.erase(it);
-					p->m_children.push_back(m_sharedthis);
-					return;
-				}
-			}
+			auto self = shared_from_this();
+			auto& c = p->m_children;
+			c.erase(std::remove_if(c.begin(), c.end(), [self](const Ref<Element>& e){ return e == self; }), c.end());
+			c.push_back(self);
 		}
 	}
 
-	void Element::clear() {
+	void Element::clear() noexcept {
 		while (m_children.size() > 0) {
 			m_children.back()->close();
 		}
@@ -594,7 +592,7 @@ namespace ui {
 		makeDirty();
 	}
 
-	Ref<Element> Element::findElementAt(vec2 _pos, Ref<Element> exclude) {
+	Ref<Element> Element::findElementAt(vec2 _pos, const Ref<Element>& exclude){
 		if (!isVisible() || !isEnabled()) {
 			return nullptr;
 		}
@@ -616,7 +614,7 @@ namespace ui {
 		}
 
 		if (this->hit(_pos)) {
-			return m_sharedthis;
+			return shared_from_this();
 		}
 
 		return nullptr;
@@ -626,7 +624,15 @@ namespace ui {
 		rw.draw(m_displayrect);
 	}
 
-	bool Element::navigateToPreviousElement() {
+	void* Element::operator new(size_t size) {
+		return ::operator new(size);
+	}
+
+	void Element::operator delete(void* ptr) {
+		::operator delete(ptr);
+	}
+
+	bool Element::navigateToPreviousElement(){
 		if (!inFocus()) {
 			return false;
 		}
@@ -655,7 +661,7 @@ namespace ui {
 		return true;
 	}
 
-	bool Element::navigateToNextElement() {
+	bool Element::navigateToNextElement(){
 		if (!inFocus()) {
 			return false;
 		}
@@ -684,7 +690,7 @@ namespace ui {
 		return true;
 	}
 
-	bool Element::navigateIn() {
+	bool Element::navigateIn(){
 		if (!inFocus()) {
 			return false;
 		}
@@ -710,7 +716,7 @@ namespace ui {
 		return false;
 	}
 
-	bool Element::navigateOut() {
+	bool Element::navigateOut(){
 		if (!inFocus()) {
 			return false;
 		}
@@ -733,12 +739,11 @@ namespace ui {
 		}
 	}
 
-	void Element::renderChildren(sf::RenderWindow& renderwindow) {
+	void Element::renderChildren(sf::RenderWindow& renderwindow){
 		// save view state
 		const vec2 offset = getContext().getViewOffset();
 		const sf::FloatRect cliprect = getContext().getClipRect();
-		for (auto it = m_children.begin(); it != m_children.end(); ++it) {
-			const Ref<Element>& child = *it;
+		for (const Ref<Element>& child : m_children){
 			if (child->isVisible() && child) {
 				if (child->clipping()) {
 					auto childrect = sf::FloatRect(-offset + child->pos(), child->size());
@@ -767,7 +772,7 @@ namespace ui {
 		}
 	}
 
-	Element::LayoutIndex Element::getNextLayoutIndex() const {
+	Element::LayoutIndex Element::getNextLayoutIndex() const noexcept {
 		LayoutIndex max = 0.0f;
 		for (const auto& child : m_children) {
 			max = std::max(child->m_layoutindex, max);
@@ -778,7 +783,7 @@ namespace ui {
 		return max + 1.0f;
 	}
 
-	void Element::organizeLayoutIndices() {
+	void Element::organizeLayoutIndices() noexcept {
 		using ElementOrSpace = std::pair<Ref<Element>, WhiteSpace*>;
 
 		std::set<std::pair<LayoutIndex, ElementOrSpace>> index_set;
@@ -800,7 +805,7 @@ namespace ui {
 		}
 	}
 
-	bool Element::ancestorInFocus() const {
+	bool Element::ancestorInFocus() const noexcept {
 		auto elem = getContext().getCurrentElement();
 		while (elem) {
 			if (elem.get() == this) {
@@ -811,7 +816,7 @@ namespace ui {
 		return false;
 	}
 
-	std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const {
+	std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const noexcept {
 		std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> sorted_elements;
 
 		sorted_elements.reserve(m_children.size() + m_whitespaces.size());
@@ -826,15 +831,15 @@ namespace ui {
 		return sorted_elements;
 	}
 
-	const std::vector<Ref<Element>>& Element::children() const {
+	const std::vector<Ref<Element>>& Element::children() const noexcept {
 		return m_children;
 	}
 
-	std::weak_ptr<Element> Element::parent() const {
+	std::weak_ptr<Element> Element::parent() const noexcept {
 		return m_parent;
 	}
 
-	void Element::layoutBefore(const Ref<Element>& sibling) {
+	void Element::layoutBefore(const Ref<Element>& sibling) noexcept {
 		if (!sibling || isClosed()) {
 			return;
 		}
@@ -849,7 +854,7 @@ namespace ui {
 		}
 	}
 
-	void Element::layoutAfter(const Ref<Element>& sibling) {
+	void Element::layoutAfter(const Ref<Element>& sibling) noexcept {
 		if (!sibling || isClosed()) {
 			return;
 		}
@@ -864,18 +869,18 @@ namespace ui {
 		}
 	}
 
-	void Element::setPadding(float _padding) {
+	void Element::setPadding(float _padding) noexcept {
 		if (abs(padding() - _padding) > epsilon) {
 			m_padding = std::max(_padding, 0.0f);
 			makeDirty();
 		}
 	}
 
-	float Element::padding() const {
+	float Element::padding() const noexcept {
 		return m_padding;
 	}
 
-	void Element::setMargin(float _margin) {
+	void Element::setMargin(float _margin) noexcept {
 		_margin = std::max(_margin, 0.0f);
 		if (abs(margin() - _margin) > epsilon) {
 			m_margin = _margin;
@@ -883,43 +888,43 @@ namespace ui {
 		}
 	}
 
-	float Element::margin() const {
+	float Element::margin() const noexcept {
 		return m_margin;
 	}
 
-	sf::Color Element::backgroundColor() const {
+	sf::Color Element::backgroundColor() const noexcept {
 		return m_displayrect.getFillColor();
 	}
 
-	void Element::setBackgroundColor(sf::Color color) {
+	void Element::setBackgroundColor(sf::Color color) noexcept {
 		m_displayrect.setFillColor(color);
 	}
 
-	sf::Color Element::borderColor() const {
+	sf::Color Element::borderColor() const noexcept {
 		return m_displayrect.getOutlineColor();
 	}
 
-	void Element::setBorderColor(sf::Color color) {
+	void Element::setBorderColor(sf::Color color) noexcept {
 		m_displayrect.setOutlineColor(color);
 	}
 
-	float Element::borderRadius() const {
+	float Element::borderRadius() const noexcept {
 		return m_displayrect.getRadius();
 	}
 
-	void Element::setBorderRadius(float radius) {
+	void Element::setBorderRadius(float radius) noexcept {
 		m_displayrect.setRadius(radius);
 	}
 
-	float Element::borderThickness() const {
+	float Element::borderThickness() const noexcept {
 		return m_displayrect.getOutlineThickness();
 	}
 
-	void Element::setBorderThickness(float thickness) {
+	void Element::setBorderThickness(float thickness) noexcept {
 		m_displayrect.setOutlineThickness(std::max(0.0f, thickness));
 	}
 
-	void Element::updatePosition() {
+	void Element::updatePosition() noexcept {
 		if (layoutStyle() != LayoutStyle::Free) {
 			return;
 		}
@@ -963,25 +968,25 @@ namespace ui {
 		}
 	}
 
-	void Element::updateChildPositions() {
+	void Element::updateChildPositions() noexcept {
 		for (const auto& child : m_children) {
 			child->updatePosition();
 		}
 	}
 
-	void Element::makeDirty() {
+	void Element::makeDirty() noexcept {
 		m_isdirty = true;
 	}
 
-	bool Element::isDirty() const {
+	bool Element::isDirty() const noexcept {
 		return m_isdirty;
 	}
 
-	void Element::makeClean() {
+	void Element::makeClean() noexcept {
 		m_isdirty = false;
 	}
 
-	bool Element::update(float width_avail) {
+	bool Element::update(float width_avail){
 		if (this->layoutStyle() == LayoutStyle::Free) {
 			width_avail = width();
 		}
@@ -1454,7 +1459,7 @@ namespace ui {
 		}
 	};
 
-	vec2 Element::arrangeChildren(float width_avail) {
+	vec2 Element::arrangeChildren(float width_avail){
 		if (m_children.size() == 0 && m_whitespaces.size() == 0) {
 			return { padding(), padding() };
 		}
@@ -1486,7 +1491,7 @@ namespace ui {
 
 	}
 
-	Element::WhiteSpace::WhiteSpace(Element::WhiteSpace::Type _type, LayoutIndex _layout_index, unsigned _charsize)
+	Element::WhiteSpace::WhiteSpace(Element::WhiteSpace::Type _type, LayoutIndex _layout_index, unsigned _charsize) noexcept
 		: type(_type), layout_index(_layout_index), charsize(_charsize) {
 
 	}

@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_NUMBERTEXTENTRY_H
+#define TIMSGUI_NUMBERTEXTENTRY_H
+
 #include "GUI/TextEntry.hpp"
 
 namespace ui {
@@ -80,3 +83,5 @@ namespace ui {
 	};
 
 } // namespace ui
+
+#endif // TIMSGUI_NUMBERTEXTENTRY_H

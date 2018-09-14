@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_ROUNDEDRECTANGLE_H
+#define TIMSGUI_ROUNDEDRECTANGLE_H
+
 #include "SFML/Graphics.hpp"
 
 namespace ui {
@@ -94,3 +97,5 @@ namespace ui {
 	};
 
 } // namespace ui
+
+#endif // TIMSGUI_ROUNDEDRECTANGLE_H

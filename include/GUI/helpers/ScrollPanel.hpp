@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_SCROLLPANEL_H
+#define TIMSGUI_SCROLLPANEL_H
+
 #include "GUI/Element.hpp"
 #include "GUI/GUI.hpp"
 
@@ -393,3 +396,5 @@ namespace ui {
 	sf::Color ScrollPanel::ScrollButton::normal_color { 0x80808080 };
 
 } // namespace ui
+
+#endif // TIMSGUI_SCROLLPANEL_H

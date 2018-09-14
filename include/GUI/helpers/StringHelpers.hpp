@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_STRINGHELPERS_H
+#define TIMSGUI_STRINGHELPERS_H
+
 #include <string>
 
 namespace ui {
@@ -70,3 +73,5 @@ namespace ui {
 	bool stringIsInt(const std::wstring& str);
 
 } // namespace ui
+
+#endif // TIMSGUI_STRINGHELPERS_H

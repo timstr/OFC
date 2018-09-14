@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_TRANSITION_H
+#define TIMSGUI_TRANSITION_H
+
 #include "Element.hpp"
 
 namespace ui {
@@ -20,3 +23,5 @@ namespace ui {
 	};
 
 }
+
+#endif // TIMSGUI_TRANSITION_H

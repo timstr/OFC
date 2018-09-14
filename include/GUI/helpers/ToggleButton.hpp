@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_TOGGLEBUTTON_H
+#define TIMSGUI_TOGGLEBUTTON_H
+
 #include "GUI/Element.hpp"
 #include "GUI/helpers/CallbackButton.hpp"
 
@@ -21,3 +24,5 @@ namespace ui {
 	};
 
 } // namespace ui
+
+#endif // TIMSGUI_TOGGLEBUTTON_H

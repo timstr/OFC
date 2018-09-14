@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_SLIDER_H
+#define TIMSGUI_SLIDER_H
+
 #include "GUI/Element.hpp"
 
 namespace ui {
@@ -161,3 +164,5 @@ namespace ui {
 	const float Slider::Handle::fine_speed = 0.1f;
 
 } // namespace ui
+
+#endif // TIMSGUI_SLIDER_H

@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_GUI_H
+#define TIMSGUI_GUI_H
+
 #include <SFML/Main.hpp>
 #include "Element.hpp"
 #include "Text.hpp"
@@ -51,3 +54,5 @@ namespace ui {
 	void run();
 
 } // namespace ui
+
+#endif // TIMSGUI_GUI_H

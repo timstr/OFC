@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_PULLDOWNMENU_H
+#define TIMSGUI_PULLDOWNMENU_H
+
 #include "GUI/helpers/CallbackButton.hpp"
 
 namespace ui {
@@ -121,3 +124,5 @@ namespace ui {
 	};
 
 } // namespace ui
+
+#endif // TIMSGUI_PULLDOWNMENU_H

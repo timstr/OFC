@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef TIMSGUI_TEXT_H
+#define TIMSGUI_TEXT_H
+
 #include "GUI/Element.hpp"
 
 namespace ui {
@@ -33,3 +36,5 @@ namespace ui {
 	};
 
 }
+
+#endif // TIMSGUI_TEXT_H
