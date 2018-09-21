@@ -32,13 +32,22 @@ set(tims-gui_headers
 
 set(tims-gui_srcs
 	src/Context.cpp
-	src/Gui.cpp
+	src/GUI.cpp
 	src/StringHelpers.cpp
 	src/Text.cpp
 	src/TextEntry.cpp
 	src/Transition.cpp
 	src/Element.cpp
 	src/Image.cpp
+	src/ToggleButton.cpp
+	src/TextEntryHelper.cpp
+	src/StringHelpers.cpp
+	src/Slider.cpp
+	src/ScrollPanel.cpp
+	src/RoundedRectangle.cpp
+	src/PullDownMenu.cpp
+	src/NumberTextEntry.cpp
+	src/CallbackButton.cpp
 )
 	
 add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})
