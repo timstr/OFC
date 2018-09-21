@@ -312,7 +312,7 @@ namespace ui {
 	}
 
 	void Context::handleHover(vec2 pos) {
-		auto element = root().findElementAt(pos, dragging_element);
+		auto element = root().findElementAt(pos, dragging_element.get());
 
 		if (element != hover_element) {
 			// if the mouse is moved onto a new element

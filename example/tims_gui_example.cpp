@@ -12,7 +12,7 @@
 std::random_device randdev;
 std::mt19937 randeng { randdev() };
 
-sf::Font& getFont() {
+const sf::Font& getFont() {
 	static sf::Font font;
 	static bool loaded;
 	if (!loaded) {

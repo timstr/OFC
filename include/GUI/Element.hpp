@@ -445,10 +445,10 @@ namespace ui {
 		bool keyDown(Key key) const noexcept;
 
 		// write a sequence of text
-		void write(const std::string& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15, TextStyle style = TextStyle::Regular) noexcept;
+		void write(const std::string& text, const sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15, TextStyle style = TextStyle::Regular) noexcept;
 
 		// write a sequence of text
-		void write(const std::wstring& text, sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15, TextStyle style = TextStyle::Regular) noexcept;
+		void write(const std::wstring& text, const sf::Font& font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15, TextStyle style = TextStyle::Regular) noexcept;
 
 		// write a line break, causing inline elements to continue on a new line
 		void writeLineBreak(unsigned charsize = 15u) noexcept;
@@ -496,7 +496,7 @@ namespace ui {
 		void clear() noexcept;
 
 		// find the element at the given local coordinates, optionally excluding a given element and all its children
-		Ref<Element> findElementAt(vec2 _pos, const Ref<Element>& exclude = nullptr);
+		Ref<Element> findElementAt(vec2 _pos, const Element* = nullptr);
 
 		// render the element
 		virtual void render(sf::RenderWindow& renderwindow);

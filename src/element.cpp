@@ -426,7 +426,7 @@ namespace ui {
 	void Element::drop(vec2 local_pos) noexcept {
 		vec2 drop_pos = absPos() + local_pos;
 		auto self = shared_from_this();
-		if (auto element = root().findElementAt(drop_pos, self)) {
+		if (auto element = root().findElementAt(drop_pos, this)) {
 			do {
 				if (element->onDrop(self)) {
 					return;
@@ -467,11 +467,11 @@ namespace ui {
 		return sf::Keyboard::isKeyPressed(key);
 	}
 
-	void Element::write(const std::string& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
+	void Element::write(const std::string& text, const sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
 		write(std::wstring { text.begin(), text.end() }, font, color, charsize, style);
 	}
 
-	void Element::write(const std::wstring& text, sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
+	void Element::write(const std::wstring& text, const sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
 		std::wstring word;
 
 		auto writeWord = [&, this]() {
@@ -592,7 +592,7 @@ namespace ui {
 		makeDirty();
 	}
 
-	Ref<Element> Element::findElementAt(vec2 _pos, const Ref<Element>& exclude){
+	Ref<Element> Element::findElementAt(vec2 _pos, const Element* exclude){
 		if (!isVisible() || !isEnabled()) {
 			return nullptr;
 		}
@@ -601,7 +601,7 @@ namespace ui {
 			return nullptr;
 		}
 
-		if (exclude.get() == this) {
+		if (exclude == this) {
 			return nullptr;
 		}
 

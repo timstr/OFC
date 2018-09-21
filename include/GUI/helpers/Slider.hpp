@@ -8,7 +8,7 @@
 namespace ui {
 
 	struct Slider : InlineElement {
-		Slider(float defaultval, float min, float max, sf::Font& font, std::function<void(float)> _onChange)
+		Slider(float defaultval, float min, float max, const sf::Font& font, std::function<void(float)> _onChange)
 			: minimum(std::min(min, max)),
 			maximum(std::max(min, max)),
 			value(std::min(std::max(defaultval, minimum), maximum)),

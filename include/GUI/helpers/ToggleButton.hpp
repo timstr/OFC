@@ -9,7 +9,7 @@
 namespace ui {
 
 	struct ToggleButton : CallbackButton {
-		ToggleButton(bool _value, sf::Font& font, std::function<void(bool)> onChange, std::pair<std::string, std::string> labels = { "off", "on" })
+		ToggleButton(bool _value, const sf::Font& font, std::function<void(bool)> onChange, std::pair<std::string, std::string> labels = { "off", "on" })
 			: CallbackButton(_value ? labels.second : labels.first, font, [this, labels, onChange] {
 			this->value = !this->value;
 			this->setCaption(this->value ? labels.second : labels.first);

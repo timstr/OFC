@@ -9,7 +9,7 @@ namespace ui {
 
 	template<typename Type>
 	struct PullDownMenu : CallbackButton {
-		PullDownMenu(std::vector<std::pair<Type, std::string>> options, sf::Font& font, std::function<void(const Type&)> _onSelect)
+		PullDownMenu(std::vector<std::pair<Type, std::string>> options, const sf::Font& font, std::function<void(const Type&)> _onSelect)
 			: CallbackButton(
 				options.empty() ? "" : options.front().second,
 				font,
@@ -38,7 +38,7 @@ namespace ui {
 			}
 			hideList();
 		}
-		PullDownMenu(std::vector<Type> options, sf::Font& font, std::function<void(const Type&)> _onSelect)
+		PullDownMenu(std::vector<Type> options, const sf::Font& font, std::function<void(const Type&)> _onSelect)
 			: PullDownMenu(generateDescriptions(options), font, _onSelect) {
 		}
 
@@ -95,7 +95,7 @@ namespace ui {
 		}
 
 		struct ListItem : ui::CallbackButton {
-			ListItem(std::string text, sf::Font& font, std::function<void()> callback) :
+			ListItem(std::string text, const sf::Font& font, std::function<void()> callback) :
 				CallbackButton(text, font, callback) {
 
 				setLayoutStyle(LayoutStyle::Block);

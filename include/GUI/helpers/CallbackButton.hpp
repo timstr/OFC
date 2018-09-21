@@ -17,7 +17,7 @@ namespace ui {
 
 	public:
 
-		CallbackButton(std::string _label, sf::Font& font, std::function<void()> _callback = {})
+		CallbackButton(std::string _label, const sf::Font& font, std::function<void()> _callback = {})
 			: label(add<Text>(_label, font)),
 			callback(_callback),
 			normal_color(0xBBBBBBFF),
