@@ -508,6 +508,8 @@ namespace ui {
 
 		std::shared_ptr<Element> m_temp_this;
 
+		bool m_closed;
+
 		void* operator new(size_t size);
 		void operator delete(void* ptr);
 		void* operator new[](size_t) = delete;

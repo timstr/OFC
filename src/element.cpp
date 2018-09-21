@@ -15,6 +15,7 @@ namespace ui {
 
 	Element::Element(LayoutStyle _display_style) noexcept :
 		m_temp_this(this, [](Element* e){ delete e; }),
+		m_closed(false),
 		m_layoutstyle(_display_style),
 		m_contentalign(ContentAlign::Left),
 		m_pos({ 0.0f, 0.0f }),
@@ -297,6 +298,7 @@ namespace ui {
 		if (isClosed()) {
 			return;
 		}
+		m_closed = true;
 		onClose();
 		while (!m_children.empty()) {
 			if (m_children.back()->inFocus()) {
@@ -311,7 +313,7 @@ namespace ui {
 	}
 
 	bool Element::isClosed() const noexcept {
-		return !static_cast<bool>(weak_from_this().lock());
+		return m_closed;
 	}
 
 	void Element::onClose() {
