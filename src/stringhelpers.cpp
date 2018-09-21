@@ -1,4 +1,4 @@
-#include "GUI/helpers/StringHelpers.hpp"
+#include "GUI/Helpers/StringHelpers.hpp"
 #include <sstream>
 #include <limits>
 

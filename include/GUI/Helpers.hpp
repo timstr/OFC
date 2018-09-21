@@ -4,14 +4,14 @@
 #define TIMSGUI_HELPERS_H
 
 #include "GUI/GUI.hpp"
-#include "GUI/helpers/StringHelpers.hpp"
-#include "GUI/helpers/CallbackButton.hpp"
-#include "GUI/helpers/PullDownMenu.hpp"
-#include "GUI/helpers/ScrollPanel.hpp"
-#include "GUI/helpers/Slider.hpp"
-#include "GUI/helpers/TextEntryHelper.hpp"
-#include "GUI/helpers/ToggleButton.hpp"
-#include "GUI/helpers/NumberTextEntry.hpp"
-#include "GUI/helpers/pi.hpp"
+#include "GUI/Helpers/StringHelpers.hpp"
+#include "GUI/Helpers/CallbackButton.hpp"
+#include "GUI/Helpers/PullDownMenu.hpp"
+#include "GUI/Helpers/ScrollPanel.hpp"
+#include "GUI/Helpers/Slider.hpp"
+#include "GUI/Helpers/TextEntryHelper.hpp"
+#include "GUI/Helpers/ToggleButton.hpp"
+#include "GUI/Helpers/NumberTextEntry.hpp"
+#include "GUI/Helpers/pi.hpp"
 
 #endif // TIMSGUI_HELPERS_H

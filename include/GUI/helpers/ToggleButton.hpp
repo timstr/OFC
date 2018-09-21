@@ -4,19 +4,12 @@
 #define TIMSGUI_TOGGLEBUTTON_H
 
 #include "GUI/Element.hpp"
-#include "GUI/helpers/CallbackButton.hpp"
+#include "GUI/Helpers/CallbackButton.hpp"
 
 namespace ui {
 
 	struct ToggleButton : CallbackButton {
-		ToggleButton(bool _value, const sf::Font& font, std::function<void(bool)> onChange, std::pair<std::string, std::string> labels = { "off", "on" })
-			: CallbackButton(_value ? labels.second : labels.first, font, [this, labels, onChange] {
-			this->value = !this->value;
-			this->setCaption(this->value ? labels.second : labels.first);
-			onChange(this->value);
-		}), value(_value) {
-
-		}
+		ToggleButton(bool _value, const sf::Font& font, std::function<void(bool)> onChange, std::pair<std::string, std::string> labels = { "off", "on" });
 
 	private:
 

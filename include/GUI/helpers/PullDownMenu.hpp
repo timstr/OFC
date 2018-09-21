@@ -3,7 +3,7 @@
 #ifndef TIMSGUI_PULLDOWNMENU_H
 #define TIMSGUI_PULLDOWNMENU_H
 
-#include "GUI/helpers/CallbackButton.hpp"
+#include "GUI/Helpers/CallbackButton.hpp"
 
 namespace ui {
 
@@ -60,12 +60,12 @@ namespace ui {
 			release(list);
 		}
 
-		bool onLeftClick(int) override {
+		bool onLeftClick(int) {
 			showList();
 			return true;
 		}
 
-		bool onKeyDown(ui::Key key) override {
+		bool onKeyDown(ui::Key key) {
 			if (key == ui::Key::Return ||
 				key == ui::Key::Left ||
 				key == ui::Key::Right ||
@@ -81,7 +81,7 @@ namespace ui {
 			return false;
 		}
 
-		void onLoseFocus() override {
+		void onLoseFocus() {
 			hideList();
 		}
 
@@ -106,7 +106,7 @@ namespace ui {
 				setMinSize({ 0.0f, 20.0f });
 			}
 
-			bool onKeyDown(ui::Key key) override {
+			bool onKeyDown(ui::Key key) {
 				if (CallbackButton::onKeyDown(key)) {
 					return true;
 				}

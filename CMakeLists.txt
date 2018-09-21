@@ -19,15 +19,15 @@ set(tims-gui_headers
 	include/GUI/Text.hpp
 	include/GUI/TextEntry.hpp
 	include/GUI/Transition.hpp
-	include/GUI/helpers/CallbackButton.hpp
-	include/GUI/helpers/NumberTextEntry.hpp
-	include/GUI/helpers/pi.hpp
-	include/GUI/helpers/PullDownMenu.hpp
-	include/GUI/helpers/ScrollPanel.hpp
-	include/GUI/helpers/Slider.hpp
-	include/GUI/helpers/StringHelpers.hpp
-	include/GUI/helpers/TextEntryHelper.hpp
-	include/GUI/helpers/ToggleButton.hpp
+	include/GUI/Helpers/CallbackButton.hpp
+	include/GUI/Helpers/NumberTextEntry.hpp
+	include/GUI/Helpers/pi.hpp
+	include/GUI/Helpers/PullDownMenu.hpp
+	include/GUI/Helpers/ScrollPanel.hpp
+	include/GUI/Helpers/Slider.hpp
+	include/GUI/Helpers/StringHelpers.hpp
+	include/GUI/Helpers/TextEntryHelper.hpp
+	include/GUI/Helpers/ToggleButton.hpp
 )
 
 set(tims-gui_srcs
@@ -45,8 +45,6 @@ set(tims-gui_srcs
 	src/Slider.cpp
 	src/ScrollPanel.cpp
 	src/RoundedRectangle.cpp
-	src/PullDownMenu.cpp
-	src/NumberTextEntry.cpp
 	src/CallbackButton.cpp
 )
 	

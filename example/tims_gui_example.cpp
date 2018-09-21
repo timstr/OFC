@@ -105,7 +105,7 @@ struct TestElement : ui::FreeElement {
 		std::cout << name << " was destroyed" << std::endl;
 	}
 
-	void onClose() override {
+	void onClose() {
 		std::cout << name << " was closed" << std::endl;
 	}
 
@@ -118,7 +118,7 @@ struct TestElement : ui::FreeElement {
 			255));
 	}
 
-	bool onLeftClick(int clicks) override {
+	bool onLeftClick(int clicks) {
 		bringToFront();
 		if (clicks == 1) {
 			std::cout << name << " was left-clicked" << std::endl;
@@ -130,7 +130,7 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	void onLeftRelease() override {
+	void onLeftRelease() {
 		std::cout << name << " was left released" << std::endl;
 		if (dragging()) {
 			stopDrag();
@@ -138,7 +138,7 @@ struct TestElement : ui::FreeElement {
 		}
 	}
 
-	bool onRightClick(int clicks) override {
+	bool onRightClick(int clicks) {
 		if (clicks == 1) {
 			std::cout << name << " was right-clicked once" << std::endl;
 			std::uniform_int_distribution<int> sdist { 20, 300 };
@@ -163,29 +163,29 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	void onRightRelease() override {
+	void onRightRelease() {
 		std::cout << name << " was right released" << std::endl;
 	}
 
-	bool onMiddleClick(int clicks) override {
+	bool onMiddleClick(int clicks) {
 		std::cout << name << " was " << (clicks == 2 ? "double-" : "") << "middle clicked" << std::endl;
 		return true;
 	}
 
-	void onMiddleRelease() override {
+	void onMiddleRelease() {
 		std::cout << name << " was middle released" << std::endl;
 	}
 
-	void onFocus() override {
+	void onFocus() {
 		bringToFront();
 		std::cout << name << " gained focus" << std::endl;
 	}
 
-	void onLoseFocus() override {
+	void onLoseFocus() {
 		std::cout << name << " lost focus" << std::endl;
 	}
 
-	bool onKeyDown(ui::Key key) override {
+	bool onKeyDown(ui::Key key) {
 		std::cout << name << " - [" << key << "] was pressed" << std::endl;
 		if (key == ui::Key::Delete) {
 			close();
@@ -193,28 +193,28 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	void onKeyUp(ui::Key key) override {
+	void onKeyUp(ui::Key key) {
 		std::cout << name << " - [" << key << "] was released" << std::endl;
 	}
 
-	bool onScroll(float dx, float dy) override {
+	bool onScroll(float dx, float dy) {
 		std::cout << name << " was scrolled (" << dx << ", " << dy << ')' << std::endl;
 		return true;
 	}
 
-	void onDrag() override {
+	void onDrag() {
 
 	}
 
-	bool onHover() override {
+	bool onHover() {
 		return true;
 	}
 
-	bool onHoverWith(const std::shared_ptr<Element>& element) override {
+	bool onHoverWith(const std::shared_ptr<Element>& element) {
 		return true;
 	}
 
-	bool onDrop(const std::shared_ptr<Element>& element) override {
+	bool onDrop(const std::shared_ptr<Element>& element) {
 		if (element) {
 			if (auto w = std::dynamic_pointer_cast<TestElement, Element>(element)) {
 				adopt(w);
@@ -241,16 +241,16 @@ struct TestElement : ui::FreeElement {
 			setYPositionStyle(ui::PositionStyle::InsideBottom);
 		}
 
-		bool onLeftClick(int) override {
+		bool onLeftClick(int) {
 			startDrag();
 			return true;
 		}
 
-		void onLeftRelease() override {
+		void onLeftRelease() {
 			stopDrag();
 		}
 
-		void onDrag() override {
+		void onDrag() {
 			parent.setSize(pos() + size());
 		}
 

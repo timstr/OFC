@@ -7,9 +7,10 @@
 
 namespace ui {
 
-	template<typename NumberType, typename = std::enable_if_t<std::is_arithmetic<NumberType>::value>>
+	template<typename NumberType>
 	struct NumberTextEntry : ui::InlineElement {
 		NumberTextEntry(NumberType defaultval, NumberType _min, NumberType _max, const sf::Font& font, std::function<void(NumberType)> _callback) {
+			static_assert(std::is_arithmetic_v<NumberType>, "The NumberType for NumberTextEntry must be a number");
 			textfield = add<TextField>(defaultval, _min, _max, font, _callback);
 		}
 
