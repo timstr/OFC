@@ -301,7 +301,7 @@ namespace ui {
 		m_closed = true;
 		onClose();
 		while (!m_children.empty()) {
-			if (m_children.back()->inFocus()) {
+			if (m_children.back()->ancestorInFocus()) {
 				grabFocus();
 			}
 			m_children.back()->close();
@@ -753,6 +753,7 @@ namespace ui {
 						// restore previous view state
 						getContext().setViewOffset(offset);
 						getContext().setClipRect(cliprect);
+						getContext().updateView();
 						continue;
 					}
 					getContext().setViewOffset(offset - child->pos());
@@ -770,6 +771,7 @@ namespace ui {
 				// restore previous view state
 				getContext().setViewOffset(offset);
 				getContext().setClipRect(cliprect);
+				getContext().updateView();
 			}
 		}
 	}
