@@ -88,8 +88,12 @@ namespace ui {
 		std::vector<std::pair<Type, std::string>> generateDescriptions(std::vector<Type> options) {
 			std::vector<std::pair<Type, std::string>> res;
 			res.reserve(options.size());
+			std::stringstream ss;
 			for (const auto& option : options) {
-				res.emplace_back(std::make_pair(option, static_cast<std::string>(option)));
+				ss.str("");
+				ss.clear();
+				ss << option;
+				res.emplace_back(std::make_pair(option, ss.str()));
 			}
 			return res;
 		}
