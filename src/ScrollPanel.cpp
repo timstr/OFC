@@ -15,7 +15,7 @@ namespace ui {
 		if (!vertical_scrolling) {
 			release(yscrollbar);
 		}
-		if (!resizebtn) {
+		if (!resize_button) {
 			release(resizebtn);
 		}
 	}
