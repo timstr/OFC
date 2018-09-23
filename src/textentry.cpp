@@ -74,8 +74,19 @@ namespace ui {
 		}
 	}
 
-	bool TextEntry::onKeyDown(Key) {
-		return true;
+	bool TextEntry::onKeyDown(Key key) {
+		return (!(
+			key == ui::Key::Up ||
+			key == ui::Key::Down ||
+			key == ui::Key::LShift ||
+			key == ui::Key::RShift ||
+			key == ui::Key::LControl ||
+			key == ui::Key::RControl ||
+			key == ui::Key::Escape ||
+			key == ui::Key::PageDown ||
+			key == ui::Key::PageUp ||
+			key == ui::Key::Enter
+		));
 	}
 
 	bool TextEntry::onLeftClick(int) {
