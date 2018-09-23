@@ -66,7 +66,7 @@ namespace ui {
 		}
 
 		bool onKeyDown(ui::Key key) {
-			if (key == ui::Key::Return ||
+			if (key == ui::Key::Enter ||
 				key == ui::Key::Left ||
 				key == ui::Key::Right ||
 				key == ui::Key::Up ||

@@ -274,7 +274,7 @@ namespace ui {
 				if (current_element->navigateToNextElement()) {
 					return;
 				}
-			} else if (key == ui::Key::Return) {
+			} else if (key == ui::Key::Enter) {
 				// navigate in
 				if (current_element->navigateIn()) {
 					return;

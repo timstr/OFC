@@ -103,7 +103,7 @@ namespace ui {
 								case Key::End:
 									text_entry->onEnd();
 									break;
-								case Key::Return:
+								case Key::Enter:
 									text_entry->onReturn(text_entry->getText());
 									break;
 								default:

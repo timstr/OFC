@@ -63,7 +63,7 @@ namespace ui {
 	}
 
 	bool CallbackButton::onKeyDown(ui::Key key) {
-		if ((key == ui::Key::Return || key == ui::Key::Space) && callback) {
+		if ((key == ui::Key::Enter || key == ui::Key::Space) && callback) {
 			callback();
 			fadeColor(active_color, hovering() ? hover_color : normal_color);
 			return true;
