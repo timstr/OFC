@@ -301,14 +301,18 @@ namespace ui {
 		m_closed = true;
 		onClose();
 		while (!m_children.empty()) {
-			if (m_children.back()->ancestorInFocus()) {
-				grabFocus();
-			}
 			m_children.back()->close();
 		}
-		auto self = shared_from_this();
-		if (auto p = parent().lock()) {
-			p->remove(self);
+		auto par = parent().lock();
+		if (par) {
+			if (inFocus()){
+				par->grabFocus();
+			}
+			auto& elems = par->m_children;
+			auto isSelf = [this](const Ref<Element>& e){ return e.get() == this; };
+			elems.erase(std::remove_if(elems.begin(), elems.end(), isSelf), elems.end());
+			par->organizeLayoutIndices();
+			par->makeDirty();
 		}
 	}
 
