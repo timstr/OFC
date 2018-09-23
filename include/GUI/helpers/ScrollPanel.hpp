@@ -8,7 +8,7 @@
 
 namespace ui {
 
-	struct ScrollPanel : ui::InlineElement {
+	struct ScrollPanel : ui::BlockElement {
 		ScrollPanel(bool horizontal_scrolling = true, bool vertical_scrolling = true, bool resize_button = false);
 
 		Ref<Element> inner() const;

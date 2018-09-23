@@ -99,6 +99,12 @@ struct TestElement : ui::FreeElement {
 			std::cout << this->name << ": a thing was set to " << std::boolalpha << v << std::endl;
 		});
 
+		auto scrollpanel = add<ui::ScrollPanel>();
+		scrollpanel->inner()->writePageBreak(30);
+		scrollpanel->inner()->write("Hello world, there is so much fun we're going to have together!", getFont());
+		scrollpanel->inner()->writePageBreak(30);
+		scrollpanel->setHeight(100, true);
+
 		add<SizeButton>(*this);
 	}
 	~TestElement() {
@@ -319,9 +325,8 @@ int main() {
 		blob->setBackgroundColor(sf::Color(0xBBBBBBFF));
 
 		auto scrollpanel = block->add<ui::ScrollPanel>(true, true, true);
-		scrollpanel->setLayoutStyle(ui::LayoutStyle::Block);
 		scrollpanel->setMargin(10.0f);
-		scrollpanel->setHeight(100.0f, true);
+		//scrollpanel->setHeight(100.0f, true);
 		scrollpanel->setBorderRadius(10.0f);
 		scrollpanel->setBorderThickness(1.0f);
 		scrollpanel->setBorderColor(sf::Color(0xFF));
