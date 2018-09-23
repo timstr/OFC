@@ -300,9 +300,11 @@ namespace ui {
 		}
 		m_closed = true;
 		onClose();
-		while (!m_children.empty()) {
-			m_children.back()->close();
+		auto children_copy = children();
+		for (const auto& child : children_copy){
+			child->close();
 		}
+		m_children.clear();
 		auto par = parent().lock();
 		if (par) {
 			if (inFocus()){
