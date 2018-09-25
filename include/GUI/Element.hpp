@@ -468,10 +468,12 @@ namespace ui {
 		void adopt(Ref<Element> child) noexcept;
 
 		// remove and destroy a child element
+		// TODO: pass by const reference, not shared_ptr
 		void remove(const Ref<Element>& element) noexcept;
 
 		// release a child element, possibly to add to another element
 		// returns nullptr if the element is not found
+		// TODO: pass by const reference, not shared_ptr
 		Ref<Element> release(const Ref<Element>& element) noexcept;
 
 		// returns true if `child` directly belongs to this element
