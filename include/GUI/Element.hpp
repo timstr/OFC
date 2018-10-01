@@ -346,6 +346,12 @@ namespace ui {
 		// the element's position relative to the root element
 		vec2 absPos() const noexcept;
 
+		// When called during an event handler such as onLeftClick or onKeyDown,
+		// transfers the corresponding response event such as onLeftRelease or onKeyUp
+		// to the given element.
+		// Otherwise, if not called during an event handler, does nothing.
+		void transferResponseTo(const Ref<Element>& elem) const;
+
 		// called when the element is clicked on with the left mouse button
 		// if false is returned, call will propagate to the parent
 		// if true is returned, onLeftRelease will be invoked when the button is released

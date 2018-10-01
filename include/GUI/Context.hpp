@@ -116,6 +116,9 @@ namespace ui {
 		// set the dragging element
 		void setDraggingElement(Ref<Element> element, vec2 offset = vec2(0, 0));
 
+		// set the alternative element to respond to the current event handler
+		void setResponseHandler(const Ref<Element>& element);
+
 		// call onLoseFocus on last current element and its ancestors until common ancestor with
 		// `element`, onFocus is then called on the ancesters of `element`, which becomes the new
 		// current element
@@ -140,6 +143,14 @@ namespace ui {
 		float timeSinceHighlight() const;
 
 	private:
+
+		// call `function` on `element` and all its ancestors until one returns true,
+		// in which case that element is returned, or, if an element transfers the
+		// response to another element, that other element is returned.
+		template<typename... ArgsT>
+		Ref<Element> propagate(Ref<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args);
+
+		// TODO: use WeakRef instead of Ref where it makes sense to do so
 
 		// flag for run() to stop
 		bool quit;
@@ -170,12 +181,21 @@ namespace ui {
 		// the text entry currently being typed into
 		Ref<TextEntry> text_entry;
 
-		// the element that was last clicked
-		Ref<Element> left_clicked_element, right_clicked_element, middle_clicked_element;
+		// the elements that were last clicked
+		Ref<Element> left_clicked_element;
+		Ref<Element> right_clicked_element;
+		Ref<Element> middle_clicked_element;
+
+		// the element which will respond during an event response
+		// used in transferResponseTo
+		Ref<Element> current_event_responder;
+
 		// maximum time between clicks of a double-click, in seconds
 		const float doubleclicktime;
+
 		// time of last click
 		sf::Time click_timestamp;
+
 		// the mouse button that was last clicked
 		sf::Mouse::Button click_button;
 

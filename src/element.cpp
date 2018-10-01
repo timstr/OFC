@@ -350,6 +350,10 @@ namespace ui {
 		return rootpos;
 	}
 
+	void Element::transferResponseTo(const Ref<Element>& elem) const {
+		getContext().setResponseHandler(elem);
+	}
+
 	bool Element::onLeftClick(int) {
 		return false;
 	}

@@ -43,7 +43,7 @@ namespace ui {
 
 	private:
 
-		struct TextField : TextEntry {
+		struct TextField : TextEn4try {
 			TextField(NumberType defaultval, NumberType _min, NumberType _max, const sf::Font& font, std::function<void(NumberType)> _callback)
 				: TextEntry(toString(defaultval), font), value(defaultval), minimum(_min), maximum(_max), callback(_callback) {
 				setBackgroundColor(sf::Color(0xFFFFFFFF));
