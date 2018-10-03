@@ -397,7 +397,7 @@ namespace ui {
 	void Element::startDrag() noexcept {
 		if (layoutStyle() == LayoutStyle::Free) {
 			grabFocus();
-			getContext().setDraggingElement(shared_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos());
+			getContext().setDraggingElement(shared_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - absPos());
 		}
 	}
 

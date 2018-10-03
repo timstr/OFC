@@ -310,7 +310,13 @@ namespace ui {
 
 	void Context::handleDrag() {
 		if (dragging_element) {
-			dragging_element->m_pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
+			const vec2 mousep = (vec2)sf::Mouse::getPosition(getRenderWindow());
+			vec2 rootp = {0, 0};
+			if (auto par = dragging_element->parent().lock()){
+				rootp = par->absPos();
+			}
+			dragging_element->m_pos = mousep - rootp - drag_offset;
+			
 			dragging_element->onDrag();
 		}
 	}
