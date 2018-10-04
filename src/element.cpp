@@ -479,11 +479,11 @@ namespace ui {
 		return sf::Keyboard::isKeyPressed(key);
 	}
 
-	void Element::write(const std::string& text, const sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
+	void Element::write(const std::string& text, const sf::Font& font, sf::Color color, unsigned charsize, uint32_t style) noexcept {
 		write(std::wstring { text.begin(), text.end() }, font, color, charsize, style);
 	}
 
-	void Element::write(const std::wstring& text, const sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
+	void Element::write(const std::wstring& text, const sf::Font& font, sf::Color color, unsigned charsize, uint32_t style) noexcept {
 		std::wstring word;
 
 		auto writeWord = [&, this]() {

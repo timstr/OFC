@@ -2,11 +2,11 @@
 
 namespace ui {
 
-	Text::Text(std::string _text, const sf::Font& _font, sf::Color color, unsigned charsize, TextStyle style)
+	Text::Text(std::string _text, const sf::Font& _font, sf::Color color, unsigned charsize, uint32_t style)
 		: Text(std::wstring { _text.begin(), _text.end() }, _font, color, charsize, style) {
 	}
 
-	Text::Text(std::wstring _text, const sf::Font& _font, sf::Color color, unsigned charsize, TextStyle style)
+	Text::Text(std::wstring _text, const sf::Font& _font, sf::Color color, unsigned charsize, uint32_t style)
 		: text(_text, _font) {
 		text.setFillColor(color);
 		setBorderColor(sf::Color(0));
@@ -51,12 +51,12 @@ namespace ui {
 		return text.getFillColor();
 	}
 
-	void Text::setStyle(TextStyle style) {
-		text.setStyle(static_cast<uint32_t>(style));
+	void Text::setStyle(uint32_t style) {
+		text.setStyle(style);
 	}
 
-	TextStyle Text::getStyle() const {
-		return static_cast<TextStyle>(text.getStyle());
+	uint32_t Text::getStyle() const {
+		return text.getStyle();
 	}
 
 	void Text::render(sf::RenderWindow& rw) {
