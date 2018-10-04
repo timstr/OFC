@@ -561,6 +561,8 @@ namespace ui {
 		// returns true if a change is needed
 		bool update(float width_avail);
 
+		// TODO: fix block elements that don't shrink
+
 		// position and arrange children. Returns the actual size used
 		vec2 Element::arrangeChildren(float width_avail);
 
