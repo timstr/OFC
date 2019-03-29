@@ -111,27 +111,27 @@ namespace ui {
 		float getProgramTime() const;
 
 		// get the dragging element
-		Ref<Element> getDraggingElement() const;
+		StrongRef<Element> getDraggingElement() const;
 
 		// set the dragging element
-		void setDraggingElement(Ref<Element> element, vec2 offset = vec2(0, 0));
+		void setDraggingElement(StrongRef<Element> element, vec2 offset = vec2(0, 0));
 
 		// call onLoseFocus on last current element and its ancestors until common ancestor with
 		// `element`, onFocus is then called on the ancesters of `element`, which becomes the new
 		// current element
-		void focusTo(Ref<Element> element);
+		void focusTo(StrongRef<Element> element);
 
 		// get the current element
-		Ref<Element> getCurrentElement() const;
+		StrongRef<Element> getCurrentElement() const;
 
 		// get the element currently being hovered over
-		Ref<Element> getHoverElement() const;
+		StrongRef<Element> getHoverElement() const;
 
 		// get the text entry currently being typed into
-		Ref<TextEntry> getTextEntry() const;
+		StrongRef<TextEntry> getTextEntry() const;
 
 		// set the current text entry
-		void setTextEntry(Ref<TextEntry> textentry);
+		void setTextEntry(StrongRef<TextEntry> textentry);
 
 		// highlight the current element
 		void highlightCurrentElement();
@@ -153,25 +153,25 @@ namespace ui {
 		sf::RenderWindow renderwindow;
 
 		// the element currently being dragged
-		Ref<Element> dragging_element;
+		StrongRef<Element> dragging_element;
 
 		// the mouse's relative position while dragging
 		vec2 drag_offset;
 
 		// the element currently being hovered over
-		Ref<Element> hover_element;
+		StrongRef<Element> hover_element;
 
 		// the element currently in focus
-		Ref<Element> current_element;
+		StrongRef<Element> current_element;
 
 		// time when current element was highlighted
 		sf::Time highlight_timestamp;
 
 		// the text entry currently being typed into
-		Ref<TextEntry> text_entry;
+		StrongRef<TextEntry> text_entry;
 
 		// the element that was last clicked
-		Ref<Element> left_clicked_element, right_clicked_element, middle_clicked_element;
+		StrongRef<Element> left_clicked_element, right_clicked_element, middle_clicked_element;
 		// maximum time between clicks of a double-click, in seconds
 		const float doubleclicktime;
 		// time of last click
@@ -186,7 +186,7 @@ namespace ui {
 		sf::Clock clock;
 
 		// keys that were pressed and which element handled them
-		std::map<Key, Ref<Element>> keys_pressed;
+		std::map<Key, StrongRef<Element>> keys_pressed;
 
 		// set of callback functions to be called during keystroke patterns
 		std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> commands;

@@ -13,11 +13,8 @@ namespace ui {
 		const float far_away = 1000000.0f;
 	}
 
-	Element::Element(LayoutStyle _display_style) noexcept :
-		m_temp_this(this, [](Element* e){ delete e; }),
-		m_closed(false),
-		m_layoutstyle(_display_style),
-		m_contentalign(ContentAlign::Left),
+	Element::Element() noexcept :
+		m_layoutstyle(LayoutStyle::Inline),
 		m_pos({ 0.0f, 0.0f }),
 		m_size({ 100.0f, 100.0f }),
 		m_minsize({ 0.0f, 0.0f }),
@@ -40,34 +37,6 @@ namespace ui {
 		m_displayrect.setFillColor(sf::Color(0));
 		m_displayrect.setOutlineThickness(0.0f);
 		m_displayrect.setOutlineColor(sf::Color(0xFF));
-	}
-
-	Element& Element::disable() noexcept {
-		m_disabled = true;
-		return *this;
-	}
-
-	Element& Element::enable() noexcept {
-		m_disabled = false;
-		return *this;
-	}
-
-	bool Element::isEnabled() const noexcept {
-		return !m_disabled;
-	}
-
-	Element& Element::enableKeyboardNavigation() noexcept {
-		m_keyboard_navigable = true;
-		return *this;
-	}
-
-	Element& Element::disableKeyboardNavigation() noexcept {
-		m_keyboard_navigable = false;
-		return *this;
-	}
-
-	bool Element::keyboardNavigable() const noexcept {
-		return m_keyboard_navigable;
 	}
 
 	Element& Element::setVisible(bool is_visible) noexcept {
@@ -311,7 +280,7 @@ namespace ui {
 				par->grabFocus();
 			}
 			auto& elems = par->m_children;
-			auto isSelf = [this](const Ref<Element>& e){ return e.get() == this; };
+			auto isSelf = [this](const StrongRef<Element>& e){ return e.get() == this; };
 			elems.erase(std::remove_if(elems.begin(), elems.end(), isSelf), elems.end());
 			par->organizeLayoutIndices();
 			par->makeDirty();
@@ -332,7 +301,7 @@ namespace ui {
 
 	vec2 Element::localMousePos() const noexcept {
 		vec2 mousepos = (vec2)sf::Mouse::getPosition(getContext().getRenderWindow());
-		Ref<const Element> element = shared_from_this();
+		StrongRef<const Element> element = shared_from_this();
 		while (element) {
 			mousepos -= element->pos();
 			element = element->parent().lock();
@@ -342,7 +311,7 @@ namespace ui {
 
 	vec2 Element::absPos() const noexcept {
 		vec2 rootpos = { 0, 0 };
-		Ref<const Element> element = shared_from_this();
+		StrongRef<const Element> element = shared_from_this();
 		while (element) {
 			rootpos += element->pos();
 			element = element->parent().lock();
@@ -427,7 +396,7 @@ namespace ui {
 		return false;
 	}
 
-	bool Element::onHoverWith(const Ref<Element>& element) {
+	bool Element::onHoverWith(const StrongRef<Element>& element) {
 		return false;
 	}
 
@@ -443,7 +412,7 @@ namespace ui {
 		}
 	}
 
-	bool Element::onDrop(const Ref<Element>& element) {
+	bool Element::onDrop(const StrongRef<Element>& element) {
 		return false;
 	}
 
@@ -525,7 +494,7 @@ namespace ui {
 		makeDirty();
 	}
 
-	void Element::adopt(Ref<Element> child) noexcept {
+	void Element::adopt(StrongRef<Element> child) noexcept {
 		if (auto p = child->parent().lock()) {
 			if (p.get() == this) {
 				return;
@@ -543,7 +512,7 @@ namespace ui {
 		}
 	}
 
-	void Element::remove(const Ref<Element>& element) noexcept {
+	void Element::remove(const StrongRef<Element>& element) noexcept {
 		if (element) {
 			for (auto it = m_children.begin(); it != m_children.end(); ++it) {
 				if (*it == element) {
@@ -561,7 +530,7 @@ namespace ui {
 		}
 	}
 
-	Ref<Element> Element::release(const Ref<Element>& element) noexcept {
+	StrongRef<Element> Element::release(const StrongRef<Element>& element) noexcept {
 		if (element) {
 			for (auto it = m_children.begin(); it != m_children.end(); ++it) {
 				if (*it == element) {
@@ -579,7 +548,7 @@ namespace ui {
 		return nullptr;
 	}
 
-	bool Element::has(const Ref<Element>& child) const noexcept {
+	bool Element::has(const StrongRef<Element>& child) const noexcept {
 		return child->parent().lock().get() == this;
 	}
 
@@ -587,7 +556,7 @@ namespace ui {
 		if (auto p = parent().lock()) {
 			auto self = shared_from_this();
 			auto& c = p->m_children;
-			c.erase(std::remove_if(c.begin(), c.end(), [self](const Ref<Element>& e){ return e == self; }), c.end());
+			c.erase(std::remove_if(c.begin(), c.end(), [self](const StrongRef<Element>& e){ return e == self; }), c.end());
 			c.push_back(self);
 		}
 	}
@@ -600,7 +569,7 @@ namespace ui {
 		makeDirty();
 	}
 
-	Ref<Element> Element::findElementAt(vec2 _pos, const Element* exclude){
+	StrongRef<Element> Element::findElementAt(vec2 _pos, const Element* exclude){
 		if (!isVisible() || !isEnabled()) {
 			return nullptr;
 		}
@@ -613,7 +582,7 @@ namespace ui {
 			return nullptr;
 		}
 
-		Ref<Element> element;
+		StrongRef<Element> element;
 		for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
 			element = (*it)->findElementAt(_pos - (*it)->pos(), exclude);
 			if (element) {
@@ -648,7 +617,7 @@ namespace ui {
 		if (!par) {
 			return false;
 		}
-		std::map<LayoutIndex, Ref<Element>> siblings;
+		std::map<LayoutIndex, StrongRef<Element>> siblings;
 		for (const auto& sib : par->children()) {
 			if (sib->isEnabled() && sib->isVisible()) {
 				siblings[sib->m_layoutindex] = sib;
@@ -677,7 +646,7 @@ namespace ui {
 		if (!par) {
 			return false;
 		}
-		std::map<LayoutIndex, Ref<Element>> siblings;
+		std::map<LayoutIndex, StrongRef<Element>> siblings;
 		for (const auto& sib : par->children()) {
 			if (sib->isEnabled() && sib->isVisible()) {
 				siblings[sib->m_layoutindex] = sib;
@@ -702,7 +671,7 @@ namespace ui {
 		if (!inFocus()) {
 			return false;
 		}
-		std::map<LayoutIndex, Ref<Element>> elems;
+		std::map<LayoutIndex, StrongRef<Element>> elems;
 		for (const auto& child : children()) {
 			if (child->isEnabled() && child->isVisible()) {
 				elems[child->m_layoutindex] = child;
@@ -751,7 +720,7 @@ namespace ui {
 		// save view state
 		const vec2 offset = getContext().getViewOffset();
 		const sf::FloatRect cliprect = getContext().getClipRect();
-		for (const Ref<Element>& child : m_children){
+		for (const StrongRef<Element>& child : m_children){
 			if (child->isVisible() && child) {
 				if (child->clipping()) {
 					auto childrect = sf::FloatRect(-offset + child->pos(), child->size());
@@ -794,7 +763,7 @@ namespace ui {
 	}
 
 	void Element::organizeLayoutIndices() noexcept {
-		using ElementOrSpace = std::pair<Ref<Element>, WhiteSpace*>;
+		using ElementOrSpace = std::pair<StrongRef<Element>, WhiteSpace*>;
 
 		std::set<std::pair<LayoutIndex, ElementOrSpace>> index_set;
 		for (const auto& child : m_children) {
@@ -826,8 +795,8 @@ namespace ui {
 		return false;
 	}
 
-	std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const noexcept {
-		std::vector<std::pair<Ref<Element>, Element::WhiteSpace>> sorted_elements;
+	std::vector<std::pair<StrongRef<Element>, Element::WhiteSpace>> Element::sortChildrenByLayoutIndex() const noexcept {
+		std::vector<std::pair<StrongRef<Element>, Element::WhiteSpace>> sorted_elements;
 
 		sorted_elements.reserve(m_children.size() + m_whitespaces.size());
 
@@ -841,7 +810,7 @@ namespace ui {
 		return sorted_elements;
 	}
 
-	const std::vector<Ref<Element>>& Element::children() const noexcept {
+	const std::vector<StrongRef<Element>>& Element::children() const noexcept {
 		return m_children;
 	}
 
@@ -849,7 +818,7 @@ namespace ui {
 		return m_parent;
 	}
 
-	void Element::layoutBefore(const Ref<Element>& sibling) noexcept {
+	void Element::layoutBefore(const StrongRef<Element>& sibling) noexcept {
 		if (!sibling || isClosed()) {
 			return;
 		}
@@ -864,7 +833,7 @@ namespace ui {
 		}
 	}
 
-	void Element::layoutAfter(const Ref<Element>& sibling) noexcept {
+	void Element::layoutAfter(const StrongRef<Element>& sibling) noexcept {
 		if (!sibling || isClosed()) {
 			return;
 		}
@@ -1052,7 +1021,7 @@ namespace ui {
 
 	struct LayoutData {
 
-		using Child = std::pair<Ref<Element>, Element::WhiteSpace>;
+		using Child = std::pair<StrongRef<Element>, Element::WhiteSpace>;
 
 		LayoutData(Element& _self, float _width_avail)
 			: self(_self),
@@ -1067,7 +1036,7 @@ namespace ui {
 			std::sort(sorted_elements.begin(), sorted_elements.end(), comp);
 		}
 
-		const Element& self;
+		Element& self;
 		float width_avail;
 		vec2 contentsize;
 		float xpos;
@@ -1076,7 +1045,7 @@ namespace ui {
 		float left_edge, right_edge;
 		bool emptyline;
 		std::vector<Child> sorted_elements;
-		std::vector<Ref<Element>> floatingleft, floatingright;
+		std::vector<StrongRef<Element>> floatingleft, floatingright;
 
 		void reset() {
 			xpos = self.padding();
@@ -1089,10 +1058,10 @@ namespace ui {
 		}
 
 		void layoutElements() {
-			std::vector<Ref<Element>> left_elems, right_elems;
+			std::vector<StrongRef<Element>> left_elems, right_elems;
 			std::vector<Child> inline_children;
 
-			auto horizontalAlign = [&, this](const std::vector<Ref<Element>>& line, float left_limit, float right_limit, bool full) {
+			auto horizontalAlign = [&, this](const std::vector<StrongRef<Element>>& line, float left_limit, float right_limit, bool full) {
 				if (line.size() == 0 || self.contentAlign() == ContentAlign::Left) {
 					return;
 				}
@@ -1130,8 +1099,7 @@ namespace ui {
 			};
 
 			// arranges and empties the current left- and right- floating elements
-			// and inline elements, returning the maximum width needed or the current
-			// available width if it would be exceeded without breaking onto a new line
+			// and inline elements, returning the maximum width needed
 			auto layoutBatch = [&, this]() -> float {
 
 				// maximum natural size of left floating elements
@@ -1152,7 +1120,7 @@ namespace ui {
 				// width of the largest element
 				float largest_width = 0.0f;
 
-				std::vector<Ref<Element>> line;
+				std::vector<StrongRef<Element>> line;
 
 				for (const auto& elem : left_elems) {
 					if (arrangeFloatingLeft(elem)) {
@@ -1171,16 +1139,16 @@ namespace ui {
 					largest_width = std::max(largest_width, elem->width());
 				}
 				for (const auto& child : inline_children) {
-					const Ref<Element>& elem = child.first;
-					float left = left_edge, right = right_edge;
+					const StrongRef<Element>& elem = child.first;
+					float left = left_edge;
+                    float right = right_edge;
 					if (elem) {
 						if (arrangeInline(elem)) {
 							horizontalAlign(line, left, right, true);
 							line.clear();
 							exceeded_width = true;
-						} else {
-							iwidth_current += elem->width() + 2.0f * elem->margin();
 						}
+						iwidth_current += elem->width() + 2.0f * elem->margin();
 						line.push_back(elem);
 						largest_width = std::max(largest_width, elem->width());
 					} else {
@@ -1207,11 +1175,7 @@ namespace ui {
 				left_elems.clear();
 				right_elems.clear();
 				inline_children.clear();
-				if (exceeded_width) {
-					return std::max(this->width_avail, largest_width);
-				} else {
-					return lwidth + rwidth + iwidth + 2.0f * self.padding();
-				}
+				return lwidth + rwidth + iwidth + 2.0f * self.padding();
 			};
 
 			// arrange all elements in batches to fit within the available width,
@@ -1227,7 +1191,7 @@ namespace ui {
 						break;
 					}
 
-					Ref<Element> elem = it->first;
+					StrongRef<Element> elem = it->first;
 
 					if (elem) {
 						// child element
@@ -1265,18 +1229,17 @@ namespace ui {
 
 			float max_width = layoutEverything();
 
-			bool should_shrink = self.layoutStyle() == LayoutStyle::Inline ||
-				self.layoutStyle() == LayoutStyle::FloatLeft ||
-				self.layoutStyle() == LayoutStyle::FloatRight;
+			bool should_resize = self.layoutStyle() != LayoutStyle::Block;
 
-			if ((should_shrink && max_width < width_avail) || (max_width > width_avail && (max_width <= self.maxWidth()))) {
+			if (should_resize && (std::abs(self.width() - max_width) > epsilon)) {
+                self.setWidth(max_width);
 				width_avail = max_width;
 				reset();
 				layoutEverything();
 			}
 		}
 
-		void arrangeBlock(const Ref<Element>& element) {
+		void arrangeBlock(const StrongRef<Element>& element) {
 			Element& elem = *element;
 
 			while (nextWiderLine()) {
@@ -1294,7 +1257,7 @@ namespace ui {
 		// flowing around floating elements.
 		// returns true if the available width was exceeded and the element
 		// broke onto a new line
-		bool arrangeInline(const Ref<Element>& element) {
+		bool arrangeInline(const StrongRef<Element>& element) {
 			Element& elem = *element;
 			bool broke_line = false;
 			do {
@@ -1333,7 +1296,7 @@ namespace ui {
 		// and any current left-floating elements.
 		// returns true if the available width was exceeded and the element
 		// broke onto a new line
-		bool arrangeFloatingLeft(const Ref<Element>& element) {
+		bool arrangeFloatingLeft(const StrongRef<Element>& element) {
 			if (!emptyline) {
 				newLine();
 			}
@@ -1365,7 +1328,7 @@ namespace ui {
 		// other current right-floating elements.
 		// return true if the available width was exceeded and the element
 		// broke onto a new line
-		bool arrangeFloatingRight(const Ref<Element>& element) {
+		bool arrangeFloatingRight(const StrongRef<Element>& element) {
 			Element& elem = *element;
 			bool broke_line = false;
 			do {
@@ -1422,7 +1385,7 @@ namespace ui {
 		void newLine() {
 			ypos = next_ypos;
 
-			auto aboveNewLine = [=](const Ref<Element>& elem) {
+			auto aboveNewLine = [=](const StrongRef<Element>& elem) {
 				return ypos >= elem->top() + elem->height() + elem->margin();
 			};
 

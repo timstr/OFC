@@ -19,10 +19,10 @@ namespace ui {
 		Image(const sf::Image& img, bool auto_size = true);
 
 		// use an existing shared texture
-		Image(const Ref<sf::Texture>& _texture, bool autosize = true);
+		Image(const StrongRef<sf::Texture>& _texture, bool autosize = true);
 
 		// get the shared texture
-		const Ref<sf::Texture>& getTexture() const;
+		const StrongRef<sf::Texture>& getTexture() const;
 
 		// load an image from a file path
 		bool loadFromFile(const std::string& path, bool auto_size = true);
@@ -43,7 +43,7 @@ namespace ui {
 		bool copyFrom(const sf::Image& img, bool auto_size = true);
 
 		// use a shared texture
-		bool setTexture(const Ref<sf::Texture>& _texture, bool auto_size = true);
+		bool setTexture(const StrongRef<sf::Texture>& _texture, bool auto_size = true);
 
 	private:
 
@@ -51,7 +51,7 @@ namespace ui {
 
 		void render(sf::RenderWindow& rw) override;
 
-		Ref<sf::Texture> texture;
+		StrongRef<sf::Texture> texture;
 		sf::Sprite sprite;
 	};
 

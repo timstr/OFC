@@ -7,7 +7,7 @@
 
 namespace ui {
 
-	struct Text : InlineElement {
+	struct Text : final Element {
 
 		Text(std::string _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15u, TextStyle style = TextStyle::Regular);
 		Text(std::wstring _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15u, TextStyle style = TextStyle::Regular);

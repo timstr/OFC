@@ -9,6 +9,21 @@
 
 #include "fontspath.hpp"
 
+/*
+TODO: restructure code for cleanliness and efficiency
+
+- Make Element a more basic interface
+    - No child elements or any of the associated baggage
+    - 
+
+- Make Text much more basic type of Element
+    - Text currently has full-blown support for adding child elements, layout style, keyboard interaction, event handlers, etc
+      -> This makes no sense
+
+- 
+
+*/
+
 std::random_device randdev;
 std::mt19937 randeng { randdev() };
 
@@ -268,7 +283,29 @@ int main() {
 
 	ui::init(1000, 800, "Tim's GUI Test", 120);
 
-	{
+    auto elem1 = ui::root().add<ui::FreeElement>();
+    elem1->setPos({50, 50});
+    elem1->setBackgroundColor(sf::Color(0xFFFFFF40));
+
+    auto child1 = ui::create<ui::InlineElement>();
+    child1->write("Child 1", getFont());
+    child1->setBackgroundColor(sf::Color(0xFF0000FF));
+
+    auto child2 = ui::create<ui::InlineElement>();
+    child2->write("Child 2", getFont());
+    child2->setBackgroundColor(sf::Color(0x00FF00FF));
+
+    auto child3 = ui::create<ui::InlineElement>();
+    child3->write("Child 3", getFont());
+    child3->setBackgroundColor(sf::Color(0x0000FFFF));
+
+    elem1->adopt(child1);
+    elem1->adopt(child2);
+    elem1->adopt(child3);
+
+
+
+	/*{
 		auto block = ui::root().add<ui::BlockElement>();
 		block->setBackgroundColor(sf::Color(0xFFFFFFFF));
 
@@ -344,7 +381,7 @@ int main() {
 		auto foot = scrollpanel->inner()->add<ui::BlockElement>();
 		foot->setContentAlign(ui::ContentAlign::Center);
 		foot->write("Trevor Hassell", getFont(), sf::Color(0xFF), 15);
-	}
+	}*/
 
 	ui::run();
 

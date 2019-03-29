@@ -8,11 +8,11 @@ ui::Image::Image(const sf::Image& img, bool auto_size) {
 	copyFrom(img, auto_size);
 }
 
-ui::Image::Image(const Ref<sf::Texture>& _texture, bool auto_size) {
+ui::Image::Image(const StrongRef<sf::Texture>& _texture, bool auto_size) {
 	setTexture(_texture, auto_size);
 }
 
-const ui::Ref<sf::Texture>& ui::Image::getTexture() const {
+const ui::StrongRef<sf::Texture>& ui::Image::getTexture() const {
 	return texture;
 }
 
@@ -50,7 +50,7 @@ bool ui::Image::copyFrom(const sf::Image& image, bool auto_size) {
 	return setTexture(tex, auto_size);
 }
 
-bool ui::Image::setTexture(const Ref<sf::Texture>& _texture, bool auto_size) {
+bool ui::Image::setTexture(const StrongRef<sf::Texture>& _texture, bool auto_size) {
 	texture = _texture;
 	if (!texture) {
 		return false;

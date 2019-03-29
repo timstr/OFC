@@ -15,7 +15,7 @@ namespace ui {
 		return true;
 	}
 
-	ui::Ref<TextEntry> TextEntryHelper::textEntry() const {
+	ui::StrongRef<TextEntry> TextEntryHelper::textEntry() const {
 		return textfield;
 	}
 

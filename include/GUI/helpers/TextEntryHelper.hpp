@@ -15,7 +15,7 @@ namespace ui {
 
 		bool onLeftClick(int) override;
 
-		Ref<TextEntry> textEntry() const;
+		StrongRef<TextEntry> textEntry() const;
 
 	private:
 
@@ -34,7 +34,7 @@ namespace ui {
 			std::function<void(const std::wstring&)> on_change;
 		};
 
-		Ref<TextField> textfield;
+		StrongRef<TextField> textfield;
 
 	};
 

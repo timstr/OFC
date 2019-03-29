@@ -9,7 +9,7 @@
 namespace ui {
 
 	namespace {
-		Ref<Element> root_ptr;
+		StrongRef<Element> root_ptr;
 	}
 
 	Element& root() {

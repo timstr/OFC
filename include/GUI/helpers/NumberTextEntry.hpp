@@ -79,7 +79,7 @@ namespace ui {
 			NumberType maximum;
 		};
 
-		Ref<TextField> textfield;
+		StrongRef<TextField> textfield;
 
 	};
 

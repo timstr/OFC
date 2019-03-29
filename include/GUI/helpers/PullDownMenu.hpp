@@ -122,8 +122,8 @@ namespace ui {
 			}
 		};
 
-		Ref<FreeElement> list;
-		std::vector<Ref<ListItem>> list_items;
+		StrongRef<FreeElement> list;
+		std::vector<StrongRef<ListItem>> list_items;
 		std::function<void(const Type&)> onSelect;
 	};
 

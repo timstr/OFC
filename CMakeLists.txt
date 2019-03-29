@@ -12,6 +12,8 @@ endif()
 set(tims-gui_headers
 	include/GUI/Context.hpp
 	include/GUI/Element.hpp
+	include/GUI/Control.hpp
+	include/GUI/Container.hpp
 	include/GUI/GUI.hpp
 	include/GUI/Helpers.hpp
 	include/GUI/Image.hpp
@@ -38,6 +40,8 @@ set(tims-gui_srcs
 	src/TextEntry.cpp
 	src/Transition.cpp
 	src/Element.cpp
+	src/Container.cpp
+	src/Control.cpp
 	src/Image.cpp
 	src/ToggleButton.cpp
 	src/TextEntryHelper.cpp
