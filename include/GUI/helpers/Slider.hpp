@@ -24,7 +24,7 @@ namespace ui {
 		void setValue(float val);
 		float getValue() const;
 
-		Ref<Element> getHandle() const;
+		StrongRef<Element> getHandle() const;
 
 	private:
 
@@ -57,8 +57,8 @@ namespace ui {
 			static const float fine_speed;
 		};
 
-		Ref<Handle> handle;
-		Ref<Text> label;
+		StrongRef<Handle> handle;
+		StrongRef<Text> label;
 		float minimum, maximum, value;
 		std::function<void(float)> onChange;
 	};

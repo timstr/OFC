@@ -106,7 +106,7 @@ namespace ui {
 
 		// called when the mouse is over the element with another element being dragged
 		// if false is returned, call will propagate to the parent
-		virtual bool onHoverWith(const Ref<Element>& element);
+		virtual bool onHoverWith(const StrongRef<Element>& element);
 
 		// drop the element (via the point local_pos, in local coordinates) onto the element below it
 		void drop(vec2 local_pos) noexcept;
@@ -114,7 +114,7 @@ namespace ui {
 		// called when a dragged element is released over the element
 		// shall return false if the parent's method is to be invoked
 		// if false is returned, call will propagate to the parent
-		virtual bool onDrop(const Ref<Element>& element);
+		virtual bool onDrop(const StrongRef<Element>& element);
 
 		// called when the element gains focus
 		virtual void onFocus();

@@ -20,7 +20,7 @@ namespace ui {
 		}
 	}
 
-	Ref<Element> ScrollPanel::inner() const {
+	StrongRef<Element> ScrollPanel::inner() const {
 		return innercontent;
 	}
 

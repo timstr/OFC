@@ -48,7 +48,7 @@ namespace ui {
 		return value;
 	}
 
-	Ref<Element> Slider::getHandle() const {
+	StrongRef<Element> Slider::getHandle() const {
 		return handle;
 	}
 

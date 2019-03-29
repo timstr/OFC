@@ -11,7 +11,7 @@ namespace ui {
 	struct ScrollPanel : ui::BlockElement {
 		ScrollPanel(bool horizontal_scrolling = true, bool vertical_scrolling = true, bool resize_button = false);
 
-		Ref<Element> inner() const;
+		StrongRef<Element> inner() const;
 
 		void showHorizontalScrollBar();
 
@@ -120,11 +120,11 @@ namespace ui {
 			ScrollPanel& panel;
 		};
 
-		Ref<FreeElement> clipping_container;
-		Ref<InnerContent> innercontent;
-		Ref<VerticalScrollBar> yscrollbar;
-		Ref<HorizontalScrollBar> xscrollbar;
-		Ref<ResizeButton> resizebtn;
+		StrongRef<FreeElement> clipping_container;
+		StrongRef<InnerContent> innercontent;
+		StrongRef<VerticalScrollBar> yscrollbar;
+		StrongRef<HorizontalScrollBar> xscrollbar;
+		StrongRef<ResizeButton> resizebtn;
 
 		static float scrollspeed;
 	};

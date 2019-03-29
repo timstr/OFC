@@ -42,7 +42,7 @@ namespace ui {
 	private:
 
 		std::function<void()> callback;
-		Ref<Text> label;
+		StrongRef<Text> label;
 		sf::Color normal_color, hover_color, active_color;
 		State state;
 
