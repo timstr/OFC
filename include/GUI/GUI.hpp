@@ -44,6 +44,9 @@ namespace ui {
 	// get the current mouse position relative to the application's top left corner
 	vec2 getMousePos();
 
+	// returns true if the program window is currently in focus
+	bool programInFocus();
+
 	// create the application window
 	void init(unsigned width = 500, unsigned height = 400, std::string title = "Behold", int target_fps = 30);
 

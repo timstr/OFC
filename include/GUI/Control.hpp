@@ -139,6 +139,12 @@ namespace ui {
 		// true if 'key' is currently being pressed
 		bool keyDown(Key key) const noexcept;
 
+        // When called during an event handler such as onLeftClick or onKeyDown,
+		// transfers the corresponding response event such as onLeftRelease or onKeyUp
+		// to the given element.
+		// Otherwise, if not called during an event handler, does nothing.
+		void transferResponseTo(const Ref<Element>& elem) const;
+
     private:
 		bool m_disabled;
 		bool m_keyboard_navigable;

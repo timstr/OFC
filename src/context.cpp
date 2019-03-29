@@ -4,11 +4,15 @@
 
 namespace ui {
 
-	// calls `function` on `element` and all its ancestors until one returns true, and that element is returned
 	template<typename... ArgsT>
-	Ref<Element> propagate(Ref<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args) {
+	Ref<Element> Context::propagate(Ref<Element> element, bool (Element::* function)(ArgsT...), ArgsT... args) {
+		current_event_responder = nullptr;
 		while (element) {
-			if (((*element).*function)(args...)) {
+			bool ret = ((*element).*function)(args...);
+			if (current_event_responder) {
+				return current_event_responder;
+			}
+			if (ret) {
 				return element;
 			}
 			element = element->parent().lock();
@@ -306,7 +310,13 @@ namespace ui {
 
 	void Context::handleDrag() {
 		if (dragging_element) {
-			dragging_element->m_pos = (vec2)sf::Mouse::getPosition(getRenderWindow()) - drag_offset;
+			const vec2 mousep = (vec2)sf::Mouse::getPosition(getRenderWindow());
+			vec2 rootp = {0, 0};
+			if (auto par = dragging_element->parent().lock()){
+				rootp = par->absPos();
+			}
+			dragging_element->m_pos = mousep - rootp - drag_offset;
+			
 			dragging_element->onDrag();
 		}
 	}
@@ -426,6 +436,10 @@ namespace ui {
 	void Context::setDraggingElement(Ref<Element> element, vec2 offset) {
 		dragging_element = element;
 		drag_offset = offset;
+	}
+
+	void Context::setResponseHandler(const Ref<Element>& element){
+		current_event_responder = element;
 	}
 
 	Ref<Element> Context::getCurrentElement() const {

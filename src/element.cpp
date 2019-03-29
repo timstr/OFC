@@ -319,6 +319,10 @@ namespace ui {
 		return rootpos;
 	}
 
+	void Element::transferResponseTo(const Ref<Element>& elem) const {
+		getContext().setResponseHandler(elem);
+	}
+
 	bool Element::onLeftClick(int) {
 		return false;
 	}
@@ -362,7 +366,7 @@ namespace ui {
 	void Element::startDrag() noexcept {
 		if (layoutStyle() == LayoutStyle::Free) {
 			grabFocus();
-			getContext().setDraggingElement(shared_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - pos());
+			getContext().setDraggingElement(shared_from_this(), (vec2)sf::Mouse::getPosition(getContext().getRenderWindow()) - absPos());
 		}
 	}
 
@@ -444,11 +448,11 @@ namespace ui {
 		return sf::Keyboard::isKeyPressed(key);
 	}
 
-	void Element::write(const std::string& text, const sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
+	void Element::write(const std::string& text, const sf::Font& font, sf::Color color, unsigned charsize, uint32_t style) noexcept {
 		write(std::wstring { text.begin(), text.end() }, font, color, charsize, style);
 	}
 
-	void Element::write(const std::wstring& text, const sf::Font& font, sf::Color color, unsigned charsize, TextStyle style) noexcept {
+	void Element::write(const std::wstring& text, const sf::Font& font, sf::Color color, unsigned charsize, uint32_t style) noexcept {
 		std::wstring word;
 
 		auto writeWord = [&, this]() {
