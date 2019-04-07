@@ -22,7 +22,6 @@ namespace ui {
 		float radius;
 		sf::Vector2f size;
 
-
 		void updatePoints();
 	};
 

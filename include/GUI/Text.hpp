@@ -1,40 +1,48 @@
 #pragma once
 
-#ifndef TIMSGUI_TEXT_H
-#define TIMSGUI_TEXT_H
-
-#include "GUI/Element.hpp"
+#include <GUI/Element.hpp>
+#include <GUI/Color.hpp>
+#include <string>
 
 namespace ui {
+    
+    enum TextStyle : uint8_t {
+        Regular = sf::Text::Text::Style::Regular,
+        Bold = sf::Text::Text::Style::Bold,
+        Italic = sf::Text::Text::Style::Italic,
+        Underlined = sf::Text::Text::Style::Underlined,
+        StrikeThrough = sf::Text::Text::Style::StrikeThrough,
+    };
 
-	struct Text : final Element {
+    using Font = sf::Font;
 
-		Text(std::string _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15u, uint32_t style = TextStyle::Regular);
-		Text(std::wstring _text, const sf::Font& _font, sf::Color color = sf::Color(0xFF), unsigned charsize = 15u, uint32_t style = TextStyle::Regular);
+    class Text : virtual Element {
+    public:
+        Text(const std::wstring& str, sf::Font& font, unsigned char_size = 15, uint8_t style = TextStyle::Regular);
+        ~Text();
 
-		void setText(std::string _text);
-		void setText(std::wstring _text);
-		std::wstring getText();
-		void clearText();
+        std::wstring text() const;
+        void setText(const std::wstring&);
 
-		void setCharacterSize(unsigned int size);
-		unsigned int getCharacterSize() const;
+        const Font& font() const;
+        unsigned characterSize() const;
+        uint8_t style() const;
+        const Color& fillColor() const;
+        const Color& outlineColor() const;
+        float outlineThickness() const;
 
-		void setTextColor(sf::Color color);
-		const sf::Color& getTextColor() const;
+        void setFont(const Font& font);
+        void setCharacterSize(unsigned);
+        void setStyle(uint8_t style);
+        void setFillColor(const Color&);
+        void setOutlineColor(const Color&);
+        void setOutlineThickness(float);
 
-		void setStyle(uint32_t style);
-		uint32_t getStyle() const;
+    private:
+        Text* toText() override;
 
-		void render(sf::RenderWindow& renderwin) override;
+    private:
+        sf::Text m_text;
+    };
 
-	protected:
-
-		void updateSize();
-
-		sf::Text text;
-	};
-
-}
-
-#endif // TIMSGUI_TEXT_H
+} // namespace ui

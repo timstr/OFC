@@ -1,4 +1,4 @@
-#include "GUI/RoundedRectangle.hpp"
+#include <GUI/RoundedRectangle.hpp>
 
 namespace ui {
 
