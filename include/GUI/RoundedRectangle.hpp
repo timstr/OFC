@@ -3,11 +3,12 @@
 #ifndef TIMSGUI_ROUNDEDRECTANGLE_H
 #define TIMSGUI_ROUNDEDRECTANGLE_H
 
-#include "SFML/Graphics.hpp"
+#include <SFML/Graphics.hpp>
 
 namespace ui {
 
-	struct RoundedRectangle : sf::ConvexShape {
+	class RoundedRectangle : public sf::ConvexShape {
+    public:
 		RoundedRectangle(sf::Vector2f _size = {}, float _radius = 0.0f);
 
 		void setRadius(float _radius);
@@ -19,8 +20,8 @@ namespace ui {
 		sf::Vector2f getSize() const;
 
 	private:
-		float radius;
-		sf::Vector2f size;
+		float m_radius;
+		sf::Vector2f m_size;
 
 		void updatePoints();
 	};

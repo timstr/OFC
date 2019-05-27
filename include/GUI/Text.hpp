@@ -16,27 +16,28 @@ namespace ui {
 
     using Font = sf::Font;
 
-    class Text : virtual Element {
+    class Text : public virtual Element {
     public:
-        Text(const std::wstring& str, sf::Font& font, unsigned char_size = 15, uint8_t style = TextStyle::Regular);
-        ~Text();
+        Text(const String& str, const sf::Font& font, const Color& color = {}, unsigned char_size = 15, uint32_t style = TextStyle::Regular);
 
-        std::wstring text() const;
-        void setText(const std::wstring&);
+        const String& text() const;
+        void setText(const String&);
 
         const Font& font() const;
         unsigned characterSize() const;
-        uint8_t style() const;
+        uint32_t style() const;
         const Color& fillColor() const;
         const Color& outlineColor() const;
         float outlineThickness() const;
 
         void setFont(const Font& font);
         void setCharacterSize(unsigned);
-        void setStyle(uint8_t style);
+        void setStyle(uint32_t style);
         void setFillColor(const Color&);
         void setOutlineColor(const Color&);
         void setOutlineThickness(float);
+
+        void render(sf::RenderWindow& rw) override;
 
     private:
         Text* toText() override;

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 
 project(tims-gui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library using SFML")
 
+set(CMAKE_CXX_STANDARD 17)
+
 set(SFML_STATIC_LIBRARIES TRUE)
 find_package(SFML 2.4 COMPONENTS system window graphics audio main REQUIRED)
 
@@ -10,46 +12,57 @@ if (NOT SFML_FOUND)
 endif()
 
 set(tims-gui_headers
-	include/GUI/Context.hpp
-	include/GUI/Element.hpp
-	include/GUI/Control.hpp
+    include/GUI/BoxElement.hpp
+    include/GUI/Color.hpp
 	include/GUI/Container.hpp
+	include/GUI/Context.hpp
+	include/GUI/Control.hpp
+    include/GUI/Draggable.hpp
+	include/GUI/Element.hpp
+	include/GUI/FlowContainer.hpp
+	include/GUI/FreeContainer.hpp
+	include/GUI/GridContainer.hpp
 	include/GUI/GUI.hpp
 	include/GUI/Helpers.hpp
 	include/GUI/Image.hpp
 	include/GUI/RoundedRectangle.hpp
 	include/GUI/Text.hpp
 	include/GUI/TextEntry.hpp
-	include/GUI/Transition.hpp
+	include/GUI/Window.hpp
 	include/GUI/Helpers/CallbackButton.hpp
-	include/GUI/Helpers/NumberTextEntry.hpp
-	include/GUI/Helpers/pi.hpp
-	include/GUI/Helpers/PullDownMenu.hpp
-	include/GUI/Helpers/ScrollPanel.hpp
-	include/GUI/Helpers/Slider.hpp
-	include/GUI/Helpers/StringHelpers.hpp
-	include/GUI/Helpers/TextEntryHelper.hpp
-	include/GUI/Helpers/ToggleButton.hpp
+    include/GUI/Helpers/CallbackTextEntry.hpp
+    include/GUI/Helpers/NumberTextEntry.hpp
+    include/GUI/Helpers/Pi.hpp
+    include/GUI/Helpers/PullDownMenu.hpp
+    include/GUI/Helpers/ScrollPanel.hpp
+    include/GUI/Helpers/Slider.hpp
+    include/GUI/Helpers/ToggleButton.hpp
 )
 
 set(tims-gui_srcs
+	src/BoxElement.cpp
+    src/Color.cpp
+	src/Container.cpp
 	src/Context.cpp
+	src/Control.cpp
+    src/Draggable.cpp
+	src/Element.cpp
+	src/FlowContainer.cpp
+	src/FreeContainer.cpp
+	src/GridContainer.cpp
 	src/GUI.cpp
-	src/StringHelpers.cpp
+	src/Image.cpp
+	src/RoundedRectangle.cpp
 	src/Text.cpp
 	src/TextEntry.cpp
-	src/Transition.cpp
-	src/Element.cpp
-	src/Container.cpp
-	src/Control.cpp
-	src/Image.cpp
-	src/ToggleButton.cpp
-	src/TextEntryHelper.cpp
-	src/StringHelpers.cpp
-	src/Slider.cpp
-	src/ScrollPanel.cpp
-	src/RoundedRectangle.cpp
-	src/CallbackButton.cpp
+	src/Window.cpp
+	src/Helpers/CallbackButton.cpp
+    src/Helpers/CallbackTextEntry.cpp
+    src/Helpers/NumberTextEntry.cpp
+    src/Helpers/PullDownMenu.cpp
+    src/Helpers/ScrollPanel.cpp
+    src/Helpers/Slider.cpp
+    src/Helpers/ToggleButton.cpp
 )
 	
 add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})
@@ -78,4 +91,8 @@ if(TIMS_GUI_GENERATE_EXAMPLE)
 	target_link_libraries(tims-gui-example
 		PUBLIC tims-gui
 	)
+endif()
+
+if(MSVC)
+	target_compile_options(tims-gui PUBLIC "/wd4250")
 endif()

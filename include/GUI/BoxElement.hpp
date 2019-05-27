@@ -2,17 +2,19 @@
 
 #include <GUI/Element.hpp>
 #include <GUI/RoundedRectangle.hpp>
+#include <GUI/Color.hpp>
 
 namespace ui {
     
-    class BoxElement : virtual Element {
+    class BoxElement : virtual public Element {
     public:
+        BoxElement();
 
-        sf::Color borderColor() const;
-        sf::Color backgroundColor() const;
+        Color borderColor() const;
+        Color backgroundColor() const;
 
-        void setBorderColor(sf::Color);
-        void setBackgroundColor(sf::Color);
+        void setBorderColor(const Color&);
+        void setBackgroundColor(const Color&);
 
         float borderRadius() const;
         float borderThickness() const;
@@ -21,6 +23,8 @@ namespace ui {
         void setBorderThickness(float);
 
         void render(sf::RenderWindow&) override;
+
+        void onResize() override;
 
     private:
         RoundedRectangle m_rect;

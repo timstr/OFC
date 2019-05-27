@@ -5,7 +5,9 @@
 
 namespace ui {
     
-    class Control : virtual Element {
+    using Key = sf::Keyboard::Key;
+
+    class Control : virtual public Element {
     public:
 
         virtual bool onLeftClick(int);
@@ -23,12 +25,14 @@ namespace ui {
         virtual void onMouseOver(Draggable*);
         virtual void onMouseOut();
 
-        virtual void onDrop(Draggable);
+        virtual bool onDrop(Draggable*);
 
         virtual bool onKeyDown(Key);
         virtual void onKeyUp(Key);
 
         bool keyDown(Key) const;
+
+        virtual bool onScroll(vec2);
 
         virtual void onGainFocus();
         virtual void onLoseFocus();

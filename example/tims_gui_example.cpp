@@ -1,28 +1,11 @@
-﻿#include "gui/GUI.hpp"
-#include "gui/Helpers.hpp"
-
-#include "gui/RoundedRectangle.hpp"
+﻿#include <GUI/GUI.hpp>
+#include <GUI/Helpers.hpp>
 
 #include <iostream>
 #include <random>
 #include <sstream>
 
 #include "fontspath.hpp"
-
-/*
-TODO: restructure code for cleanliness and efficiency
-
-- Make Element a more basic interface
-    - No child elements or any of the associated baggage
-    - 
-
-- Make Text much more basic type of Element
-    - Text currently has full-blown support for adding child elements, layout style, keyboard interaction, event handlers, etc
-      -> This makes no sense
-
-- 
-
-*/
 
 std::random_device randdev;
 std::mt19937 randeng { randdev() };
@@ -37,110 +20,76 @@ const sf::Font& getFont() {
 	return font;
 }
 
-struct TestElement : ui::FreeElement {
-	TestElement(std::string name) : name(name) {
+struct TestElement : ui::Control, ui::Container, ui::BoxElement, ui::Draggable {
+	TestElement(ui::String name) : name(name), label(add<ui::Text>(name, getFont())) {
 
-		enableKeyboardNavigation();
-
-		std::cout << name << " was constructed" << std::endl;
+		std::cout << static_cast<std::string>(name) << " was constructed" << std::endl;
 		changeColor();
-		label = add<ui::Text>(name, getFont());
 
-		auto colorbtn = add<ui::CallbackButton>("Change Colour", getFont(), [this] {
+		auto& colorbtn = add<ui::CallbackButton>("Change Colour", getFont(), [this] {
 			changeColor();
 		});
 
 
-		colorbtn->setNormalColor(sf::Color(0xFF0000FF));
-		colorbtn->setActiveColor(sf::Color(0x00FF00FF));
-		colorbtn->setHoverColor(sf::Color(0x0000FFFF));
+		colorbtn.setNormalColor(0xFF0000FF);
+		colorbtn.setActiveColor(0x00FF00FF);
+		colorbtn.setHoverColor(0x0000FFFF);
 
-		add<ui::PullDownMenu<std::string>>(std::vector<std::string>{"Bread", "Butter", "Apricots", "Orphans", "Oregonians", "Orifices", "Mankind"},
-										   getFont(),
-										   [this](const std::string& s) {
-			this->label->setText(s);
-		});
-		std::vector<std::pair<sf::Color, std::string>> color_options {
-			{sf::Color(0xcf302dff), "red"},
-			{sf::Color(0x990f04ff), "cherry"},
-			{sf::Color(0xe2252bff), "rose"},
-			{sf::Color(0x600f0cff), "jam"},
-			{sf::Color(0x600f0cff), "merlot"},
-			{sf::Color(0x5f0a03ff), "garnet"},
-			{sf::Color(0xb80f0aff), "crimson"},
-			{sf::Color(0x900604ff), "ruby"},
-			{sf::Color(0x920c09ff), "scarlet"},
-			{sf::Color(0x4c0805ff), "wine"},
-			{sf::Color(0x7e2811ff), "brick"},
-			{sf::Color(0xa91b0dff), "apple"},
-			{sf::Color(0x420d09ff), "mahogany"},
-			{sf::Color(0x720d05ff), "blood"},
-			{sf::Color(0x5e1915ff), "sangria"},
-			{sf::Color(0x7a1913ff), "berry"},
-			{sf::Color(0x670c09ff), "currant"},
-			{sf::Color(0xbc5449ff), "blush"},
-			{sf::Color(0xd31505ff), "candy"},
-			{sf::Color(0x9c1003ff), "lipstick"}
+		add<ui::PullDownMenu<ui::String>>(
+            std::vector<ui::String>{"Bread", "Butter", "Apricots", "Orphans", "Oregonians", "Orifices", "Mankind"},
+            getFont(),
+            [this](const ui::String& s) {
+                this->label.setText(s);
+		    }
+        );
+		std::vector<std::pair<ui::Color, ui::String>> color_options {
+			{0xcf302dff, "red"},
+			{0x990f04ff, "cherry"},
+			{0xe2252bff, "rose"},
+			{0x600f0cff, "jam"},
+			{0x600f0cff, "merlot"},
+			{0x5f0a03ff, "garnet"},
+			{0xb80f0aff, "crimson"},
+			{0x900604ff, "ruby"},
+			{0x920c09ff, "scarlet"},
+			{0x4c0805ff, "wine"},
+			{0x7e2811ff, "brick"},
+			{0xa91b0dff, "apple"},
+			{0x420d09ff, "mahogany"},
+			{0x720d05ff, "blood"},
+			{0x5e1915ff, "sangria"},
+			{0x7a1913ff, "berry"},
+			{0x670c09ff, "currant"},
+			{0xbc5449ff, "blush"},
+			{0xd31505ff, "candy"},
+			{0x9c1003ff, "lipstick"}
 		};
-		auto redmenu = add<ui::PullDownMenu<sf::Color>>(color_options, getFont(), [this](const sf::Color& color) {
+		auto& redmenu = add<ui::PullDownMenu<ui::Color>>(color_options, getFont(), [this](const ui::Color& color) {
 			this->setBackgroundColor(color);
 		});
 
-		redmenu->setNormalColor(sf::Color(0xFF0000FF));
-		redmenu->setActiveColor(sf::Color(0x00FF00FF));
-		redmenu->setHoverColor(sf::Color(0x0000FFFF));
+		redmenu.setNormalColor(0xFF0000FF);
+		redmenu.setActiveColor(0x00FF00FF);
+		redmenu.setHoverColor(0x0000FFFF);
 
-		add<ui::TextEntryHelper>("", getFont(), [this](const std::wstring& text) {
-			this->label->setText(text);
+		add<ui::CallbackTextEntry>("", getFont(), [this](const ui::String& text) {
+			this->label.setText(text);
 		});
-
-		float val = 0.5f;
-		float min = 0.0f;
-		float max = 1.0f;
-		auto numbrocont = add<ui::InlineElement>();
-		numbrocont->setSize({ 100.0f, 35.0f }, true);
-		auto numbro = numbrocont->add<ui::Text>(std::to_string(val), getFont());
-		auto onChange = [numbro](float v) {
-			numbro->setText(std::to_string(v));
-		};
-		add<ui::NumberTextEntry<float>>(val, min, max, getFont(), onChange);
-		add<ui::Slider>(val, min, max, getFont(), onChange);
-
-		add<ui::CallbackButton>("add something", getFont(), [this] {
-			write("blop", getFont());
-		});
-
-		add<ui::ToggleButton>(false, getFont(), [this](bool v) {
-			std::cout << this->name << ": a thing was set to " << std::boolalpha << v << std::endl;
-		});
-
-		auto scrollpanel = add<ui::ScrollPanel>();
-		scrollpanel->inner()->writePageBreak(30);
-		scrollpanel->inner()->write("Hello world, there is so much fun we're going to have together!", getFont());
-		scrollpanel->inner()->writePageBreak(30);
-		scrollpanel->setHeight(100, true);
-
-		add<SizeButton>(*this);
 	}
 	~TestElement() {
 		std::cout << name << " was destroyed" << std::endl;
 	}
-
-	void onClose() {
-		std::cout << name << " was closed" << std::endl;
-	}
-
+    
 	void changeColor() {
 		std::uniform_int_distribution<unsigned> dist(0, 0xFF);
-		setBackgroundColor(sf::Color(
+		setBackgroundColor(ui::Color(
 			(uint8_t)dist(randeng),
 			(uint8_t)dist(randeng),
 			(uint8_t)dist(randeng),
 			255));
 	}
 
-	bool onLeftClick(int clicks) {
-		bringToFront();
+	bool onLeftClick(int clicks) override {
 		if (clicks == 1) {
 			std::cout << name << " was left-clicked" << std::endl;
 			startDrag();
@@ -151,7 +100,7 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	void onLeftRelease() {
+	void onLeftRelease() override {
 		std::cout << name << " was left released" << std::endl;
 		if (dragging()) {
 			stopDrag();
@@ -159,24 +108,16 @@ struct TestElement : ui::FreeElement {
 		}
 	}
 
-	bool onRightClick(int clicks) {
+	bool onRightClick(int clicks) override {
 		if (clicks == 1) {
 			std::cout << name << " was right-clicked once" << std::endl;
 			std::uniform_int_distribution<int> sdist { 20, 300 };
 			std::uniform_int_distribution<int> mdist { 0, 20 };
-			auto self = shared_from_this();
-			vec2 oldsize = size();
-			vec2 newsize = { (float)sdist(randeng), (float)sdist(randeng) };
-			float oldmargin = margin();
-			float newmargin = (float)mdist(randeng);
-			float oldpadding = padding();
-			float newpadding = (float)mdist(randeng);
-			ui::startTransition(1.0, [=](float t) {
+			ui::vec2 oldsize = size();
+			ui::vec2 newsize = { (float)sdist(randeng), (float)sdist(randeng) };
+			startTransition(1.0, [=](float t) {
 				float x = 0.5f - 0.5f * cos(t * 3.141592654f);
-				self->setSize(oldsize * (1.0f - x) + newsize * x);
-				self->setMargin(oldmargin * (1.0f - x) + newmargin * x);
-				self->setPadding(oldpadding * (1.0f - x) + newpadding * x);
-				self->setBorderRadius(oldpadding * (1.0f - x) + newpadding * x);
+				setSize(oldsize * (1.0f - x) + newsize * x);
 			});
 		} else if (clicks == 2) {
 			std::cout << name << " was right-clicked twice" << std::endl;
@@ -184,29 +125,28 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	void onRightRelease() {
+	void onRightRelease() override {
 		std::cout << name << " was right released" << std::endl;
 	}
 
-	bool onMiddleClick(int clicks) {
+	bool onMiddleClick(int clicks) override {
 		std::cout << name << " was " << (clicks == 2 ? "double-" : "") << "middle clicked" << std::endl;
 		return true;
 	}
 
-	void onMiddleRelease() {
+	void onMiddleRelease() override {
 		std::cout << name << " was middle released" << std::endl;
 	}
 
-	void onFocus() {
-		bringToFront();
+	void onGainFocus() override {
 		std::cout << name << " gained focus" << std::endl;
 	}
 
-	void onLoseFocus() {
+	void onLoseFocus() override {
 		std::cout << name << " lost focus" << std::endl;
 	}
 
-	bool onKeyDown(ui::Key key) {
+	bool onKeyDown(ui::Key key) override {
 		std::cout << name << " - [" << key << "] was pressed" << std::endl;
 		if (key == ui::Key::Delete) {
 			close();
@@ -214,31 +154,19 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	void onKeyUp(ui::Key key) {
+	void onKeyUp(ui::Key key) override {
 		std::cout << name << " - [" << key << "] was released" << std::endl;
 	}
 
-	bool onScroll(float dx, float dy) {
-		std::cout << name << " was scrolled (" << dx << ", " << dy << ')' << std::endl;
+	bool onScroll(ui::vec2 d) override {
+		std::cout << name << " was scrolled (" << d.x << ", " << d.y << ')' << std::endl;
 		return true;
 	}
 
-	void onDrag() {
-
-	}
-
-	bool onHover() {
-		return true;
-	}
-
-	bool onHoverWith(const std::shared_ptr<Element>& element) {
-		return true;
-	}
-
-	bool onDrop(const std::shared_ptr<Element>& element) {
-		if (element) {
-			if (auto w = std::dynamic_pointer_cast<TestElement, Element>(element)) {
-				adopt(w);
+	bool onDrop(Draggable* d) override {
+		if (d) {
+			if (auto w = dynamic_cast<TestElement*>(d)) {
+				adopt(w->orphan());
 				std::cout << w->name;
 			} else {
 				std::cout << "An element";
@@ -250,28 +178,31 @@ struct TestElement : ui::FreeElement {
 		return true;
 	}
 
-	const std::string name;
-	std::shared_ptr<ui::Text> label;
+    void render(sf::RenderWindow& rw) override {
+        ui::BoxElement::render(rw);
+        ui::Container::render(rw);
+    };
 
-	struct SizeButton : ui::FreeElement {
+	const std::string name;
+	ui::Text& label;
+
+	struct SizeButton : ui::Control, ui::BoxElement, ui::Draggable {
 		SizeButton(TestElement& _parent) : parent(_parent) {
 			setSize({ 20.0f, 20.0f }, true);
-			setBackgroundColor(sf::Color(0x808080FF));
+			setBackgroundColor(0x808080FF);
 			setBorderThickness(0.0f);
-			setXPositionStyle(ui::PositionStyle::InsideRight);
-			setYPositionStyle(ui::PositionStyle::InsideBottom);
 		}
 
-		bool onLeftClick(int) {
+		bool onLeftClick(int) override {
 			startDrag();
 			return true;
 		}
 
-		void onLeftRelease() {
+		void onLeftRelease() override {
 			stopDrag();
 		}
 
-		void onDrag() {
+		void onDrag() override {
 			parent.setSize(pos() + size());
 		}
 
@@ -279,29 +210,69 @@ struct TestElement : ui::FreeElement {
 	};
 };
 
+struct BoxContainer : ui::FreeContainer, ui::BoxElement {
+    void render(sf::RenderWindow& rw) override {
+        ui::BoxElement::render(rw);
+        ui::Container::render(rw);
+    }
+};
+
 int main() {
+    
+    ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
 
-	ui::init(1000, 800, "Tim's GUI Test", 120);
+    auto& root = win.root();
 
-    auto elem1 = ui::root().add<ui::FreeElement>();
-    elem1->setPos({50, 50});
-    elem1->setBackgroundColor(sf::Color(0xFFFFFF40));
+    auto& cont = root.add<ui::GridContainer>(ui::PositionStyle::Center, ui::PositionStyle::Center, 3, 3);
+    cont.setSize({300.0f, 300.0f}, true);
+    cont.setRowHeight(0, 1.0f);
+    cont.setRowHeight(1, 2.0f);
+    cont.setRowHeight(2, 4.0f);
+    cont.setColumnWidth(0, 5.0f);
+    cont.setColumnWidth(1, 1.0f);
+    cont.setColumnWidth(2, 1.0f);
 
-    auto child1 = ui::create<ui::InlineElement>();
+    const auto add_cell = [&cont](size_t i, size_t j, ui::Color color){
+        auto& c = cont.putCell<BoxContainer>(i, j);
+        c.setHorizontalFill(true);
+        c.setVerticalFill(true);
+        c.setBackgroundColor(color);
+        auto& c2 = c.add<BoxContainer>(ui::PositionStyle::Center, ui::PositionStyle::Center);
+        c2.setBackgroundColor(0xFFFFFFFF);
+        c2.setSize({25.0f, 25.0f}, true);
+        c.add<ui::Text>(ui::PositionStyle::Center, ui::PositionStyle::Center, "X", getFont());
+    };
+    
+    add_cell(0, 0, 0x00000080);
+    add_cell(0, 1, 0x88000080);
+    add_cell(0, 2, 0x00000080);
+    add_cell(1, 0, 0x88000080);
+    add_cell(1, 1, 0x00000080);
+    add_cell(1, 2, 0x88000080);
+    add_cell(2, 0, 0x00000080);
+    add_cell(2, 1, 0x88000080);
+    add_cell(2, 2, 0x00000080);
+    
+    /*auto& elem1 = root.add<BoxContainer>();
+    elem1.setPos({50, 50});
+    elem1.setBackgroundColor(0xFFFFFF40);
+
+
+    auto child1 = std::make_unique<BoxContainer>();
     child1->write("Child 1", getFont());
-    child1->setBackgroundColor(sf::Color(0xFF0000FF));
+    child1->setBackgroundColor(0xFF0000FF);
 
-    auto child2 = ui::create<ui::InlineElement>();
+    auto child2 = std::make_unique<BoxContainer>();
     child2->write("Child 2", getFont());
-    child2->setBackgroundColor(sf::Color(0x00FF00FF));
+    child2->setBackgroundColor(0x00FF00FF);
 
-    auto child3 = ui::create<ui::InlineElement>();
+    auto child3 = std::make_unique<BoxContainer>();
     child3->write("Child 3", getFont());
-    child3->setBackgroundColor(sf::Color(0x0000FFFF));
+    child3->setBackgroundColor(0x0000FFFF);
 
-    elem1->adopt(child1);
-    elem1->adopt(child2);
-    elem1->adopt(child3);
+    elem1.adopt(std::move(child1));
+    elem1.adopt(std::move(child2));
+    elem1.adopt(std::move(child3));*/
 
 
 
@@ -343,7 +314,7 @@ int main() {
 			++count;
 		});
 
-		std::wstring str = L"\tLorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.";
+		ui::String str = L"\tLorem ipsum dolor sit amet, ne choro legendos expetendis quo. Ei mel nibh dissentiunt, ius nibh nobis ei, at mel feugiat platonem. Et hinc graeco veritus pro. Liber inimicus repudiare ex usu. Ad nec evertitur sadipscing, id oratio legere nec. Ad eum eros congue phaedrum, eos nonumy phaedrum ut, soluta interpretaris ad nam. Sed tation sensibus constituam te. Vel altera legimus no, sit vide modus neglegentur ad, ocurreret laboramus disputando ad eum. Laoreet convenire ei vis. At sed agam mollis blandit, ex noster facete ius. Nobis denique vix ei. Ea sumo invenire per, tempor integre an usu, at soluta nostrud signiferumque his. Ex feugait quaestio vel, nonumy prompta ullamcorper vel in. Ea rebum posse constituto quo. Ex nostro malorum eleifend vel. Etiam verterem splendide vel ut, his no tantas commune. Sea cu solet detracto, mei propriae neglegentur eu. Cum ad quas singulis iudicabit, erat adolescens id qui, mel in quem sadipscing. Eu duo eius neglegentur, vix debet mediocrem in, id graece sensibus est. Ex sea veniam omnium veritus, an mea scaevola efficiendi. Duo minim maluisset te, ne qui democritum sadipscing. Eu rebum voluptaria ullamcorper quo. Ei est verterem imperdiet, his delicata vituperata te. Ei utinam insolens temporibus duo, et vis ancillae voluptaria. His clita doctus minimum at. Usu no mutat timeam assueverit, nobis mnesarchum sadipscing at cum. An illud minim nec, no errem dicunt accusamus pro, ad sanctus docendi delicata mel.";
 
 		block->write(str, getFont());
 
