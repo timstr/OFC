@@ -50,8 +50,10 @@ namespace ui {
         bool inFocus() const;
         void requestFocus();
 
-        FreeContainer& root();
-        const FreeContainer& root() const;
+        void setRoot(std::unique_ptr<Container>);
+
+        template<typename T, typename... Args>
+        T& setRoot(Args&&... args);
 
     private:
         Window(unsigned width, unsigned height, const String& title);
@@ -107,17 +109,7 @@ namespace ui {
         // key pressed elements
         std::map<Key, Control*> m_keypressed_elems;
 
-        class RootContainer : public FreeContainer {
-        public:
-            RootContainer(Window*);
-
-        private:
-
-            Window* m_window;
-            Window* getWindow() const override;
-        };
-
-        RootContainer m_root;
+        std::unique_ptr<Container> m_root;
         sf::RenderWindow m_sfwindow;
 
         friend class Context;
@@ -126,5 +118,15 @@ namespace ui {
         friend class Draggable;
         friend class TextEntry;
     };
+
+    // template definitions
+
+    template<typename T, typename... Args>
+    inline T& Window::setRoot(Args&&... args){
+        auto uptr = std::make_unique<T>(std::forward<Args>(args)...);
+        T& ret = *uptr;
+        m_root = std::move(uptr);
+        return ret;
+    }
 
 } // namespace ui

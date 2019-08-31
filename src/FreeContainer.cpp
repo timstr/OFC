@@ -24,6 +24,14 @@ namespace ui {
         return Container::release(e);
     }
 
+    void FreeContainer::setElementStyle(const Element* e, PositionStyle xstyle, PositionStyle ystyle){
+        auto it = m_styles.find(e);
+        if (it != m_styles.end()){
+            it->second.x = xstyle;
+            it->second.y = ystyle;
+        }
+    }
+
     void FreeContainer::updateContents(){
         const auto compute_position = [](PositionStyle style, float pos, float size, float epos, float esize){
             switch (style){
@@ -45,9 +53,9 @@ namespace ui {
         for (auto& elem : children()){
             auto it = m_styles.find(elem.get());
             assert(it != m_styles.end());
-            const auto& [xstyle, ystyle] = it->second;
-            float x = compute_position(xstyle, left(), width(), elem->left(), elem->width());
-            float y = compute_position(ystyle, top(), height(), elem->top(), elem->height());
+            const auto& style = it->second;
+            float x = compute_position(style.y, left(), width(), elem->left(), elem->width());
+            float y = compute_position(style.x, top(), height(), elem->top(), elem->height());
             elem->setPos({x, y});
             elem->update({0.0f, 0.0f});
         }

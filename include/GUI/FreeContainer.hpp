@@ -61,7 +61,6 @@ namespace ui {
 
         std::unique_ptr<Element> release(const Element*);
         
-        // TODO
         void setElementStyle(const Element*, PositionStyle xstyle, PositionStyle ystyle);
 
     private:
@@ -69,7 +68,12 @@ namespace ui {
         void updateContents() override;
 
         // mapping of all elements with fixed position style
-        std::map<const Element*, std::pair<PositionStyle, PositionStyle>> m_styles;
+        struct ElementStyle {
+            PositionStyle x;
+            PositionStyle y;
+        };
+
+        std::map<const Element*, ElementStyle> m_styles;
     };
 
     // Template definitions

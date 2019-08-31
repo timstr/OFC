@@ -77,7 +77,7 @@ namespace ui {
 
         // find an element that is hit at the given position
         // (in local coordinates)
-        virtual Element* findElementAt(vec2 p) const;
+        virtual Element* findElementAt(vec2 p);
 
         // draws the window
         virtual void render(sf::RenderWindow&) = 0;

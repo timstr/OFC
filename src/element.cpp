@@ -100,6 +100,7 @@ namespace ui {
         }
         if (different(v, m_size.x)){
             m_size.x = v;
+            require_update();
             if (m_parent){
                 m_parent->require_update();
             }
@@ -112,8 +113,8 @@ namespace ui {
         if (m_maxsize.x < v){
             m_maxsize.x = v;
         }
-        if (m_position.x < v){
-            setLeft(v);
+        if (m_size.x < v){
+            setWidth(v);
         }
     }
     void Element::setMaxWidth(float v){
@@ -122,8 +123,8 @@ namespace ui {
         if (m_minsize.x > v){
             m_minsize.x = v;
         }
-        if (m_position.x > v){
-            setLeft(v);
+        if (m_size.x > v){
+            setWidth(v);
         }
     }
     void Element::setHeight(float v, bool force){
@@ -135,6 +136,7 @@ namespace ui {
         }
         if (different(v, m_size.y)){
             m_size.y = v;
+            require_update();
             if (m_parent){
                 m_parent->require_update();
             }
@@ -147,8 +149,8 @@ namespace ui {
         if (m_maxsize.y < v){
             m_maxsize.y = v;
         }
-        if (m_position.y < v){
-            setLeft(v);
+        if (m_size.y < v){
+            setHeight(v);
         }
     }
     void Element::setMaxHeight(float v){
@@ -157,8 +159,8 @@ namespace ui {
         if (m_minsize.y > v){
             m_minsize.y = v;
         }
-        if (m_position.y > v){
-            setLeft(v);
+        if (m_size.y > v){
+            setHeight(v);
         }
     }
     void Element::setSize(vec2 v, bool force){
@@ -195,9 +197,8 @@ namespace ui {
             (p.y >= m_position.y) &&
             (p.y < m_position.y + m_size.y);
     }
-    Element* Element::findElementAt(vec2 p) const {
-        // TODO
-        return nullptr;
+    Element* Element::findElementAt(vec2 p){
+        return hit(p) ? this : nullptr;
     }
     void Element::startTransition(float duration, std::function<void(float)> fn, std::function<void()> on_complete){
         m_transitions.emplace_back(duration, std::move(fn), std::move(on_complete));
@@ -273,15 +274,15 @@ namespace ui {
     }
 
     void Element::update(vec2 max_size){
-        if (m_needs_update){
-            if (m_fill_x){
-                setWidth(std::clamp(max_size.x, m_minsize.x, m_maxsize.x));
-            }
-            if (m_fill_y){
-                setHeight(std::clamp(max_size.y, m_minsize.y, m_maxsize.y));
-            }
+        if (m_fill_x){
+            setWidth(std::clamp(max_size.x, m_minsize.x, m_maxsize.x));
         }
-        updateContents();
+        if (m_fill_y){
+            setHeight(std::clamp(max_size.y, m_minsize.y, m_maxsize.y));
+        }
+        if (m_needs_update){
+            updateContents();
+        }
         m_needs_update = false;
     }
 

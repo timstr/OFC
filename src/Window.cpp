@@ -17,7 +17,7 @@ namespace ui {
         m_last_click_time(),
         m_last_click_btn(),
         m_keypressed_elems(),
-        m_root(this) {
+        m_root(std::make_unique<Container>()) {
 
         m_sfwindow.create(sf::VideoMode(width, height), title);
         m_sfwindow.setVerticalSyncEnabled(true);
@@ -36,10 +36,10 @@ namespace ui {
         const auto screensize = getSize();
         v.reset({{0.0, 0.0}, screensize});
         m_sfwindow.setView(v);
-        m_root.setHorizontalFill(true);
-        m_root.setVerticalFill(true);
-        m_root.update(getSize());
-        m_root.render(m_sfwindow);
+        m_root->setHorizontalFill(true);
+        m_root->setVerticalFill(true);
+        m_root->update(getSize());
+        m_root->render(m_sfwindow);
         m_sfwindow.display();
     }
 
@@ -99,12 +99,9 @@ namespace ui {
         m_sfwindow.requestFocus();
     }
 
-    FreeContainer& Window::root(){
-        return m_root;
-    }
-
-    const FreeContainer& Window::root() const {
-        return m_root;
+    void Window::setRoot(std::unique_ptr<Container> c){
+        m_root = std::move(c);
+        c->m_parent_window = this;
     }
 
     void Window::processEvents(){
@@ -115,10 +112,9 @@ namespace ui {
                     close();
                     return;
                 }
-                case sf::Event::Resized: {
-                    vec2 size{static_cast<float>(event.size.width), static_cast<float>(event.size.height)};
-                    m_root.setSize(size, true);
-                }
+                /* case sf::Event::Resized: {
+                    
+                } */
                 case sf::Event::LostFocus: {
                     releaseAllButtons();
                 }
@@ -241,14 +237,6 @@ namespace ui {
 
     TextEntry* Window::currentTextEntry(){
         return m_text_entry;
-    }
-
-    Window::RootContainer::RootContainer(Window* w) : m_window(w) {
-
-    }
-
-    Window* Window::RootContainer::getWindow() const {
-        return m_window;
     }
 
 } // namespace ui

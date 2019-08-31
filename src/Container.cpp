@@ -31,6 +31,14 @@ namespace ui {
         return m_children;
     }
 
+    void Container::on_child_moved(Element*){
+
+    }
+
+    void Container::on_child_resized(Element*){
+
+    }
+
     void Container::render(sf::RenderWindow& rw){
         const auto old_view = rw.getView();
         // TODO: handle clipping here

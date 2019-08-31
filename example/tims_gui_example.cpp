@@ -221,10 +221,11 @@ int main() {
     
     ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
 
-    auto& root = win.root();
+    //auto& root = win.setRoot<ui::FreeContainer>();
 
-    auto& cont = root.add<ui::GridContainer>(ui::PositionStyle::Center, ui::PositionStyle::Center, 3, 3);
-    cont.setSize({300.0f, 300.0f}, true);
+    auto& cont = win.setRoot<ui::GridContainer>(3, 3);
+    //auto& cont = root.add<ui::GridContainer>(ui::PositionStyle::Center, ui::PositionStyle::Center, 3, 3);
+    //cont.setSize({300.0f, 300.0f}, true);
     cont.setRowHeight(0, 1.0f);
     cont.setRowHeight(1, 2.0f);
     cont.setRowHeight(2, 4.0f);
@@ -243,15 +244,15 @@ int main() {
         c.add<ui::Text>(ui::PositionStyle::Center, ui::PositionStyle::Center, "X", getFont());
     };
     
-    add_cell(0, 0, 0x00000080);
-    add_cell(0, 1, 0x88000080);
-    add_cell(0, 2, 0x00000080);
-    add_cell(1, 0, 0x88000080);
-    add_cell(1, 1, 0x00000080);
-    add_cell(1, 2, 0x88000080);
-    add_cell(2, 0, 0x00000080);
-    add_cell(2, 1, 0x88000080);
-    add_cell(2, 2, 0x00000080);
+    add_cell(0, 0, 0x000000FF);
+    add_cell(0, 1, 0x880000FF);
+    add_cell(0, 2, 0x000000FF);
+    add_cell(1, 0, 0x880000FF);
+    add_cell(1, 1, 0x000000FF);
+    add_cell(1, 2, 0x880000FF);
+    add_cell(2, 0, 0x000000FF);
+    add_cell(2, 1, 0x880000FF);
+    add_cell(2, 2, 0x000000FF);
     
     /*auto& elem1 = root.add<BoxContainer>();
     elem1.setPos({50, 50});
