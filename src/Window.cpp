@@ -2,7 +2,27 @@
 
 #include <GUI/Context.hpp>
 
+#include <cassert>
+
 namespace ui {
+
+    namespace {
+        // Generic function for propagating an event through handler callbacks
+        // Calls `handlerFn` on the element with the given arguments. If the
+        // element returns `true`, that element has responded to the event, and
+        // the element is returned. Otherwise, the process is repeated on its
+        // ancestor controls, until one handles the event, or null is returned.
+        template<typename... ArgsT>
+        Control* propagate(Control* elem, bool (Control::* handlerFn)(ArgsT...), ArgsT... args){
+            while (elem){
+                if ((elem->*handlerFn)(args...)){
+                    return elem;
+                }
+                elem = elem->getParentControl();
+            }
+            return nullptr;
+        }
+    }
 
     Window::Window(unsigned width, unsigned height, const String& title) :
         m_sfwindow(),
@@ -26,7 +46,7 @@ namespace ui {
     Window& Window::create(unsigned width, unsigned height, const String& title){
         auto pw = std::unique_ptr<Window>(new Window(width, height, title));
         auto& wr = *pw;
-        Context::get().add_window(std::move(pw));
+        Context::get().addWindow(std::move(pw));
         return wr;
     }
 
@@ -88,7 +108,7 @@ namespace ui {
     }
 
     void Window::close(){
-        Context::get().remove_window(this);
+        Context::get().removeWindow(this);
     }
 
     bool Window::inFocus() const {
@@ -117,6 +137,8 @@ namespace ui {
                 } */
                 case sf::Event::LostFocus: {
                     releaseAllButtons();
+                    stopDrag();
+                    break;
                 }
                 /* case sf::Event::GainedFocus: {
 
@@ -125,31 +147,63 @@ namespace ui {
                     if (m_text_entry){
                         m_text_entry->type(event.text.unicode);
                     }
+                    break;
                 }
                 case sf::Event::KeyPressed: {
                     if (m_focus_elem){
                         m_focus_elem->onKeyDown(event.key.code);
                     }
+                    break;
                 }
                 case sf::Event::KeyReleased: {
                     if (m_focus_elem){
                         m_focus_elem->onKeyUp(event.key.code);
                     }
+                    break;
                 }
                 case sf::Event::MouseWheelScrolled: {
-                    // TODO
+                    auto delta = vec2{};
+                    if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::HorizontalWheel){
+                        delta.x = event.mouseWheelScroll.delta;
+                    } else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel){
+                        delta.y = event.mouseWheelScroll.delta;
+                    }
+                    const auto x = static_cast<float>(event.mouseButton.x);
+                    const auto y = static_cast<float>(event.mouseButton.y);
+                    handleScroll({x, y}, delta);
+                    break;
                 }
                 case sf::Event::MouseButtonPressed: {
-                    // TODO
+                    const auto x = static_cast<float>(event.mouseButton.x);
+                    const auto y = static_cast<float>(event.mouseButton.y);
+                    handleMouseDown(event.mouseButton.button, {x, y});
+                    break;
                 }
                 case sf::Event::MouseButtonReleased: {
-                    // TODO
-                }
-                case sf::Event::MouseMoved: {
-                    // TODO
+                    const auto x = static_cast<float>(event.mouseButton.x);
+                    const auto y = static_cast<float>(event.mouseButton.y);
+                    handleMouseUp(event.mouseButton.button, {x, y});
+                    break;
                 }
             }
         }
+    }
+
+    void Window::tick(){
+        handleDrag();
+        handleHover(getMousePosition());
+        applyTransitions();
+    }
+
+    Control* Window::findControlAt(vec2 p){
+        const auto hitElem = m_root->findElementAt(p);
+        if (!hitElem){
+            return nullptr;
+        }
+        if (auto c = hitElem->toControl()){
+            return c;
+        }
+        return hitElem->getParentControl();
     }
 
     void Window::releaseAllButtons(){
@@ -169,6 +223,167 @@ namespace ui {
             ctrl->onKeyUp(key);
         }
         m_keypressed_elems.clear();
+    }
+
+    void Window::handleMouseDown(sf::Mouse::Button btn, vec2 pos){
+        const auto hitCtrl = findControlAt(pos);
+
+        bool recent = (Context::get().getProgramTime() - m_last_click_time) <= Context::get().getDoubleClickTime();
+
+        bool sameBtn = btn == m_last_click_btn;
+
+        bool sameElem = false;
+        if (btn == sf::Mouse::Left){
+            sameElem = m_lclick_elem == hitCtrl;
+        } else if (btn == sf::Mouse::Middle){
+            sameElem = m_mclick_elem == hitCtrl;
+        } else if (btn == sf::Mouse::Right){
+            sameElem = m_rclick_elem == hitCtrl;
+        }
+
+        int numClicks = 1;
+        if (recent && sameBtn && sameElem){
+            numClicks = 2;
+
+            // don't let it be double clicked again until after it gets single clicked again
+			// achieved by faking an old timestamp
+			m_last_click_time = Context::get().getProgramTime() - Context::get().getDoubleClickTime();
+        } else {
+            focusTo(hitCtrl);
+            m_last_click_time = Context::get().getProgramTime();
+        }
+
+        if (btn == sf::Mouse::Left) {
+			m_lclick_elem = propagate(hitCtrl, &Control::onLeftClick, numClicks);
+		} else if (btn == sf::Mouse::Middle) {
+			m_mclick_elem = propagate(hitCtrl, &Control::onMiddleClick, numClicks);
+		} else if (btn == sf::Mouse::Middle) {
+			m_rclick_elem = propagate(hitCtrl, &Control::onMiddleClick, numClicks);
+		}
+
+        m_last_click_btn = btn;
+    }
+
+    void Window::handleMouseUp(sf::Mouse::Button btn, vec2 pos){
+        if (btn == sf::Mouse::Left) {
+			if (m_lclick_elem) {
+				m_lclick_elem->onLeftRelease();
+			}
+		} else if (btn == sf::Mouse::Middle) {
+			if (m_mclick_elem) {
+				m_mclick_elem->onRightRelease();
+			}
+		} else if (btn == sf::Mouse::Right) {
+			if (m_rclick_elem) {
+				m_rclick_elem->onRightRelease();
+			}
+		}
+    }
+
+    void Window::handleKeyDown(sf::Keyboard::Key key){
+        // search for longest matching set of keys in registered commands
+		size_t max = 0;
+		auto current_cmd = m_commands.end();
+		for (auto cmd_it = m_commands.begin(), end = m_commands.end(); cmd_it != end; ++cmd_it) {
+			if (cmd_it->first.first == key) {
+				bool match = true;
+				for (int i = 0; i < cmd_it->first.second.size() && match; i++) {
+					match = sf::Keyboard::isKeyPressed(cmd_it->first.second[i]);
+				}
+				if (match && cmd_it->first.second.size() >= max) {
+					max = cmd_it->first.second.size();
+					current_cmd = cmd_it;
+				}
+			}
+		}
+
+		if (current_cmd != m_commands.end()) {
+			// if one was found, invoke that command
+			current_cmd->second();
+			return;
+		}
+
+		// if no command was found, send key stroke to the current element
+		auto elem = propagate(m_focus_elem, &Control::onKeyDown, key);
+		// and send key up to last element receiving same keystroke
+		// in case of switching focus while key is held
+		auto key_it = m_keypressed_elems.find(key);
+		if (key_it != m_keypressed_elems.end()) {
+			if (key_it->second && key_it->second != elem) {
+				key_it->second->onKeyUp(key);
+				key_it->second = elem;
+			}
+		} else if (elem) {
+			m_keypressed_elems[key] = elem;
+		}
+
+        // TODO: keyboard navigation
+    }
+
+    void Window::handleKeyUp(sf::Keyboard::Key key){
+        auto it = m_keypressed_elems.find(key);
+		if (it != m_keypressed_elems.end()) {
+			assert(it->second);
+		    it->second->onKeyUp(key);
+			m_keypressed_elems.erase(it);
+		}
+    }
+
+    void Window::handleScroll(vec2 pos, vec2 scroll){
+        auto elem = findControlAt(pos);
+        propagate(elem, &Control::onScroll, scroll);
+    }
+
+    void Window::handleDrag(){
+        if (m_drag_elem){
+            const auto mousePos = getMousePosition();
+            auto rootPos = vec2{};
+            if (const auto c = m_drag_elem->getParentContainer()){
+                rootPos = c->rootPos();
+            }
+            // TODO: why not setPos()?
+            m_drag_elem->m_position = mousePos - rootPos - m_drag_offset;
+            m_drag_elem->onDrag();
+        }
+    }
+
+    void Window::handleHover(vec2 pos){
+        auto newElem = findControlAt(pos);
+        if (newElem == m_hover_elem){
+            return;
+        }
+
+        std::vector<Control*> pathUp, pathDown;
+        auto curr = m_hover_elem;
+        while (curr){
+            pathUp.push_back(curr);
+            curr = curr->getParentControl();
+        }
+
+        curr = newElem;
+        while (curr){
+            pathDown.push_back(curr);
+            curr = curr->getParentControl();
+        }
+
+        while (pathUp.size() > 0 && pathDown.size() > 0 && pathUp.front() == pathDown.front()){
+            pathUp.erase(pathUp.begin());
+            pathDown.erase(pathDown.begin());
+        }
+
+        for (auto it = pathUp.rbegin(), itEnd = pathUp.rend(); it != itEnd; ++it){
+            (*it)->onMouseOut();
+        }
+
+        for (auto& c : pathDown){
+            c->onMouseOver();
+        }
+
+        m_hover_elem = newElem;
+
+        if (m_drag_elem){
+            propagate(newElem, &Control::onHover, m_drag_elem);
+        }
     }
 
     void Window::onRemoveElement(Element* elem){
@@ -211,7 +426,41 @@ namespace ui {
     }
 
     void Window::focusTo(Control* control){
-        // TODO
+        auto prev = m_focus_elem;
+
+        std::vector<Control*> pathUp, pathDown;
+        auto curr = m_focus_elem;
+        while (curr){
+            pathUp.push_back(curr);
+            curr = curr->getParentControl();
+        }
+
+        curr = control;
+        while (curr){
+            pathDown.push_back(curr);
+            curr = curr->getParentControl();
+        }
+
+        while (pathUp.size() > 0 && pathDown.size() > 0 && pathUp.front() == pathDown.front()){
+            pathUp.erase(pathUp.begin());
+            pathDown.erase(pathDown.begin());
+        }
+
+        for (auto it = pathUp.rbegin(), itEnd = pathUp.rend(); it != itEnd; ++it){
+            (*it)->onLoseFocus();
+            if (m_focus_elem != prev){
+                return;
+            }
+        }
+
+        for (auto& c : pathDown){
+            c->onGainFocus();
+            if (m_focus_elem != prev){
+                return;
+            }
+        }
+
+        m_focus_elem = control;
     }
 
     void Window::startDrag(Draggable* d, vec2 o){
@@ -237,6 +486,40 @@ namespace ui {
 
     TextEntry* Window::currentTextEntry(){
         return m_text_entry;
+    }
+
+    void Window::addTransition(Element* e, double duration, std::function<void(double)> fn, std::function<void()> onComplete){
+        m_transitions.push_back({
+            e,
+            duration,
+            std::move(fn),
+            std::move(onComplete),
+            Context::get().getProgramTime()
+        });
+    }
+
+    void Window::removeTransitions(const Element* e){
+        m_transitions.erase(std::remove_if(
+            m_transitions.begin(),
+            m_transitions.end(),
+            [&](const Transition& t){
+                return t.element == e;
+            }
+        ), m_transitions.end());
+    }
+
+    void Window::applyTransitions(){
+        const auto now = Context::get().getProgramTime();
+        for (auto it = m_transitions.begin(); it != m_transitions.end();){
+            const auto t = (now - it->timeStamp).asSeconds() / it->duration;
+            if (t > 1.0){
+                it->fn(1.0);
+                it->on_complete();
+                it = m_transitions.erase(it);
+            } else {
+                it->fn(t);
+            }
+        }
     }
 
 } // namespace ui

@@ -7,13 +7,13 @@ namespace ui {
     void FreeContainer::adopt(std::unique_ptr<Element> e){
         const Element* eptr = e.get();
         Container::adopt(std::move(e));
-        m_styles.try_emplace(eptr, std::pair{PositionStyle::None, PositionStyle::None});
+        m_styles.try_emplace(eptr, ElementStyle{PositionStyle::None, PositionStyle::None});
     }
 
     void FreeContainer::adopt(std::unique_ptr<Element> e, PositionStyle xstyle, PositionStyle ystyle){
         const Element* eptr = e.get();
         Container::adopt(std::move(e));
-        m_styles.try_emplace(eptr, std::pair{xstyle, ystyle});
+        m_styles.try_emplace(eptr, ElementStyle{xstyle, ystyle});
     }
 
     std::unique_ptr<Element> FreeContainer::release(const Element* e){

@@ -11,11 +11,11 @@ namespace ui {
         return the_instance;
     }
 
-    void Context::add_window(std::unique_ptr<Window> w){
+    void Context::addWindow(std::unique_ptr<Window> w){
         m_windows.push_back(std::move(w));
     }
 
-    void Context::remove_window(const Window* w){
+    void Context::removeWindow(const Window* w){
         m_windows.erase(std::remove_if(
             m_windows.begin(),
             m_windows.end(),
@@ -24,14 +24,24 @@ namespace ui {
     }
 
     void Context::run(){
+        m_cachedTime = m_clock.getElapsedTime();
         while (m_windows.size() > 0){
             for (auto& win : m_windows){
                 win->processEvents();
             }
             for (auto& win : m_windows){
+                win->tick();
                 win->redraw();
             }
         }
+    }
+
+    sf::Time Context::getProgramTime() const {
+        return m_cachedTime;
+    }
+
+    sf::Time Context::getDoubleClickTime() const {
+         return sf::seconds(0.25f);
     }
 
 } // namespace ui

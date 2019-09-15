@@ -33,7 +33,7 @@ namespace ui {
 
 		bool onKeyDown(ui::Key key) override;
 
-		void onMouseOver(Draggable*) override;
+		void onMouseOver() override;
 		void onMouseOut() override;
 
         void render(sf::RenderWindow&) override;

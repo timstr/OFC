@@ -19,9 +19,6 @@ namespace ui {
         
         static Window& create(unsigned width, unsigned height, const String& title);
 
-        // redraw the UI
-        void redraw();
-
         // the window's inner size
         vec2 getSize() const;
         void setSize(vec2);
@@ -61,16 +58,46 @@ namespace ui {
         // process the window's event queue
         void processEvents();
 
+        // update ui components
+        void tick();
+
+        // redraw the UI
+        void redraw();
+
+        Control* findControlAt(vec2 p);
+
         // emulates the releasing of all held
         // keys and mouse buttons
         void releaseAllButtons();
+        
+        void handleMouseDown(sf::Mouse::Button btn, vec2 pos);
+        void handleMouseUp(sf::Mouse::Button btn, vec2 pos);
+
+        void handleKeyDown(sf::Keyboard::Key key);
+        void handleKeyUp(sf::Keyboard::Key key);
+
+        void handleScroll(vec2 pos, vec2 scroll);
+
+        void handleDrag();
+
+        void handleHover(vec2 pos);
 
         // clean up all listeners for a window
         void onRemoveElement(Element*);
 
-        // focus to an element
-        // passing null will remove the focus from all elements
+        // focus to a control, effectively calling onLoseFocus
+        // on all controls from the currently one up to the common
+        // ancestor, then calling onFocus on all controls down to
+        // the new one.
+        // passing null will remove the focus from all elements.
         void focusTo(Control*);
+
+        // Simulate the moving of the mouse to a control, effectively
+        // calling onMouseOut on all controls from the currently one
+        // up to the common ancestor, then calling on all controls down to
+        // the new one.
+        // passing null will remove the focus from all elements.
+        void hoverTo(Control*);
 
         void startDrag(Draggable*, vec2);
         void stopDrag();
@@ -79,6 +106,11 @@ namespace ui {
         void startTyping(TextEntry*);
         void stopTyping();
         TextEntry* currentTextEntry();
+
+        void addTransition(Element* e, double duration, std::function<void(double)> fn, std::function<void()> onComplete);
+        void removeTransitions(const Element* e);
+
+        void applyTransitions();
 
     private:
 
@@ -106,8 +138,21 @@ namespace ui {
         sf::Time m_last_click_time;
         sf::Mouse::Button m_last_click_btn;
 
-        // key pressed elements
+        // elements which handled a key press
         std::map<Key, Control*> m_keypressed_elems;
+
+        struct Transition {
+            Element* const element;
+            const double duration;
+            const std::function<void(float)> fn;
+            const std::function<void()> on_complete;
+            const sf::Time timeStamp;
+        };
+
+        std::vector<Transition> m_transitions;
+
+        // registered keyboard commands
+        std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> m_commands;
 
         std::unique_ptr<Container> m_root;
         sf::RenderWindow m_sfwindow;
@@ -123,9 +168,11 @@ namespace ui {
 
     template<typename T, typename... Args>
     inline T& Window::setRoot(Args&&... args){
+        static_assert(std::is_base_of_v<Container, T>, "T must derive from ui::Container");
         auto uptr = std::make_unique<T>(std::forward<Args>(args)...);
         T& ret = *uptr;
         m_root = std::move(uptr);
+        m_root->m_parent_window = this;
         return ret;
     }
 

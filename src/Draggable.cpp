@@ -19,6 +19,10 @@ namespace ui {
         }
     }
 
+    void Draggable::onDrag(){
+    
+    }
+
     Draggable* Draggable::toDraggable(){
         return this;
     }

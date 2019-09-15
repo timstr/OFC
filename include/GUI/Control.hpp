@@ -22,9 +22,10 @@ namespace ui {
         bool middleMouseDown() const;
         bool rightMouseDown() const;
         
-        virtual void onMouseOver(Draggable*);
+        virtual void onMouseOver();
         virtual void onMouseOut();
 
+        virtual bool onHover(Draggable*);
         virtual bool onDrop(Draggable*);
 
         virtual bool onKeyDown(Key);
@@ -39,6 +40,9 @@ namespace ui {
 
         bool hasFocus() const;
         void grabFocus();
+
+    private:
+        Control* toControl() noexcept override final;
     };
 
 } // namespace ui

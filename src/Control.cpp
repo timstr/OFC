@@ -40,12 +40,16 @@ namespace ui {
         return false;
     }
 
-    void Control::onMouseOver(Draggable*){
+    void Control::onMouseOver(){
 
     }
 
     void Control::onMouseOut(){
 
+    }
+
+    bool Control::onHover(Draggable*){
+        return false;
     }
 
     bool Control::onDrop(Draggable*){
@@ -84,6 +88,10 @@ namespace ui {
         if (auto win = getParentWindow()){
             win->focusTo(this);
         }
+    }
+
+    Control* Control::toControl() noexcept {
+        return this;
     }
 
 } // namespace ui

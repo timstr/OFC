@@ -1,6 +1,7 @@
 #include <GUI/Container.hpp>
 
 #include <algorithm>
+#include <cassert>
 
 namespace ui {
     
@@ -53,7 +54,28 @@ namespace ui {
     }
 
     Container* Container::toContainer(){
-        return static_cast<Container*>(this);
+        return this;
+    }
+
+    Element* Container::findElementAt(vec2 p){
+        for (auto it = m_children.rbegin(), end = m_children.rend(); it != end; ++it){
+            auto& c = *it;
+            if (auto e = c->findElementAt(p - pos())){
+                return e;
+            }
+        }
+        return hit(p) ? this : nullptr;
+    }
+
+    Window* Container::getWindow() const {
+        if (m_parent_window){
+            return m_parent_window;
+        }
+        if (auto p = getParentContainer()){
+            return p->getWindow();
+        }
+        assert(false);
+        return nullptr;
     }
     
 

@@ -33,9 +33,15 @@ namespace ui {
 
         Container* toContainer() override;
 
+        Element* findElementAt(vec2 p) override;
+
         std::vector<std::unique_ptr<Element>> m_children;
 
         Window* m_parent_window;
+
+        Window* getWindow() const override final;
+
+        void updateContents() override final;
 
         friend class Element;
         friend class Window;

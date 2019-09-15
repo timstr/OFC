@@ -145,16 +145,6 @@ namespace ui {
 
         Container* m_parent;
 
-        struct Transition {
-            Transition(float duration, std::function<void(float)>&& fn, std::function<void()>&& on_complete);
-
-            const double duration;
-            const std::function<void(float)> fn;
-            const std::function<void()> on_complete;
-        };
-
-        std::vector<Transition> m_transitions;
-
         virtual Container* toContainer();
         virtual Control* toControl();
         virtual Draggable* toDraggable();

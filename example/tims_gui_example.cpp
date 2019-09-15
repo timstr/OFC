@@ -217,12 +217,7 @@ struct BoxContainer : ui::FreeContainer, ui::BoxElement {
     }
 };
 
-int main() {
-    
-    ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
-
-    //auto& root = win.setRoot<ui::FreeContainer>();
-
+void makeGridLayout(ui::Window& win){
     auto& cont = win.setRoot<ui::GridContainer>(3, 3);
     //auto& cont = root.add<ui::GridContainer>(ui::PositionStyle::Center, ui::PositionStyle::Center, 3, 3);
     //cont.setSize({300.0f, 300.0f}, true);
@@ -253,6 +248,34 @@ int main() {
     add_cell(2, 0, 0x000000FF);
     add_cell(2, 1, 0x880000FF);
     add_cell(2, 2, 0x000000FF);
+}
+
+class DragButton : public ui::Draggable, public ui::Control, public ui::BoxElement {
+public:
+    DragButton(){
+        setSize({100, 100});
+        setBackgroundColor(0x008000FF);
+    }
+
+    bool onLeftClick(int clicks) override {
+        startDrag();
+        return true;
+    }
+
+    void onLeftRelease() override {
+        stopDrag();
+    }
+};
+
+int main() {
+    
+    ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
+
+    // makeGridLayout(win);
+
+    auto& root = win.setRoot<ui::FreeContainer>();
+
+    root.add<DragButton>();
     
     /*auto& elem1 = root.add<BoxContainer>();
     elem1.setPos({50, 50});

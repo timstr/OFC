@@ -1,5 +1,6 @@
 #include <GUI/Element.hpp> 
 #include <GUI/Container.hpp>
+#include <GUI/Context.hpp>
 #include <GUI/Window.hpp>
 
 #include <cassert>
@@ -201,7 +202,14 @@ namespace ui {
         return hit(p) ? this : nullptr;
     }
     void Element::startTransition(float duration, std::function<void(float)> fn, std::function<void()> on_complete){
-        m_transitions.emplace_back(duration, std::move(fn), std::move(on_complete));
+        if (auto win = getParentWindow()){
+            win->addTransition(
+                this,
+                duration,
+                std::move(fn),
+                std::move(on_complete)
+            );
+        }
     }
     std::unique_ptr<Element> Element::orphan(){
         if (!m_parent){
@@ -242,12 +250,6 @@ namespace ui {
         }
         return nullptr;
     }
-    Element::Transition::Transition(float dur, std::function<void(float)>&& f, std::function<void()>&& complete) :
-        duration(dur),
-        fn(std::move(f)),
-        on_complete(std::move(complete)) {
-
-    }
 
     Control* Element::getParentControl(){
         if (m_parent){
@@ -287,7 +289,7 @@ namespace ui {
     }
 
     void Element::updateContents(){
-        // Nothing to do
+        applyTransitions();
     }
 
 } // namespace ui
