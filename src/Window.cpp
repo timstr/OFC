@@ -56,9 +56,8 @@ namespace ui {
         const auto screensize = getSize();
         v.reset({{0.0, 0.0}, screensize});
         m_sfwindow.setView(v);
-        m_root->setHorizontalFill(true);
-        m_root->setVerticalFill(true);
-        m_root->update(getSize());
+        m_root->setSize(getSize());
+        updateAllElements();
         m_root->render(m_sfwindow);
         m_sfwindow.display();
     }
@@ -121,6 +120,7 @@ namespace ui {
 
     void Window::setRoot(std::unique_ptr<Container> c){
         m_root = std::move(c);
+        m_root->requireDeepUpdate();
         c->m_parent_window = this;
     }
 
@@ -416,13 +416,19 @@ namespace ui {
         if (elem == m_rclick_elem){
             m_lclick_elem = nullptr;
         }
-        for (auto it = m_keypressed_elems.begin(), end = m_keypressed_elems.end(); it != end; ++it){
+        for (auto it = m_keypressed_elems.begin(), end = m_keypressed_elems.end(); it != end;){
             const auto& [key, ctrl] = *it;
             if (elem == ctrl){
-                m_keypressed_elems.erase(it);
+                m_keypressed_elems.erase(it++);
                 break;
+            } else {
+                ++it;
             }
         }
+        m_updateQueue.erase(std::remove(
+            m_updateQueue.begin(),
+            m_updateQueue.end(),
+        elem), m_updateQueue.end());
     }
 
     void Window::focusTo(Control* control){
@@ -519,6 +525,86 @@ namespace ui {
             } else {
                 it->fn(t);
             }
+        }
+    }
+
+    void Window::enqueueForUpdate(Element* elem){
+        if (std::find(m_updateQueue.begin(), m_updateQueue.end(), elem) != m_updateQueue.end()){
+            return;
+        }
+        m_updateQueue.push_back(elem);
+    }
+
+    void Window::updateAllElements(){
+        while (!m_updateQueue.empty()){
+            updateOneElement(m_updateQueue.front());
+        }
+    }
+
+    void Window::updateOneElement(Element* elem){
+        // NOTE: the size is being accessed directly instead of through
+        // get/setSize() to avoid adding the element to the queue again
+
+        assert(elem);
+        assert(!elem->m_isUpdating);
+        elem->m_isUpdating = true;
+
+        // Remove the element from the queue
+        {
+            auto it = std::find(m_updateQueue.begin(), m_updateQueue.end(), elem);
+            assert(it != m_updateQueue.end());
+            m_updateQueue.erase(it);
+        }
+
+        // Get the element's original size
+        const auto prevSize = elem->m_parent ?
+            elem->m_parent->getPreviousSize(elem) :
+            elem->m_size;
+
+        // Retrieve the element's available size
+        const auto availSize = [&](){
+            if (auto p = elem->getParentContainer()){
+                return p->getAvailableSize(elem);
+            } else {
+                assert(elem == m_root.get());
+                return getSize();
+            }
+        }();
+
+        // Set the element's size to be the available size
+        elem->m_size = availSize;
+
+        // Tell the element to update its contents and get the size it actually needs
+        const auto actualSize = elem->update();
+
+        // Limit the element's size according to its minimum and maximum size
+        elem->m_size.x = std::clamp(elem->m_size.x, elem->m_minsize.x, elem->m_maxsize.x);
+        elem->m_size.y = std::clamp(elem->m_size.y, elem->m_minsize.y, elem->m_maxsize.y);
+
+        // mark the element as clean
+        elem->m_needs_update = false;
+
+        // cache the element's previous sizes to allow efficient rerendering decisions
+        // (see getPreviousSize() above)
+        if (auto c = elem->toContainer()){
+            c->updatePreviousSizes();
+        }
+
+        elem->m_isUpdating = false;
+
+        // If the element's size changed from its previous size, or if the parent
+        // is dirty, update it too
+        const auto sizeChanged = 
+            std::abs(elem->m_size.x - prevSize.x) > 1e-6 ||
+            std::abs(elem->m_size.y - prevSize.y) > 1e-6;
+        
+        if (sizeChanged){
+            elem->onResize();
+        }
+
+        if (elem->m_parent && (elem->m_parent->m_needs_update || sizeChanged)){
+            elem->m_parent->requireUpdate();
+            elem->m_parent->forceUpdate();
         }
     }
 

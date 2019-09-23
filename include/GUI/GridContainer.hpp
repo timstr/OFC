@@ -31,15 +31,25 @@ namespace ui {
 
         Element* getCell(size_t row, size_t column);
         const Element* getCell(size_t row, size_t column) const;
-
-        void updateContents() override;
+        
+        void setHorizontalFill(size_t row, size_t column, bool enabled);
+        void setVerticalFill(size_t row, size_t column, bool enabled);
 
     private:
         size_t m_rows;
         size_t m_cols;
-        std::vector<std::vector<Element*>> m_cells;
+
+        struct CellData {
+            Element* child;
+            bool fillX;
+            bool fillY;
+        };
+
+        std::vector<std::vector<CellData>> m_cells;
         std::vector<float> m_widths;
         std::vector<float> m_heights;
+
+        vec2 update() override;
     };
 
     // Template definitions

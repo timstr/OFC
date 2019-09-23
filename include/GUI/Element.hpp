@@ -28,26 +28,26 @@ namespace ui {
         Element& operator=(Element&&) = delete;
 
         // the element's position relative to its container
-        float left() const;
-        float top() const;
-        vec2 pos() const;
+        float left();
+        float top();
+        vec2 pos();
         void setLeft(float);
         void setTop(float);
         void setPos(vec2);
 
         // the element's position relative to the window
-        vec2 rootPos() const;
+        vec2 rootPos();
 
         // The position of the mouse relative to the element
-        vec2 localMousePos() const;
+        vec2 localMousePos();
 
         // called whenever the element's position is changed
         virtual void onMove();
 
         // get the element's size
-        float width() const;
-        float height() const;
-        vec2 size() const;
+        float width();
+        float height();
+        vec2 size();
 
         // set the element's size
         void setWidth(float, bool force = false);
@@ -63,10 +63,11 @@ namespace ui {
         // whether the element takes up all available space vertically
         // and horizontally (when placed in a suitable container),
         // subject to minimum and maximum size
-        void setHorizontalFill(bool);
-        void setVerticalFill(bool);
-        bool horizontalFill() const;
-        bool verticalFill() const;
+        // TODO: move this to GridContainer since that is the only place this makes sense
+        // void setHorizontalFill(bool);
+        // void setVerticalFill(bool);
+        // bool horizontalFill() const;
+        // bool verticalFill() const;
 
         // called whenever the element's size is changed
         virtual void onResize();
@@ -87,7 +88,7 @@ namespace ui {
         //  fn          - called each tick of the animation, where the argument
         //                is the progress, and varies from 0 to 1
         //  on_complete - (optional) called when the animation ends
-        void startTransition(float duration, std::function<void(float)> fn, std::function<void()> on_complete = {});
+        void startTransition(double duration, std::function<void(double)> fn, std::function<void()> on_complete = {});
 
         // removes the element from its parent and returns a unique_ptr
         // containing the element.
@@ -114,34 +115,104 @@ namespace ui {
         Control* getParentControl();
         const Control* getParentControl() const;
 
-        void require_update();
+        /*
+        If an element's size is changed internally (via setSize() or if it is a container
+        and just changed size due to modified contents):
+            - Propagate the change to the parent container (this may trigger some
+              additional updates)
+                -> maybe a method like Container::onContentsChanged() can be used here
+                   which will recompute the layout of its children recursively
+                -> On second though, this sounds redundent. A simple virtual
+                   Element::update() probably suffices
 
-        // Makes the element up to date, in terms of its
-        // size and contents.
-        // Called after any size and content related changes
-        // are made.
-        // max_size is the largest available size, which
-        // the element may take up exactly or not, depending
-        // on whether horizontal/vertical fill are enabled.
-        // Calls updateContents to deal with specialized
-        // layout styles.
-        void update(vec2 max_size);
+        If more space becomes available to an element with horizontal or vertical fill
+        enabled:
+            - It is resized to take up that space, and if it is a container, its
+              layout is recomputed, using update()
+
+        If an element is dirty (needs to be updated), should it:
+            - be put into a global rerender queue for efficiency?
+                -> If this is done, some care should be taken to prevent
+                   updating the same element twice (i.e. if both a container
+                   and its child are queued and updating one also causes the
+                   other to be made clean, it can be removed from the queue
+            - be made clean by a recursive update() function called on
+              the entire UI tree?
+                -> This will waste a lot of CPU time/power
+
+
+        If an element is updated and its size changes, should it
+            - Call on its parent container to update() also?
+            - Mark its parent container (depending on its layout style) as dirty
+              and queue it for updating?
+                -> This could (should?) be done by the queuing code, not in each
+                   different update() method
+        */
+
+        // Marks the element as dirty
+        void requireUpdate();
 
     private:
-        
-        // Should be overridden to make the element's contents
-        // up to date, whatever those contents may be
-        virtual void updateContents();
+        /* Possible workflow:
+        - The element is resized to have the maximum available size
+        - The element is updated (recomputes the layouts of its contents, given its new size; nothing else)
+        - The element returns the width/height it actually needs
+        - Using x/y fill and min/max size, the element's width and height are modified
+          to be the actual size it needs / can take on
+
+
+        When an element is modified, it is marked dirty and is added to the window's update queue.
+        At some point just before rendering (or if the dirty element's size or position is queried),
+        that element is taken from the queue and is updated (how to get the maximum available size?)
+        and is made clean again (possible optimization: update parents before their children to save
+        work).
+
+        The maximum available size should probably be computed/cached by each container:
+            - Flow container: inline elements use their own size as available size
+                block elements are given width of container as available width.
+            - Free container: maximum size is simply the element's size. x/y fill has
+              no effect, the element is only resized if its contents exceed its own size.
+            - Grid container: maximum size is easy to cache / compute.
+        Nice!
+
+        NOTE: This maximum size should be made available through the Container or Element interface
+        so that the update queue can use it.
+
+        TODO: How can a container query the updated size of one of its children when the container is
+        recomputing its layout in a call to update()?
+        - Available size is determined (how will vary by container)
+        - Element's size is is modified using setSize(), which might
+          mark the element as dirty if the size is different
+        - If the container needs access to the element's size, it will
+          call getSize() *which will force an update if the element is dirty*
+        - Otherwise, if the element's size is not needed to continue,
+          the element will remain on the update queue and will be dealt
+          with before rendering.
+          NOTE: if the child element is updated while the container itself is
+          in the update() method, it may cause the container to get queued for
+          updating again as a result of the child's size changing. This should
+          be no problem if the container is marked as clean unconditionally after
+          it is updated, and if clean elements are silently taken off the update
+          queue without updating.
+          
+        */
+        virtual vec2 update();
+
+        // Causes the element to immediately be updated if it or its parent have
+        // been marked dirty.
+        // This method is called when the element's size or position is queried.
+        void forceUpdate();
+
+        void requireDeepUpdate();
 
     private:
-        vec2 m_position;
-        vec2 m_size;
+        mutable vec2 m_position;
+        mutable vec2 m_size;
         vec2 m_minsize;
         vec2 m_maxsize;
-        bool m_fill_x;
-        bool m_fill_y;
 
         bool m_needs_update;
+        bool m_isUpdating;
 
         Container* m_parent;
 

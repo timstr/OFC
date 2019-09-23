@@ -112,6 +112,11 @@ namespace ui {
 
         void applyTransitions();
 
+
+        void enqueueForUpdate(Element*);
+        void updateAllElements();
+        void updateOneElement(Element*);
+
     private:
 
         /********** UI state **********/
@@ -142,14 +147,16 @@ namespace ui {
         std::map<Key, Control*> m_keypressed_elems;
 
         struct Transition {
-            Element* const element;
-            const double duration;
-            const std::function<void(float)> fn;
-            const std::function<void()> on_complete;
-            const sf::Time timeStamp;
+            Element* element;
+            double duration;
+            std::function<void(double)> fn;
+            std::function<void()> on_complete;
+            sf::Time timeStamp;
         };
 
         std::vector<Transition> m_transitions;
+
+        std::vector<Element*> m_updateQueue;
 
         // registered keyboard commands
         std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> m_commands;
@@ -173,6 +180,7 @@ namespace ui {
         T& ret = *uptr;
         m_root = std::move(uptr);
         m_root->m_parent_window = this;
+        m_root->requireDeepUpdate();
         return ret;
     }
 

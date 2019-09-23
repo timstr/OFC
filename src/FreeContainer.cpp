@@ -32,7 +32,7 @@ namespace ui {
         }
     }
 
-    void FreeContainer::updateContents(){
+    /*void FreeContainer::updateContents(){
         const auto compute_position = [](PositionStyle style, float pos, float size, float epos, float esize){
             switch (style){
             case PositionStyle::OutsideBegin:
@@ -59,6 +59,6 @@ namespace ui {
             elem->setPos({x, y});
             elem->update({0.0f, 0.0f});
         }
-    }
+    }*/
 
 } // namespace ui

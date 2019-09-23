@@ -36,7 +36,7 @@ namespace ui {
 
         void onResize() override;
         
-        void updateContents() override;
+        vec2 update() override;
 
         float m_padding;
 

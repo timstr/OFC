@@ -24,9 +24,8 @@ namespace ui {
         m_size({100.0f, 100.0f}),
         m_minsize({0.0f, 0.0f}),
         m_maxsize({really_big, really_big}),
-        m_fill_x(false),
-        m_fill_y(false),
         m_needs_update(false),
+        m_isUpdating(false),
         m_parent(nullptr) {
         
     }
@@ -35,13 +34,16 @@ namespace ui {
             win->onRemoveElement(this);
         }
     }
-    float Element::left() const {
+    float Element::left(){
+        forceUpdate();
         return m_position.x;
     }
-    float Element::top() const {
+    float Element::top(){
+        forceUpdate();
         return m_position.y;
     }
-    vec2 Element::pos() const {
+    vec2 Element::pos(){
+        forceUpdate();
         return m_position;
     }
     void Element::setLeft(float v){
@@ -49,7 +51,7 @@ namespace ui {
         if (different(v, m_position.x)){
             m_position.x = v;
             if (m_parent){
-                m_parent->require_update();
+                m_parent->requireUpdate();
             }
         }
     }
@@ -58,7 +60,7 @@ namespace ui {
         if (different(v, m_position.y)){
             m_position.y = v;
             if (m_parent){
-                m_parent->require_update();
+                m_parent->requireUpdate();
             }
         }
     }
@@ -68,14 +70,14 @@ namespace ui {
         if (different(v, m_position)){
             m_position = v;
             if (m_parent){
-                m_parent->require_update();
+                m_parent->requireUpdate();
             }
         }
     }
-    vec2 Element::rootPos() const {
-        return m_position + (m_parent ? m_parent->rootPos() : vec2{});
+    vec2 Element::rootPos(){
+        return pos() + (m_parent ? m_parent->rootPos() : vec2{});
     }
-    vec2 Element::localMousePos() const {
+    vec2 Element::localMousePos(){
         auto win = getParentWindow();
         assert(win);
         return win->getMousePosition() - rootPos();
@@ -83,13 +85,16 @@ namespace ui {
     void Element::onMove(){
 
     }
-    float Element::width() const {
+    float Element::width(){
+        forceUpdate();
         return m_size.x;
     }
-    float Element::height() const {
+    float Element::height(){
+        forceUpdate();
         return m_size.y;
     }
-    vec2 Element::size() const {
+    vec2 Element::size(){
+        forceUpdate();
         return m_size;
     }
     void Element::setWidth(float v, bool force){
@@ -101,11 +106,7 @@ namespace ui {
         }
         if (different(v, m_size.x)){
             m_size.x = v;
-            require_update();
-            if (m_parent){
-                m_parent->require_update();
-            }
-            onResize();
+            requireUpdate();
         }
     }
     void Element::setMinWidth(float v){
@@ -137,11 +138,7 @@ namespace ui {
         }
         if (different(v, m_size.y)){
             m_size.y = v;
-            require_update();
-            if (m_parent){
-                m_parent->require_update();
-            }
-            onResize();
+            requireUpdate();
         }
     }
     void Element::setMinHeight(float v){
@@ -176,18 +173,6 @@ namespace ui {
         setMaxWidth(v.x);
         setMaxHeight(v.y);
     }
-    void Element::setHorizontalFill(bool v){
-        m_fill_x = v;
-    }
-    void Element::setVerticalFill(bool v){
-        m_fill_y = v;
-    }
-    bool Element::horizontalFill() const {
-        return m_fill_x;
-    }
-    bool Element::verticalFill() const {
-        return m_fill_y;
-    }
     void Element::onResize(){
 
     }
@@ -201,7 +186,7 @@ namespace ui {
     Element* Element::findElementAt(vec2 p){
         return hit(p) ? this : nullptr;
     }
-    void Element::startTransition(float duration, std::function<void(float)> fn, std::function<void()> on_complete){
+    void Element::startTransition(double duration, std::function<void(double)> fn, std::function<void()> on_complete){
         if (auto win = getParentWindow()){
             win->addTransition(
                 this,
@@ -271,25 +256,47 @@ namespace ui {
         return nullptr;
     }
 
-    void Element::require_update(){
-        m_needs_update = true;
+    void Element::requireUpdate(){
+        if (!m_needs_update && !m_isUpdating){
+            if (auto win = getParentWindow()){
+                win->enqueueForUpdate(this);
+            }
+            m_needs_update = true;
+        }
     }
 
-    void Element::update(vec2 max_size){
-        if (m_fill_x){
-            setWidth(std::clamp(max_size.x, m_minsize.x, m_maxsize.x));
-        }
-        if (m_fill_y){
-            setHeight(std::clamp(max_size.y, m_minsize.y, m_maxsize.y));
-        }
-        if (m_needs_update){
-            updateContents();
-        }
-        m_needs_update = false;
+    vec2 Element::update(){
+        // Nothing to do by default
+        return m_size;
     }
 
-    void Element::updateContents(){
-        applyTransitions();
+    void Element::forceUpdate(){
+        if (m_needs_update && !m_isUpdating){
+            if (auto win = getParentWindow()){
+                // NOTE: this may cause the parent to be updated as well,
+                // if the element's size changes
+                win->updateOneElement(this);
+                assert(!m_needs_update);
+            }
+        }
+    }
+
+    void Element::requireDeepUpdate(){
+        auto win = getParentWindow();
+        if (!win){
+            return;
+        }
+        std::function<void(Element*)> fn = [&](Element* e){
+            if (e->m_needs_update){
+                win->enqueueForUpdate(e);
+            }
+            if (auto cont = e->toContainer()){
+                for (auto c : cont->children()){
+                    fn(c);
+                }
+            }
+        };
+        fn(this);
     }
 
 } // namespace ui

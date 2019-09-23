@@ -65,7 +65,7 @@ namespace ui {
 
     private:
 
-        void updateContents() override;
+        //void updateContents() override;
 
         // mapping of all elements with fixed position style
         struct ElementStyle {

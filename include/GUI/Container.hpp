@@ -23,11 +23,16 @@ namespace ui {
 
         std::unique_ptr<Element> release(const Element*);
 
-        std::vector<std::unique_ptr<Element>>& children();
-        const std::vector<std::unique_ptr<Element>>& children() const;
+        std::vector<Element*> children();
+        std::vector<const Element*> children() const;
 
-        virtual void on_child_moved(Element*);
-        virtual void on_child_resized(Element*);
+        // Call this before updating the child element when recomputing layout
+        void setAvailableSize(const Element* child, vec2 size);
+        vec2 getAvailableSize(const Element* child) const;
+
+        // Call this after computing the layout
+        void updatePreviousSizes();
+        vec2 getPreviousSize(const Element* child) const;
 
     private:
 
@@ -35,13 +40,17 @@ namespace ui {
 
         Element* findElementAt(vec2 p) override;
 
-        std::vector<std::unique_ptr<Element>> m_children;
+        struct ChildData {
+            std::unique_ptr<Element> child;
+            vec2 availableSize;
+            vec2 previousSize;
+        };
+
+        std::vector<ChildData> m_children;
 
         Window* m_parent_window;
 
         Window* getWindow() const override final;
-
-        void updateContents() override final;
 
         friend class Element;
         friend class Window;
@@ -52,10 +61,10 @@ namespace ui {
     template<typename T, typename... Args>
     inline T& Container::add(Args&&... args){
         static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
-        T* ptr = new T(std::forward<Args>(args)...);
-        T& ret = *ptr;
-        adopt(std::unique_ptr<Element>(ptr));
-        require_update();
+        auto c = std::make_unique<T>(std::forward<Args>(args)...);
+        T& ret = *c;
+        this->adopt(std::move(c));
+        this->requireDeepUpdate();
         return ret;
     }
 

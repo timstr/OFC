@@ -115,9 +115,9 @@ struct TestElement : ui::Control, ui::Container, ui::BoxElement, ui::Draggable {
 			std::uniform_int_distribution<int> mdist { 0, 20 };
 			ui::vec2 oldsize = size();
 			ui::vec2 newsize = { (float)sdist(randeng), (float)sdist(randeng) };
-			startTransition(1.0, [=](float t) {
-				float x = 0.5f - 0.5f * cos(t * 3.141592654f);
-				setSize(oldsize * (1.0f - x) + newsize * x);
+			startTransition(1.0, [=](double t) {
+				double x = 0.5 - 0.5 * std::cos(t * 3.141592654f);
+				setSize(oldsize * static_cast<float>(1.0 - x) + newsize * static_cast<float>(x));
 			});
 		} else if (clicks == 2) {
 			std::cout << name << " was right-clicked twice" << std::endl;
@@ -230,8 +230,8 @@ void makeGridLayout(ui::Window& win){
 
     const auto add_cell = [&cont](size_t i, size_t j, ui::Color color){
         auto& c = cont.putCell<BoxContainer>(i, j);
-        c.setHorizontalFill(true);
-        c.setVerticalFill(true);
+        cont.setHorizontalFill(i, j, true);
+        cont.setVerticalFill(i, j, true);
         c.setBackgroundColor(color);
         auto& c2 = c.add<BoxContainer>(ui::PositionStyle::Center, ui::PositionStyle::Center);
         c2.setBackgroundColor(0xFFFFFFFF);
@@ -271,11 +271,10 @@ int main() {
     
     ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
 
-    // makeGridLayout(win);
+    makeGridLayout(win);
 
-    auto& root = win.setRoot<ui::FreeContainer>();
-
-    root.add<DragButton>();
+    //auto& root = win.setRoot<ui::FreeContainer>();
+    //root.add<DragButton>();
     
     /*auto& elem1 = root.add<BoxContainer>();
     elem1.setPos({50, 50});

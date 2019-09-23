@@ -10,7 +10,7 @@ namespace ui {
         m_cols(1){
         
         m_cells.push_back({});
-        m_cells.front().push_back(nullptr);
+        m_cells.front().push_back({nullptr});
 
         m_widths.push_back(1.0f);
         m_heights.push_back(1.0f);
@@ -25,7 +25,7 @@ namespace ui {
         m_cells.resize(rows);
         for (auto& row : m_cells){
             row.resize(columns);
-            std::fill(row.begin(), row.end(), nullptr);
+            std::fill(row.begin(), row.end(), CellData{});
         }
 
         m_widths.resize(columns);
@@ -43,7 +43,7 @@ namespace ui {
         while (m_rows < r){
             m_cells.push_back({});
             m_cells.back().resize(m_cols);
-            std::fill(m_cells.back().begin(), m_cells.back().end(), nullptr);
+            std::fill(m_cells.back().begin(), m_cells.back().end(), CellData{});
             m_heights.push_back(1.0f);
             ++m_rows;
         }
@@ -59,7 +59,7 @@ namespace ui {
         }
         while (m_cols < c){
             for (auto& row : m_cells){
-                row.push_back(nullptr);
+                row.push_back({});
             }
             m_widths.push_back(1.0f);
             ++m_cols;
@@ -113,13 +113,13 @@ namespace ui {
     void GridContainer::putCell(size_t row, size_t column, std::unique_ptr<Element> e){
 		assert(row >= 0 && row < m_rows);
 		assert(column >= 0 && column < m_cols);
-        auto prev = m_cells[row][column];
+        auto prev = m_cells[row][column].child;
         if (prev){
             release(prev);
         }
         auto eptr = e.get();
         adopt(std::move(e));
-        m_cells[row][column] = eptr;
+        m_cells[row][column].child = eptr;
     }
 
     void GridContainer::clearCell(size_t row, size_t column){
@@ -127,18 +127,30 @@ namespace ui {
     }
 
     Element* GridContainer::getCell(size_t row, size_t column){
-		assert(row >= 0 && row < m_rows);
-		assert(column >= 0 && column < m_cols);
-        return m_cells[row][column];
+		return const_cast<Element*>(const_cast<const GridContainer*>(this)->getCell(row, column));
     }
 
     const Element* GridContainer::getCell(size_t row, size_t column) const {
 		assert(row >= 0 && row < m_rows);
 		assert(column >= 0 && column < m_cols);
-        return m_cells[row][column];
+        return m_cells[row][column].child;
     }
 
-    void GridContainer::updateContents(){
+    void GridContainer::setHorizontalFill(size_t row, size_t column, bool enabled){
+        assert(row < m_rows);
+        assert(column < m_cols);
+        m_cells[row][column].fillX = enabled;
+        requireUpdate();
+    }
+
+    void GridContainer::setVerticalFill(size_t row, size_t column, bool enabled){
+        assert(row < m_rows);
+        assert(column < m_cols);
+        m_cells[row][column].fillY = enabled;
+        requireUpdate();
+    }
+
+    vec2 GridContainer::update(){
 		std::vector<float> row_pos;
 		std::vector<float> col_pos;
         row_pos.resize(m_rows + 1);
@@ -165,15 +177,29 @@ namespace ui {
             }
             col_pos.back() = width();
         }
-
+        
         for (size_t i = 0; i < m_rows; ++i){
             for (size_t j = 0; j < m_cols; ++j){
-                if (auto e = m_cells[i][j]){
-                    e->setPos({col_pos[j], row_pos[i]});
-                    e->update({col_pos[j + 1] - col_pos[j], row_pos[i + 1] - row_pos[i]});
+                if (auto c = m_cells[i][j]; c.child){
+                    auto avail = c.child->size();
+                    c.child->setPos({col_pos[j], row_pos[i]});
+                    if (c.fillX){
+                        avail.x = col_pos[j + 1] - col_pos[j];
+                    }
+                    if (c.fillY){
+                        avail.y = row_pos[i + 1] - row_pos[i];
+                    }
+                    setAvailableSize(c.child, avail);
+                    // TODO: query child's size now to see if it exceeds the bounds
+                    // of its cell
+
+                    //e->update({col_pos[j + 1] - col_pos[j], row_pos[i + 1] - row_pos[i]});
                 }
             }
         }
+
+        // TODO: allow size to be exceeded
+        return size();
     }
 
 } // namespace ui
