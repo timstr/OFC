@@ -60,15 +60,6 @@ namespace ui {
         void setMinSize(vec2);
         void setMaxSize(vec2);
 
-        // whether the element takes up all available space vertically
-        // and horizontally (when placed in a suitable container),
-        // subject to minimum and maximum size
-        // TODO: move this to GridContainer since that is the only place this makes sense
-        // void setHorizontalFill(bool);
-        // void setVerticalFill(bool);
-        // bool horizontalFill() const;
-        // bool verticalFill() const;
-
         // called whenever the element's size is changed
         virtual void onResize();
 

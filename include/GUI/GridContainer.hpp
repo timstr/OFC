@@ -4,6 +4,8 @@
 
 namespace ui {
 
+    // TODO: replace row,column (i.e. y,x) indexing with x,y indexing. y before x is confusing.
+
     class GridContainer : public Container {
     public:
         GridContainer();

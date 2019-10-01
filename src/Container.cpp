@@ -4,11 +4,16 @@
 #include <cassert>
 
 namespace ui {
+
+    Container::Container()
+        : m_parentWindow(nullptr) {
+    }
     
     void Container::adopt(std::unique_ptr<Element> e){
         e->m_parent = this;
         auto eptr = e.get();
-        m_children.push_back({std::move(e), {0.0f, 0.0f}});
+        m_children.push_back({std::move(e), {}, {0.0f, 0.0f}});
+        eptr->requireDeepUpdate();
         requireUpdate();
     }
 
@@ -64,13 +69,29 @@ namespace ui {
             }
         );
         assert(it != m_children.end());
-        if (std::abs(it->availableSize.x - size.x) > 1e-6 || std::abs(it->availableSize.y - size.y) > 1e-6){
+        if (!it->availableSize.has_value() ||
+            (std::abs(it->availableSize->x - size.x) > 1e-6 || std::abs(it->availableSize->y - size.y) > 1e-6)){
             it->child->requireUpdate();
         }
         it->availableSize = size;
     }
 
-    vec2 Container::getAvailableSize(const Element* child) const {
+    void Container::unsetAvailableSize(const Element* child){
+        auto it = std::find_if(
+            m_children.begin(),
+            m_children.end(),
+            [&](const ChildData& cd){
+                return cd.child.get() == child;
+            }
+        );
+        assert(it != m_children.end());
+        if (it->availableSize.has_value()){
+            it->child->requireUpdate();
+        }
+        it->availableSize.reset();
+    }
+
+    std::optional<vec2> Container::getAvailableSize(const Element* child) const {
         auto it = std::find_if(
             m_children.begin(),
             m_children.end(),
@@ -128,13 +149,12 @@ namespace ui {
     }
 
     Window* Container::getWindow() const {
-        if (m_parent_window){
-            return m_parent_window;
+        if (m_parentWindow){
+            return m_parentWindow;
         }
         if (auto p = getParentContainer()){
             return p->getWindow();
         }
-        assert(false);
         return nullptr;
     }
     

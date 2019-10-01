@@ -5,6 +5,7 @@
 #include <GUI/Text.hpp>
 
 #include <memory>
+#include <optional>
 #include <variant>
 #include <vector>
 
@@ -12,6 +13,8 @@ namespace ui {
     
     class Container : virtual public Element {
     public:
+        Container();
+
         void render(sf::RenderWindow&) override;
 
     protected:
@@ -26,9 +29,10 @@ namespace ui {
         std::vector<Element*> children();
         std::vector<const Element*> children() const;
 
-        // Call this before updating the child element when recomputing layout
+        // The available size is the space an element is allowed to fill
         void setAvailableSize(const Element* child, vec2 size);
-        vec2 getAvailableSize(const Element* child) const;
+        void unsetAvailableSize(const Element* child);
+        std::optional<vec2> getAvailableSize(const Element* child) const;
 
         // Call this after computing the layout
         void updatePreviousSizes();
@@ -42,13 +46,13 @@ namespace ui {
 
         struct ChildData {
             std::unique_ptr<Element> child;
-            vec2 availableSize;
+            std::optional<vec2> availableSize;
             vec2 previousSize;
         };
 
         std::vector<ChildData> m_children;
 
-        Window* m_parent_window;
+        Window* m_parentWindow;
 
         Window* getWindow() const override final;
 

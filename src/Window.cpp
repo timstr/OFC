@@ -120,8 +120,8 @@ namespace ui {
 
     void Window::setRoot(std::unique_ptr<Container> c){
         m_root = std::move(c);
+        m_root->m_parentWindow = this;
         m_root->requireDeepUpdate();
-        c->m_parent_window = this;
     }
 
     void Window::processEvents(){
@@ -567,15 +567,21 @@ namespace ui {
                 return p->getAvailableSize(elem);
             } else {
                 assert(elem == m_root.get());
-                return getSize();
+                return std::optional{getSize()};
             }
         }();
 
         // Set the element's size to be the available size
-        elem->m_size = availSize;
+        if (availSize){
+            elem->m_size = *availSize;
+        }
 
         // Tell the element to update its contents and get the size it actually needs
         const auto actualSize = elem->update();
+
+        if (!availSize){
+            elem->m_size = actualSize;
+        }
 
         // Limit the element's size according to its minimum and maximum size
         elem->m_size.x = std::clamp(elem->m_size.x, elem->m_minsize.x, elem->m_maxsize.x);

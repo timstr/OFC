@@ -20,7 +20,7 @@ const sf::Font& getFont() {
 	return font;
 }
 
-struct TestElement : ui::Control, ui::Container, ui::BoxElement, ui::Draggable {
+struct TestElement : ui::Control, ui::FlowContainer, ui::BoxElement, ui::Draggable {
 	TestElement(ui::String name) : name(name), label(add<ui::Text>(name, getFont())) {
 
 		std::cout << static_cast<std::string>(name) << " was constructed" << std::endl;
@@ -79,6 +79,11 @@ struct TestElement : ui::Control, ui::Container, ui::BoxElement, ui::Draggable {
 	~TestElement() {
 		std::cout << name << " was destroyed" << std::endl;
 	}
+
+    void render(sf::RenderWindow& rw) override {
+        ui::BoxElement::render(rw);
+        ui::FlowContainer::render(rw);
+    }
     
 	void changeColor() {
 		std::uniform_int_distribution<unsigned> dist(0, 0xFF);
@@ -176,12 +181,7 @@ struct TestElement : ui::Control, ui::Container, ui::BoxElement, ui::Draggable {
 		}
 		std::cout << " was dropped onto " << name << std::endl;
 		return true;
-	}
-
-    void render(sf::RenderWindow& rw) override {
-        ui::BoxElement::render(rw);
-        ui::Container::render(rw);
-    };
+    }
 
 	const std::string name;
 	ui::Text& label;
@@ -217,26 +217,29 @@ struct BoxContainer : ui::FreeContainer, ui::BoxElement {
     }
 };
 
-void makeGridLayout(ui::Window& win){
-    auto& cont = win.setRoot<ui::GridContainer>(3, 3);
-    //auto& cont = root.add<ui::GridContainer>(ui::PositionStyle::Center, ui::PositionStyle::Center, 3, 3);
-    //cont.setSize({300.0f, 300.0f}, true);
-    cont.setRowHeight(0, 1.0f);
-    cont.setRowHeight(1, 2.0f);
-    cont.setRowHeight(2, 4.0f);
-    cont.setColumnWidth(0, 5.0f);
-    cont.setColumnWidth(1, 1.0f);
-    cont.setColumnWidth(2, 1.0f);
+std::unique_ptr<ui::GridContainer> makeGridLayout(){
+    auto cont = std::make_unique<ui::GridContainer>(3, 3);
+    cont->setRowHeight(0, 1.0f);
+    cont->setRowHeight(1, 2.0f);
+    cont->setRowHeight(2, 4.0f);
+    cont->setColumnWidth(0, 5.0f);
+    cont->setColumnWidth(1, 1.0f);
+    cont->setColumnWidth(2, 1.0f);
 
     const auto add_cell = [&cont](size_t i, size_t j, ui::Color color){
-        auto& c = cont.putCell<BoxContainer>(i, j);
-        cont.setHorizontalFill(i, j, true);
-        cont.setVerticalFill(i, j, true);
+        auto& c = cont->putCell<BoxContainer>(i, j);
+        cont->setHorizontalFill(i, j, true);
+        cont->setVerticalFill(i, j, true);
         c.setBackgroundColor(color);
-        auto& c2 = c.add<BoxContainer>(ui::PositionStyle::Center, ui::PositionStyle::Center);
-        c2.setBackgroundColor(0xFFFFFFFF);
-        c2.setSize({25.0f, 25.0f}, true);
-        c.add<ui::Text>(ui::PositionStyle::Center, ui::PositionStyle::Center, "X", getFont());
+        //auto& c2 = c.add<BoxContainer>(ui::FreeContainer::Center, ui::FreeContainer::Center);
+        //c2.setBackgroundColor(0xFFFFFFFF);
+        //c2.setSize({25.0f, 25.0f}, true);
+        //c.add<ui::Text>(ui::FreeContainer::Center, ui::FreeContainer::Center, "X", getFont());
+
+        auto btn = std::make_unique<ui::ToggleButton>(false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boom"});
+        c.adopt(std::move(btn), ui::FreeContainer::Center, ui::FreeContainer::Center);
+
+        //c.add<ui::ToggleButton>(ui::FreeContainer::Center, ui::FreeContainer::Center, false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boom"});
     };
     
     add_cell(0, 0, 0x000000FF);
@@ -248,6 +251,14 @@ void makeGridLayout(ui::Window& win){
     add_cell(2, 0, 0x000000FF);
     add_cell(2, 1, 0x880000FF);
     add_cell(2, 2, 0x000000FF);
+
+    return cont;
+}
+
+void makeFlowLayout(ui::Window& win){
+    auto& cont = win.setRoot<ui::FlowContainer>();
+
+    cont.write("a b c d e f g h i j k l m n o p q r s t u v A B C D E F G H I J K L M N O P Q R S T U V W X Y Z", getFont());
 }
 
 class DragButton : public ui::Draggable, public ui::Control, public ui::BoxElement {
@@ -267,11 +278,20 @@ public:
     }
 };
 
-int main() {
+int main(){
     
     ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
 
-    makeGridLayout(win);
+    auto contptr = makeGridLayout(); 
+    auto& cont = *contptr;
+    win.setRoot(std::move(contptr));
+    
+    auto gl = makeGridLayout();
+    gl->putCell(2, 0, makeGridLayout());
+
+    cont.putCell(2, 0, std::move(gl));
+
+    //makeFlowLayout(win);
 
     //auto& root = win.setRoot<ui::FreeContainer>();
     //root.add<DragButton>();

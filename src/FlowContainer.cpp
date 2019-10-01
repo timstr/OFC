@@ -48,30 +48,25 @@ namespace ui {
         m_layout.push_back(WhiteSpace{WhiteSpace::Tab, width});
     }
 
-    void FlowContainer::onResize(){
-        
-    }
-
     vec2 FlowContainer::update(){
         const auto avail = size();
         auto max = vec2{};
         bool firstOfLine = true;
         float x = 0.0f;
         float y = 0.0f;
-        float nextY = y;
+        float nextY = 0.0f;
         for (auto c : children()){
-            setAvailableSize(c, c->size());
             c->setPos({x, y});
             auto s = c->size();
-            x += s.x;
+            x = std::floor(x + s.x);
             if (x >= avail.x && !firstOfLine){
-                x = 0.0f;
+                c->setPos({0.0, nextY});
+                x = s.x;
                 y = nextY;
-                c->setPos({x, y});
                 firstOfLine = true;
             } else {
                 firstOfLine = false;
-                nextY = std::max(nextY, y + s.y);
+                nextY = std::floor(std::max(nextY, y + s.y));
             }
             max.x = std::max(max.x, c->left() + s.x);
             max.y = std::max(max.y, c->top() + s.y);

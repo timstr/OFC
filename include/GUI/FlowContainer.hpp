@@ -33,8 +33,6 @@ namespace ui {
 		void writeTab(float width = 50.0f);
 
     private:
-
-        void onResize() override;
         
         vec2 update() override;
 

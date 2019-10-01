@@ -32,7 +32,7 @@ namespace ui {
         }
     }
 
-    /*void FreeContainer::updateContents(){
+    vec2 FreeContainer::update(){
         const auto compute_position = [](PositionStyle style, float pos, float size, float epos, float esize){
             switch (style){
             case PositionStyle::OutsideBegin:
@@ -51,14 +51,17 @@ namespace ui {
         };
 
         for (auto& elem : children()){
-            auto it = m_styles.find(elem.get());
+            auto it = m_styles.find(elem);
             assert(it != m_styles.end());
             const auto& style = it->second;
-            float x = compute_position(style.y, left(), width(), elem->left(), elem->width());
-            float y = compute_position(style.x, top(), height(), elem->top(), elem->height());
-            elem->setPos({x, y});
-            elem->update({0.0f, 0.0f});
+            const auto x = compute_position(style.y, left(), width(), elem->left(), elem->width());
+            const auto y = compute_position(style.x, top(), height(), elem->top(), elem->height());
+            elem->setPos({std::floor(x), std::floor(y)});
+            //elem->update({0.0f, 0.0f});
         }
-    }*/
+
+        // TODO: check whether size needs to be exceeded
+        return size();
+    }
 
 } // namespace ui

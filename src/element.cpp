@@ -47,7 +47,6 @@ namespace ui {
         return m_position;
     }
     void Element::setLeft(float v){
-        v = std::abs(v);
         if (different(v, m_position.x)){
             m_position.x = v;
             if (m_parent){
@@ -56,7 +55,6 @@ namespace ui {
         }
     }
     void Element::setTop(float v){
-        v = std::abs(v);
         if (different(v, m_position.y)){
             m_position.y = v;
             if (m_parent){
@@ -65,8 +63,6 @@ namespace ui {
         }
     }
     void Element::setPos(vec2 v){
-        v.x = std::abs(v.x);
-        v.y = std::abs(v.y);
         if (different(v, m_position)){
             m_position = v;
             if (m_parent){
@@ -260,8 +256,8 @@ namespace ui {
         if (!m_needs_update && !m_isUpdating){
             if (auto win = getParentWindow()){
                 win->enqueueForUpdate(this);
+                m_needs_update = true;
             }
-            m_needs_update = true;
         }
     }
 
@@ -287,9 +283,7 @@ namespace ui {
             return;
         }
         std::function<void(Element*)> fn = [&](Element* e){
-            if (e->m_needs_update){
-                win->enqueueForUpdate(e);
-            }
+            win->enqueueForUpdate(e);
             if (auto cont = e->toContainer()){
                 for (auto c : cont->children()){
                     fn(c);

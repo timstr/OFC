@@ -179,7 +179,7 @@ namespace ui {
         auto uptr = std::make_unique<T>(std::forward<Args>(args)...);
         T& ret = *uptr;
         m_root = std::move(uptr);
-        m_root->m_parent_window = this;
+        m_root->m_parentWindow = this;
         m_root->requireDeepUpdate();
         return ret;
     }
