@@ -5,6 +5,8 @@
 
 namespace ui {
 
+    // TODO: put all the search code into a single helper function
+
     Container::Container()
         : m_parentWindow(nullptr) {
     }
@@ -12,7 +14,7 @@ namespace ui {
     void Container::adopt(std::unique_ptr<Element> e){
         e->m_parent = this;
         auto eptr = e.get();
-        m_children.push_back({std::move(e), {}, {0.0f, 0.0f}});
+        m_children.push_back({std::move(e), {}, {}, {}});
         eptr->requireDeepUpdate();
         requireUpdate();
     }
@@ -73,6 +75,7 @@ namespace ui {
             (std::abs(it->availableSize->x - size.x) > 1e-6 || std::abs(it->availableSize->y - size.y) > 1e-6)){
             it->child->requireUpdate();
         }
+        it->previousSize.reset();
         it->availableSize = size;
     }
 
@@ -88,6 +91,7 @@ namespace ui {
         if (it->availableSize.has_value()){
             it->child->requireUpdate();
         }
+        it->previousSize.reset();
         it->availableSize.reset();
     }
 
@@ -103,13 +107,30 @@ namespace ui {
         return it->availableSize;
     }
 
+    vec2 Container::getRequiredSize(const Element* child) const {
+        auto it = std::find_if(
+            m_children.begin(),
+            m_children.end(),
+            [&](const ChildData& cd){
+                return cd.child.get() == child;
+            }
+        );
+        assert(it != m_children.end());
+        if (!it->requiredSize){
+            it->child->requireUpdate();
+        }
+        it->child->forceUpdate();
+        assert(it->requiredSize);
+        return *it->requiredSize;
+    }
+
     void Container::updatePreviousSizes(){
         for (auto& cd : m_children){
             cd.previousSize = cd.child->m_size;
         }
     }
 
-    vec2 Container::getPreviousSize(const Element* child) const {
+    std::optional<vec2> Container::getPreviousSize(const Element* child) const {
         auto it = std::find_if(
             m_children.begin(),
             m_children.end(),
@@ -119,6 +140,18 @@ namespace ui {
         );
         assert(it != m_children.end());
         return it->previousSize;
+    }
+
+    void Container::setRequiredSize(const Element* child, vec2 size){
+        auto it = std::find_if(
+            m_children.begin(),
+            m_children.end(),
+            [&](const ChildData& cd){
+                return cd.child.get() == child;
+            }
+        );
+        assert(it != m_children.end());
+        it->requiredSize = size;
     }
 
     void Container::render(sf::RenderWindow& rw){

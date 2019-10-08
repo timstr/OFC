@@ -58,17 +58,21 @@ namespace ui {
         for (auto c : children()){
             c->setPos({x, y});
             auto s = c->size();
-            x = std::floor(x + s.x);
+            x = std::ceil(x + s.x);
             if (x >= avail.x && !firstOfLine){
                 c->setPos({0.0, nextY});
-                x = s.x;
+                x = std::ceil(s.x);
                 y = nextY;
                 firstOfLine = true;
             } else {
                 firstOfLine = false;
-                nextY = std::floor(std::max(nextY, y + s.y));
+                nextY = std::ceil(std::max(nextY, y + s.y));
             }
-            max.x = std::max(max.x, c->left() + s.x);
+            // TODO: how should the required height be calculated?
+
+            //max.x = std::max(max.x, c->left() + s.x);
+            //max.y = std::max(max.y, c->top() + s.y);
+            max.x = std::max(max.x, s.x);
             max.y = std::max(max.y, c->top() + s.y);
         }
         return max;

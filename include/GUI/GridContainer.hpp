@@ -20,6 +20,7 @@ namespace ui {
         size_t rows() const;
         size_t columns() const;
 
+        // TODO: rename these to "weight" to avoid ambiguity with physical size
         void setRowHeight(size_t row, float height);
         void setColumnWidth(size_t column, float width);
         float rowHeight(size_t row) const;

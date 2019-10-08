@@ -50,6 +50,8 @@ namespace ui {
             }
         };
 
+        auto maxSize = vec2{};
+
         for (auto& elem : children()){
             auto it = m_styles.find(elem);
             assert(it != m_styles.end());
@@ -58,10 +60,20 @@ namespace ui {
             const auto y = compute_position(style.x, top(), height(), elem->top(), elem->height());
             elem->setPos({std::floor(x), std::floor(y)});
             //elem->update({0.0f, 0.0f});
+
+            const auto req = getRequiredSize(elem);
+            maxSize.x = std::max(maxSize.x, req.x);
+            maxSize.y = std::max(maxSize.y, req.y);
         }
 
-        // TODO: check whether size needs to be exceeded
-        return size();
+        if (maxSize.x > width()){
+            setWidth(maxSize.x);
+        }
+        if (maxSize.y > height()){
+            setHeight(maxSize.y);
+        }
+
+        return maxSize;
     }
 
 } // namespace ui

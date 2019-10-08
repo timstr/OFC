@@ -219,12 +219,12 @@ struct BoxContainer : ui::FreeContainer, ui::BoxElement {
 
 std::unique_ptr<ui::GridContainer> makeGridLayout(){
     auto cont = std::make_unique<ui::GridContainer>(3, 3);
-    cont->setRowHeight(0, 1.0f);
+    /*cont->setRowHeight(0, 1.0f);
     cont->setRowHeight(1, 2.0f);
     cont->setRowHeight(2, 4.0f);
     cont->setColumnWidth(0, 5.0f);
     cont->setColumnWidth(1, 1.0f);
-    cont->setColumnWidth(2, 1.0f);
+    cont->setColumnWidth(2, 1.0f);*/
 
     const auto add_cell = [&cont](size_t i, size_t j, ui::Color color){
         auto& c = cont->putCell<BoxContainer>(i, j);
@@ -236,29 +236,31 @@ std::unique_ptr<ui::GridContainer> makeGridLayout(){
         //c2.setSize({25.0f, 25.0f}, true);
         //c.add<ui::Text>(ui::FreeContainer::Center, ui::FreeContainer::Center, "X", getFont());
 
-        auto btn = std::make_unique<ui::ToggleButton>(false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boom"});
+        auto btn = std::make_unique<ui::ToggleButton>(false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boooooom"});
         c.adopt(std::move(btn), ui::FreeContainer::Center, ui::FreeContainer::Center);
 
         //c.add<ui::ToggleButton>(ui::FreeContainer::Center, ui::FreeContainer::Center, false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boom"});
     };
     
-    add_cell(0, 0, 0x000000FF);
-    add_cell(0, 1, 0x880000FF);
-    add_cell(0, 2, 0x000000FF);
-    add_cell(1, 0, 0x880000FF);
-    add_cell(1, 1, 0x000000FF);
-    add_cell(1, 2, 0x880000FF);
-    add_cell(2, 0, 0x000000FF);
-    add_cell(2, 1, 0x880000FF);
-    add_cell(2, 2, 0x000000FF);
+    add_cell(0, 0, 0xBBBBBBFF);
+    add_cell(0, 1, 0xDDDDDDFF);
+    add_cell(0, 2, 0xBBBBBBFF);
+    add_cell(1, 0, 0xDDDDDDFF);
+    add_cell(1, 1, 0xBBBBBBFF);
+    add_cell(1, 2, 0xDDDDDDFF);
+    add_cell(2, 0, 0xBBBBBBFF);
+    add_cell(2, 1, 0xDDDDDDFF);
+    add_cell(2, 2, 0xBBBBBBFF);
 
     return cont;
 }
 
-void makeFlowLayout(ui::Window& win){
-    auto& cont = win.setRoot<ui::FlowContainer>();
+std::unique_ptr<ui::FlowContainer> makeFlowLayout(){
+    auto cont = std::make_unique<ui::FlowContainer>();
 
-    cont.write("a b c d e f g h i j k l m n o p q r s t u v A B C D E F G H I J K L M N O P Q R S T U V W X Y Z", getFont());
+    cont->write("a b c d e f g h i j k l m n o p q r s t u v A B C D E F G H I J K L M N O P Q R S T U V W X Y Z", getFont());
+
+    return cont;
 }
 
 class DragButton : public ui::Draggable, public ui::Control, public ui::BoxElement {
@@ -282,14 +284,18 @@ int main(){
     
     ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
 
-    auto contptr = makeGridLayout(); 
-    auto& cont = *contptr;
-    win.setRoot(std::move(contptr));
-    
-    auto gl = makeGridLayout();
-    gl->putCell(2, 0, makeGridLayout());
+    auto& root = win.setRoot<ui::FreeContainer>();
 
-    cont.putCell(2, 0, std::move(gl));
+    auto gcp = makeGridLayout();
+    auto& gc = *gcp;
+
+    root.adopt(std::move(gcp));
+
+    gc.setMinSize({200.0f, 200.0f});
+    gc.setPos({50.0f, 50.0f});
+
+    //gc.putCell(2, 0, makeFlowLayout());
+    gc.putCell(2, 0, makeGridLayout());
 
     //makeFlowLayout(win);
 

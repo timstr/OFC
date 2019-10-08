@@ -151,55 +151,130 @@ namespace ui {
     }
 
     vec2 GridContainer::update(){
-		std::vector<float> row_pos;
-		std::vector<float> col_pos;
-        row_pos.resize(m_rows + 1);
-        col_pos.resize(m_cols + 1);
+        const auto placeCells = [&](const std::vector<float>& widths, const std::vector<float>& heights){
+            auto rowPositions = std::vector<float>(m_rows + 1, 0.0f);
+            auto colPositions = std::vector<float>(m_cols + 1, 0.0f);
 
-        const auto width_sum = std::accumulate(m_widths.begin(), m_widths.end(), 0.0f);
-        const auto height_sum = std::accumulate(m_heights.begin(), m_heights.end(), 0.0f);
-
-        {
-            float row_acc = 0.0f;
-            for (size_t i = 0; i < m_rows; ++i){
-                const float h = height() * m_heights[i] / height_sum;
-                row_pos[i] = row_acc;
-                row_acc += h;
-            }
-            row_pos.back() = height();
-        }
-        {
-            float col_acc = 0.0f;
-            for (size_t i = 0; i < m_cols; ++i){
-                const float w = width() * m_widths[i] / width_sum;
-                col_pos[i] = col_acc;
-                col_acc += w;
-            }
-            col_pos.back() = width();
-        }
+            auto minWidths = std::vector<float>(m_cols, 0.0f);
+            auto minHeights = std::vector<float>(m_rows, 0.0f);
         
-        for (size_t i = 0; i < m_rows; ++i){
-            for (size_t j = 0; j < m_cols; ++j){
-                if (auto c = m_cells[i][j]; c.child){
-                    auto avail = c.child->size();
-                    c.child->setPos({col_pos[j], row_pos[i]});
-                    if (c.fillX){
-                        avail.x = col_pos[j + 1] - col_pos[j];
-                    }
-                    if (c.fillY){
-                        avail.y = row_pos[i + 1] - row_pos[i];
-                    }
-                    setAvailableSize(c.child, avail);
-                    // TODO: query child's size now to see if it exceeds the bounds
-                    // of its cell
+            const auto widthSum = std::accumulate(widths.begin(), widths.end(), 0.0f);
+            const auto heightSum = std::accumulate(heights.begin(), heights.end(), 0.0f);
 
-                    //e->update({col_pos[j + 1] - col_pos[j], row_pos[i + 1] - row_pos[i]});
+            {
+                float rowAcc = 0.0f;
+                for (size_t i = 0; i < m_rows; ++i){
+                    const float h = height() * heights[i] / heightSum;
+                    rowPositions[i] = rowAcc;
+                    rowAcc += h;
+                }
+                rowPositions.back() = rowAcc;
+            }
+            {
+                float colAcc = 0.0f;
+                for (size_t i = 0; i < m_cols; ++i){
+                    const float w = width() * widths[i] / widthSum;
+                    colPositions[i] = colAcc;
+                    colAcc += w;
+                }
+                colPositions.back() = colAcc;
+            }
+            
+            for (size_t i = 0; i < m_rows; ++i){
+                for (size_t j = 0; j < m_cols; ++j){
+                    if (auto c = m_cells[i][j]; c.child){
+                        auto avail = vec2{};//getRequiredSize(c.child);
+                        c.child->setPos({colPositions[j], rowPositions[i]});
+                        //if (c.fillX){
+                            avail.x = colPositions[j + 1] - colPositions[j];
+                        //}
+                        //if (c.fillY){
+                            avail.y = rowPositions[i + 1] - rowPositions[i];
+                        //}
+                        //if (c.fillX || c.fillY){
+                            setAvailableSize(c.child, avail);
+                        /*} else {
+                            unsetAvailableSize(c.child);
+                        }*/
+
+                        const auto required = getRequiredSize(c.child);
+
+                        minWidths[j] = std::max(minWidths[j], required.x);
+                        minHeights[i] = std::max(minHeights[i], required.y);
+                    }
                 }
             }
+
+            //setSize({colPositions.back(), rowPositions.back()});
+
+            return std::make_pair(minWidths, minHeights);
+        };
+
+        const auto collapseAndDistribute = [](const std::vector<float>& sizes, float availSize, const std::vector<float>& weights){
+            assert(sizes.size() == weights.size());
+            const auto n = sizes.size();
+            
+            const auto sumAllSizes = std::accumulate(sizes.begin(), sizes.end(), 0.0f);
+            const auto surplus = availSize - sumAllSizes;
+
+            auto ret = std::vector<float>{};
+
+            // Initially let each cell have exactly the space it needs, no more or less
+            for (const auto& s : sizes){
+                ret.push_back(s);
+            }
+
+            // If there is no remaining size, there's nothing left to do
+            if (surplus <= 0.0f){
+                return ret;
+            }
+
+            // find all cells whose fraction of the resulting size is less than their weight
+            auto cellsToGrow = std::vector<std::size_t>{};
+            const auto sumAllWeights = std::accumulate(weights.begin(), weights.end(), 0.0f);
+            auto sumGrowWeights = 0.0f;
+            for (std::size_t i = 0; i < n; ++i){
+                if (sizes[i] / availSize < weights[i] / sumAllWeights){
+                    sumGrowWeights += weights[i];
+                    cellsToGrow.push_back(i);
+                }
+            }
+
+            // Divide surplus among those cells in proportion to their weight
+            for (const auto& i : cellsToGrow){
+                ret[i] += surplus * weights[i] / sumGrowWeights;
+            }
+
+            // Done
+            return ret;
+        };
+
+        const auto [requiredWidths, requiredHeights] = placeCells(m_widths, m_heights);
+        
+        const auto minWidth = std::accumulate(requiredWidths.begin(), requiredWidths.end(), 0.0f);
+        const auto minHeight = std::accumulate(requiredHeights.begin(), requiredHeights.end(), 0.0f);
+        
+        if (width() < minWidth){
+            setWidth(minWidth);
+        }
+        if (height() < minHeight){
+            setHeight(minHeight);
         }
 
+        const auto availSize = size();
+
+        const auto newWidths = collapseAndDistribute(requiredWidths, availSize.x, m_widths);
+        const auto newHeights = collapseAndDistribute(requiredHeights, availSize.y, m_heights);
+
+        // TODO: avoid this when possible
+        placeCells(newWidths, newHeights);
+
+        // TODO: remove this difference from unconstrained cells proportionally
+        // while shifting constrained cells into new position
+        // TODO: return sum of horizontal and vertical sizes
+
         // TODO: allow size to be exceeded
-        return size();
+        return {minWidth, minHeight};
     }
 
 } // namespace ui

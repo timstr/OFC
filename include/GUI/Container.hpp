@@ -34,9 +34,7 @@ namespace ui {
         void unsetAvailableSize(const Element* child);
         std::optional<vec2> getAvailableSize(const Element* child) const;
 
-        // Call this after computing the layout
-        void updatePreviousSizes();
-        vec2 getPreviousSize(const Element* child) const;
+        vec2 getRequiredSize(const Element* child) const;
 
     private:
 
@@ -47,7 +45,8 @@ namespace ui {
         struct ChildData {
             std::unique_ptr<Element> child;
             std::optional<vec2> availableSize;
-            vec2 previousSize;
+            std::optional<vec2> previousSize;
+            std::optional<vec2> requiredSize;
         };
 
         std::vector<ChildData> m_children;
@@ -55,6 +54,12 @@ namespace ui {
         Window* m_parentWindow;
 
         Window* getWindow() const override final;
+        
+        // Call this after computing the layout
+        void updatePreviousSizes();
+        std::optional<vec2> getPreviousSize(const Element* child) const;
+
+        void setRequiredSize(const Element* child, vec2 size);
 
         friend class Element;
         friend class Window;

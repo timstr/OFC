@@ -559,7 +559,7 @@ namespace ui {
         // Get the element's original size
         const auto prevSize = elem->m_parent ?
             elem->m_parent->getPreviousSize(elem) :
-            elem->m_size;
+            std::optional<vec2>{};
 
         // Retrieve the element's available size
         const auto availSize = [&](){
@@ -575,9 +575,17 @@ namespace ui {
         if (availSize){
             elem->m_size = *availSize;
         }
+        // Limit the element's size according to its minimum and maximum size
+        elem->m_size.x = std::clamp(elem->m_size.x, elem->m_minsize.x, elem->m_maxsize.x);
+        elem->m_size.y = std::clamp(elem->m_size.y, elem->m_minsize.y, elem->m_maxsize.y);
 
         // Tell the element to update its contents and get the size it actually needs
         const auto actualSize = elem->update();
+
+        // Let the container know the required size (which may differ from the final size)
+        if (auto p = elem->getParentContainer()){
+            p->setRequiredSize(elem, actualSize);
+        }
 
         if (!availSize){
             elem->m_size = actualSize;
@@ -601,8 +609,10 @@ namespace ui {
         // If the element's size changed from its previous size, or if the parent
         // is dirty, update it too
         const auto sizeChanged = 
-            std::abs(elem->m_size.x - prevSize.x) > 1e-6 ||
-            std::abs(elem->m_size.y - prevSize.y) > 1e-6;
+            !prevSize.has_value() || (
+                std::abs(elem->m_size.x - prevSize->x) > 1e-6 ||
+                std::abs(elem->m_size.y - prevSize->y) > 1e-6
+            );
         
         if (sizeChanged){
             elem->onResize();
