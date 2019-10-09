@@ -620,11 +620,15 @@ namespace ui {
                 std::abs(elem->m_size.y - prevSize->y) > 1e-6
             );
         
+        const auto couldUseLessSpace = 
+            (actualSize.x < elem->m_size.x) ||
+            (actualSize.y < elem->m_size.y);
+
         if (sizeChanged){
             elem->onResize();
         }
 
-        if (elem->m_parent && (elem->m_parent->m_needs_update || sizeChanged)){
+        if (elem->m_parent && (elem->m_parent->m_needs_update || sizeChanged || couldUseLessSpace)){
             elem->m_parent->requireUpdate();
             elem->m_parent->forceUpdate();
         }

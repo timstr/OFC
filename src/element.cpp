@@ -290,7 +290,7 @@ namespace ui {
             return;
         }
         std::function<void(Element*)> fn = [&](Element* e){
-            win->enqueueForUpdate(e);
+            e->requireUpdate();
             if (auto cont = e->toContainer()){
                 for (auto c : cont->children()){
                     fn(c);
