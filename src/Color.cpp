@@ -186,4 +186,13 @@ namespace ui {
 		}
     }
 
+    Color interpolate(const Color& c0, const Color& c1, float t) noexcept {
+        return Color(
+            (1.0f - t) * c0.red() + t * c1.red(),
+            (1.0f - t) * c0.green() + t * c1.green(),
+            (1.0f - t) * c0.blue() + t * c1.blue(),
+            (1.0f - t) * c0.alpha() + t * c1.alpha()
+        );
+    }
+
 } // namespace ui

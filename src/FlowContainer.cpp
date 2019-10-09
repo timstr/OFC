@@ -2,6 +2,10 @@
 
 namespace ui {
 
+    FlowContainer::FlowContainer()
+        : m_padding(5.0f) {
+    }
+
     float FlowContainer::padding() const {
         return m_padding;
     }
@@ -49,11 +53,13 @@ namespace ui {
     }
 
     vec2 FlowContainer::update(){
+        // TODO: margins
+
         const auto avail = size();
         auto max = vec2{};
         bool firstOfLine = true;
-        float x = 0.0f;
-        float y = 0.0f;
+        float x = m_padding;
+        float y = m_padding;
         float nextY = 0.0f;
         for (auto c : children()){
             c->setPos({x, y});
@@ -68,14 +74,13 @@ namespace ui {
                 firstOfLine = false;
                 nextY = std::ceil(std::max(nextY, y + s.y));
             }
-            // TODO: how should the required height be calculated?
 
             //max.x = std::max(max.x, c->left() + s.x);
             //max.y = std::max(max.y, c->top() + s.y);
             max.x = std::max(max.x, s.x);
-            max.y = std::max(max.y, c->top() + s.y);
+            max.y = std::max(max.y, s.y);
         }
-        return max;
+        return {max.x + 2.0f * m_padding, max.y + 2.0f * m_padding};
 
         // TODO
         // Available size is simply size()

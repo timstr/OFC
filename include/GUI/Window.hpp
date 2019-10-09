@@ -150,7 +150,7 @@ namespace ui {
             Element* element;
             double duration;
             std::function<void(double)> fn;
-            std::function<void()> on_complete;
+            std::function<void()> onComplete;
             sf::Time timeStamp;
         };
 

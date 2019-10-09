@@ -39,7 +39,9 @@ namespace ui {
         m_keypressed_elems(),
         m_root(std::make_unique<Container>()) {
 
-        m_sfwindow.create(sf::VideoMode(width, height), title);
+        sf::ContextSettings settings;
+        settings.antialiasingLevel = 8;
+        m_sfwindow.create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
         m_sfwindow.setVerticalSyncEnabled(true);
     }
 
@@ -56,6 +58,7 @@ namespace ui {
         const auto screensize = getSize();
         v.reset({{0.0, 0.0}, screensize});
         m_sfwindow.setView(v);
+        m_root->setPos({0.0f, 0.0f});
         m_root->setSize(getSize());
         updateAllElements();
         m_root->render(m_sfwindow);
@@ -520,10 +523,13 @@ namespace ui {
             const auto t = (now - it->timeStamp).asSeconds() / it->duration;
             if (t > 1.0){
                 it->fn(1.0);
-                it->on_complete();
+                if (it->onComplete){
+                    it->onComplete();
+                }
                 it = m_transitions.erase(it);
             } else {
                 it->fn(t);
+                ++it;
             }
         }
     }

@@ -15,6 +15,7 @@ namespace ui {
 
     class FlowContainer : public Container {
     public:
+        FlowContainer();
 
         float padding() const;
 

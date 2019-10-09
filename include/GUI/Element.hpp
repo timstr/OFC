@@ -81,6 +81,8 @@ namespace ui {
         //  on_complete - (optional) called when the animation ends
         void startTransition(double duration, std::function<void(double)> fn, std::function<void()> on_complete = {});
 
+        void clearTransitions();
+
         // removes the element from its parent and returns a unique_ptr
         // containing the element.
         // Throws an exception if the element has no parent

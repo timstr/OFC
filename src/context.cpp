@@ -24,8 +24,8 @@ namespace ui {
     }
 
     void Context::run(){
-        m_cachedTime = m_clock.getElapsedTime();
         while (m_windows.size() > 0){
+            m_cachedTime = m_clock.getElapsedTime();
             for (auto& win : m_windows){
                 win->processEvents();
             }

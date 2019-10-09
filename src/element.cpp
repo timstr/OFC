@@ -192,6 +192,13 @@ namespace ui {
             );
         }
     }
+
+    void Element::clearTransitions(){
+        if (auto win = getParentWindow()){
+            win->removeTransitions(this);
+        }
+    }
+
     std::unique_ptr<Element> Element::orphan(){
         if (!m_parent){
             throw std::runtime_error("Attempted to orphan an element without a parent");

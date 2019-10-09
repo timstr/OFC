@@ -239,6 +239,8 @@ std::unique_ptr<ui::GridContainer> makeGridLayout(){
         auto btn = std::make_unique<ui::ToggleButton>(false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boooooom"});
         c.adopt(std::move(btn), ui::FreeContainer::Center, ui::FreeContainer::Center);
 
+        //c.add<ui::CallbackButton>(ui::FreeContainer::Center, ui::FreeContainer::Center, "Bang!", getFont());
+
         //c.add<ui::ToggleButton>(ui::FreeContainer::Center, ui::FreeContainer::Center, false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boom"});
     };
     
@@ -284,12 +286,13 @@ int main(){
     
     ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
 
-    auto& root = win.setRoot<ui::FreeContainer>();
+    //auto& root = win.setRoot<ui::FreeContainer>();
 
     auto gcp = makeGridLayout();
     auto& gc = *gcp;
 
-    root.adopt(std::move(gcp));
+    //root.adopt(std::move(gcp));
+    win.setRoot(std::move(gcp));
 
     gc.setMinSize({200.0f, 200.0f});
     gc.setPos({50.0f, 50.0f});

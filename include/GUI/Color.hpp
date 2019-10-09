@@ -47,4 +47,8 @@ namespace ui {
         void updateHSLFromRGB();
     };
 
+    Color interpolate(const Color& c0, const Color& c1, float t) noexcept;
+
+    // TODO: alpha blending function(s)
+
 };

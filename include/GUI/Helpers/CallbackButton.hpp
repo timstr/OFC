@@ -1,12 +1,13 @@
 #pragma once
 
 #include <GUI/Control.hpp>
-#include <GUI/Container.hpp>
+#include <GUI/FlowContainer.hpp>
 #include <GUI/BoxElement.hpp>
+#include <GUI/Text.hpp>
 
 namespace ui {
 
-    class CallbackButton : public Control, public Container, public BoxElement {
+    class CallbackButton : public Control, public FlowContainer, public BoxElement {
 	private:
 		enum class State {
 			Normal,
@@ -15,7 +16,7 @@ namespace ui {
 		};
 
     public:
-        CallbackButton(const String& label, const sf::Font& font, std::function<void()> on_click = {});
+        CallbackButton(const String& label, const sf::Font& font, std::function<void()> onClick = {});
 
 		void setNormalColor(Color);
 		Color getNormalColor() const;
@@ -24,14 +25,15 @@ namespace ui {
 		void setActiveColor(Color);
 		Color getActiveColor() const;
 
-		void setCallback(std::function<void()> _callback);
+		void setCallback(std::function<void()> callback);
 
-		void setCaption(const String& _label);
+		Text& getCaption() noexcept;
+		const Text& getCaption() const noexcept;
 
 		bool onLeftClick(int) override;
 		void onLeftRelease() override;
 
-		bool onKeyDown(ui::Key key) override;
+		bool onKeyDown(ui::Key) override;
 
 		void onMouseOver() override;
 		void onMouseOut() override;
@@ -40,10 +42,12 @@ namespace ui {
 
 	private:
 
-		std::function<void()> callback;
-		Text& label;
-		Color normal_color, hover_color, active_color;
-		State state;
+		std::function<void()> m_callback;
+		Text& m_label;
+		Color m_normalColor;
+        Color m_hoverColor;
+        Color m_activeColor;
+		State m_state;
 
 		void fadeColor(Color from, Color to);
 	};
