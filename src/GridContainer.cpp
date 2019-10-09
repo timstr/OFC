@@ -210,43 +210,62 @@ namespace ui {
             return std::make_pair(minWidths, minHeights);
         };
 
-        const auto collapseAndDistribute = [](const std::vector<float>& sizes, float availSize, const std::vector<float>& weights){
-            assert(sizes.size() == weights.size());
-            const auto n = sizes.size();
+        const auto collapseAndDistribute = [](const std::vector<float>& minimumSizes, float availSize, const std::vector<float>& weights){
+            // Mark all slots active
+            // set remaining space to be availSize
+            // assign weighted remaining space to all active slots
+            // Loop:
+            // - find an active slot whose assigned space is too small
+            // - assign it the space it needs and mark it inactive
+            // - subtract its minimum space from the remaining space
+            // - reassign weighted remaining space to all active slots
+
+            assert(minimumSizes.size() == weights.size());
+            assert(minimumSizes.size() > 0);
             
-            const auto sumAllSizes = std::accumulate(sizes.begin(), sizes.end(), 0.0f);
-            const auto surplus = availSize - sumAllSizes;
+            const auto n = minimumSizes.size();
 
-            auto ret = std::vector<float>{};
-
-            // Initially let each cell have exactly the space it needs, no more or less
-            for (const auto& s : sizes){
-                ret.push_back(s);
-            }
-
-            // If there is no remaining size, there's nothing left to do
-            if (surplus <= 0.0f){
-                return ret;
-            }
-
-            // find all cells whose fraction of the resulting size is less than their weight
-            auto cellsToGrow = std::vector<std::size_t>{};
-            const auto sumAllWeights = std::accumulate(weights.begin(), weights.end(), 0.0f);
-            auto sumGrowWeights = 0.0f;
+            std::vector<std::size_t> active;
             for (std::size_t i = 0; i < n; ++i){
-                if (sizes[i] / availSize < weights[i] / sumAllWeights){
-                    sumGrowWeights += weights[i];
-                    cellsToGrow.push_back(i);
+                active.push_back(i);
+            }
+
+            auto assignedSizes = std::vector<float>(n, 0.0f);
+
+            const auto divideRemainingSpace = [&](){
+                assert(availSize > 0.0f);
+                float totalWeight = 0.0f;
+                for (const auto i : active){
+                    totalWeight += weights[i];
+                }
+                for (const auto i : active){
+                    assignedSizes[i] = availSize * weights[i] / totalWeight;
+                }
+            };
+
+            divideRemainingSpace();
+
+            while (true){
+                bool found = false;
+                for (auto it = active.begin(); it != active.end();){
+                    const auto i = *it;
+                    if (assignedSizes[i] < minimumSizes[i]){
+                        availSize -= minimumSizes[i];
+                        assignedSizes[i] = minimumSizes[i];
+                        it = active.erase(it);
+                        divideRemainingSpace();
+                        found = true;
+                        break;
+                    } else {
+                        ++it;
+                    }
+                }
+                if (!found){
+                    return assignedSizes;
                 }
             }
-
-            // Divide surplus among those cells in proportion to their weight
-            for (const auto& i : cellsToGrow){
-                ret[i] += surplus * weights[i] / sumGrowWeights;
-            }
-
-            // Done
-            return ret;
+            assert(false);
+            return assignedSizes;
         };
 
         const auto [requiredWidths, requiredHeights] = placeCells(m_widths, m_heights);

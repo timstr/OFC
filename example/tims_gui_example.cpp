@@ -294,7 +294,7 @@ int main(){
     //root.adopt(std::move(gcp));
     win.setRoot(std::move(gcp));
 
-    gc.setMinSize({200.0f, 200.0f});
+    //gc.setMinSize({200.0f, 200.0f});
     gc.setPos({50.0f, 50.0f});
 
     //gc.putCell(2, 0, makeFlowLayout());
