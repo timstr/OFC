@@ -13,7 +13,8 @@ namespace ui {
     TextEntry::TextEntry(const sf::Font& font, unsigned height)
         : Text("", font, {}, height, {})
         , m_cursorHead(0)
-        , m_cursorTail(0) {
+        , m_cursorTail(0)
+        , m_overtype(false) {
 
         setBackgroundColor(0xFFFFFFFF);
         //setBorderRadius(5.0f);
@@ -44,7 +45,29 @@ namespace ui {
     }
 
     bool TextEntry::onLeftClick(int clicks){
-        // TODO find cursor position
+        const auto s = text();
+
+        if (s.getSize() > 0){
+            std::size_t min = static_cast<std::size_t>(-1);
+            float minDist = 1e6f;
+            const auto mousePos = localMousePos().x;
+            for (std::size_t i = 0; i < s.getSize(); ++i){
+                const auto charPos = m_text.findCharacterPos(i).x;
+                const auto dist = std::abs(charPos - mousePos);
+                if (dist < minDist){
+                    minDist = dist;
+                    min = i;
+                }
+            }
+
+            assert(min != static_cast<std::size_t>(-1));
+
+            m_cursorHead = min;
+            if (!shift()){
+                m_cursorTail = m_cursorHead;
+            }
+        }
+
         startTyping();
         return true;
     }
@@ -62,7 +85,6 @@ namespace ui {
     }
 
     void TextEntry::handleBackspace(){
-        // TODO: delete whole previous word if shift is down
         const auto s = text();
 
 
@@ -77,22 +99,26 @@ namespace ui {
         }
 
         if (m_cursorHead > 0){
-            m_cursorHead -= 1;
+            if (ctrl()){
+                skipLeft();
+            } else {
+                m_cursorHead -= 1;
+            }
+            const auto cut = s.substring(0, m_cursorHead) + s.substring(m_cursorTail);
             m_cursorTail = m_cursorHead;
-            const auto cut = s.substring(0, m_cursorHead) + s.substring(m_cursorHead + 1);
             setText(cut);
             handleChange();
         }
     }
 
     void TextEntry::handleDelete(){
-        // TODO: delete whole following word if shift is down
         const auto s = text();
 
         // If there is a selection, just erase that
         if (m_cursorHead != m_cursorTail){
             const auto [i0, i1] = selection();
             const auto cut = s.substring(0, i0) + s.substring(i1);
+            m_cursorHead = i0;
             m_cursorTail = m_cursorHead;
             setText(cut);
             handleChange();
@@ -100,7 +126,13 @@ namespace ui {
         }
 
         if (m_cursorHead < s.getSize()){
-            const auto cut = s.substring(0, m_cursorHead) + s.substring(m_cursorHead + 1);
+            if (ctrl()){
+                skipRight();
+            } else {
+                m_cursorHead += 1;
+            }
+            const auto cut = s.substring(0, m_cursorTail) + s.substring(m_cursorHead);
+            m_cursorHead = m_cursorTail;
             setText(cut);
             handleChange();
         }
@@ -108,13 +140,8 @@ namespace ui {
 
     void TextEntry::handleLeft(){
         if (m_cursorHead > 0){
-            const auto s = text();
-            if (ctrl() && s.getSize() > 0 && m_cursorHead > 0){
-                bool ws = s[m_cursorHead - 1] == ' ';
-                if (!ws){
-                    skipLeft(false);
-                }
-                skipLeft(true);
+            if (ctrl()){
+                skipLeft();
             } else {
                 m_cursorHead -= 1;
             }
@@ -127,12 +154,8 @@ namespace ui {
     void TextEntry::handleRight(){
         if (m_cursorHead < text().getSize()){
             const auto s = text();
-            if (ctrl() && s.getSize() > 0 && m_cursorHead < s.getSize()){
-                bool ws = s[m_cursorHead] == ' ';
-                if (!ws){
-                    skipRight(false);
-                }
-                skipRight(true);
+            if (ctrl()){
+                skipRight();
             } else {
                 m_cursorHead += 1;
             }
@@ -157,7 +180,7 @@ namespace ui {
     }
 
     void TextEntry::handleInsert(){
-        // TODO: should insert/overtype mode be global or per-field?
+        m_overtype = !m_overtype;
     }
 
     void TextEntry::handleSelectAll(){
@@ -246,17 +269,23 @@ namespace ui {
             }
 
             rect.setPosition({posHead, 0.0f});
-            rect.setSize({2.0, static_cast<float>(characterSize())});
+
+            float width = 2.0f;
+            if (m_overtype){
+                if (m_cursorHead < text().getSize()){
+                    width = m_text.findCharacterPos(m_cursorHead + 1).x - m_text.findCharacterPos(m_cursorHead).x;
+                } else {
+                    width = static_cast<float>(characterSize()) * 0.5f;
+                }
+            }
+
+            rect.setSize({width, static_cast<float>(characterSize())});
             const auto t = Context::get().getProgramTime().asSeconds();
             const auto v = 0.5f + 0.5f * std::cos(t * pi<float> * 4.0f);
             rect.setFillColor(interpolate(0x0, 0xFF, v));
 
             rw.draw(rect);
         }
-
-        // TODO: render selection
-
-        // TODO: render box instead of bar if in overtype mode
     }
 
     TextEntry* TextEntry::toTextEntry(){
@@ -269,17 +298,28 @@ namespace ui {
             return;
         }
 
-        const auto& str = text();
+        auto str = text();
 
-        const auto [i0, i1] = selection();
+        if (m_cursorHead != m_cursorTail){
+            const auto [i0, i1] = selection();
 
-        const auto first = str.substring(0, i0);
-        const auto mid = String{unicode};
-        const auto rest = str.substring(i1);
+            const auto first = str.substring(0, i0);
+            const auto mid = String{unicode};
+            const auto rest = str.substring(i1);
 
-        setText(first + mid + rest);
-        m_cursorHead = i0 + 1;
-        m_cursorTail = m_cursorHead;
+            setText(first + mid + rest);
+            m_cursorHead = i0 + 1;
+            m_cursorTail = m_cursorHead;
+        } else {
+            if (m_overtype && m_cursorHead < str.getSize()){
+                str[m_cursorHead] = unicode;
+            } else {
+                str.insert(m_cursorHead, {unicode});
+            }
+            m_cursorHead += 1;
+            m_cursorTail = m_cursorHead;
+            setText(str);
+        }
 
         handleChange();
     }
@@ -305,24 +345,50 @@ namespace ui {
         return keyDown(Key::LControl) || keyDown(Key::RControl);
     }
 
-    void TextEntry::skipLeft(bool whitespace){
+    void TextEntry::skipLeft(){
         const auto s = text();
         if (s.getSize() == 0){
             return;
         }
-        while (m_cursorHead > 0 && (whitespace == (s[m_cursorHead - 1] == ' '))){
-            m_cursorHead -= 1;
+
+        const auto doSkip = [&](bool whitespace){
+            while (m_cursorHead > 0 && (whitespace != (s[m_cursorHead - 1] == ' '))){
+                m_cursorHead -= 1;
+            }
+        };
+
+        if (m_cursorHead == 0){
+            return;
         }
+
+        bool ws = s[m_cursorHead - 1] == ' ';
+        if (!ws){
+            doSkip(true);
+        }
+        doSkip(false);
     }
 
-    void TextEntry::skipRight(bool whitespace){
+    void TextEntry::skipRight(){
         const auto s = text();
         if (s.getSize() == 0){
             return;
         }
-        while (m_cursorHead < s.getSize() && (whitespace == (s[m_cursorHead] == ' '))){
-            m_cursorHead += 1;
+
+        const auto doSkip = [&](bool whitespace){
+            while (m_cursorHead < s.getSize() && (whitespace != (s[m_cursorHead] == ' '))){
+                m_cursorHead += 1;
+            }
+        };
+
+        if (m_cursorHead == s.getSize()){
+            return;
         }
+
+        bool ws = s[m_cursorHead] == ' ';
+        if (!ws){
+            doSkip(true);
+        }
+        doSkip(false);
     }
 
 } // namespace ui

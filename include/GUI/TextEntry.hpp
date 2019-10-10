@@ -71,13 +71,13 @@ namespace ui {
 
         bool ctrl() const;
 
-        void skipLeft(bool whitespace);
+        void skipLeft();
 
-        void skipRight(bool whitespace);
+        void skipRight();
 
-        // TODO: rename to cursorHead and cursorTail (head is moved, tail stays put when shift is held and selections are made)
         std::size_t m_cursorHead;
         std::size_t m_cursorTail;
+        bool m_overtype;
 
         friend class Window;
     };
