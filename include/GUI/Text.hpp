@@ -24,10 +24,10 @@ namespace ui {
         void setText(const String&);
 
         const Font& font() const;
-        unsigned characterSize() const;
+        std::size_t characterSize() const;
         uint32_t style() const;
-        const Color& fillColor() const;
-        const Color& outlineColor() const;
+        Color fillColor() const;
+        Color outlineColor() const;
         float outlineThickness() const;
 
         void setFont(const Font& font);
@@ -42,8 +42,9 @@ namespace ui {
     private:
         Text* toText() override;
 
-    private:
         sf::Text m_text;
+
+        friend class TextEntry;
     };
 
 } // namespace ui

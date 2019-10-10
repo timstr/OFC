@@ -1,13 +1,14 @@
 #pragma once
 
+#include <GUI/BoxElement.hpp>
 #include <GUI/Control.hpp>
 #include <GUI/Text.hpp>
 
 namespace ui {
 
-    class TextEntry : public Control, public Text {
+    class TextEntry : public Control, public Text, public BoxElement {
     public:
-        TextEntry(sf::Font& font, unsigned height = 15);
+        TextEntry(const sf::Font& font, unsigned height = 15);
 
         void startTyping();
 
@@ -15,22 +16,68 @@ namespace ui {
 
         bool isTyping() const;
 
-        // called immediately after the character is typed
-        virtual void onType(uint32_t unicode);
+    protected:
+
+        virtual void onChange();
 
         virtual void onReturn();
 
         virtual bool validate() const;
 
+    private:
+
+        bool onLeftClick(int clicks) override;
+
         bool onKeyDown(Key) override;
+
+        void onLoseFocus() override;
+
+        void render(sf::RenderWindow&) override;
+
+        void handleBackspace();
+        
+        void handleDelete();
+        
+        void handleLeft();
+        
+        void handleRight();
+        
+        void handleHome();
+        
+        void handleEnd();
+
+        void handleInsert();
+
+        void handleSelectAll();
+        
+        void handleCopy();
+        
+        void handleCut();
+        
+        void handlePaste();
+
+        void handleReturn();
 
     private:
         virtual TextEntry* toTextEntry() override;
 
         void type(uint32_t unicode);
 
-        unsigned m_cursor_begin;
-        unsigned m_cursor_end;
+        void handleChange();
+
+        std::pair<std::size_t, std::size_t> selection() const;
+
+        bool shift() const;
+
+        bool ctrl() const;
+
+        void skipLeft(bool whitespace);
+
+        void skipRight(bool whitespace);
+
+        // TODO: rename to cursorHead and cursorTail (head is moved, tail stays put when shift is held and selections are made)
+        std::size_t m_cursorHead;
+        std::size_t m_cursorTail;
 
         friend class Window;
     };

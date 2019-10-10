@@ -72,7 +72,7 @@ struct TestElement : ui::Control, ui::FlowContainer, ui::BoxElement, ui::Draggab
 		redmenu.setActiveColor(0x00FF00FF);
 		redmenu.setHoverColor(0x0000FFFF);
 
-		add<ui::CallbackTextEntry>("", getFont(), [this](const ui::String& text) {
+		add<ui::CallbackTextEntry>(getFont(), [this](const ui::String& text) {
 			this->label.setText(text);
 		});
 	}
@@ -217,6 +217,46 @@ struct BoxContainer : ui::FreeContainer, ui::BoxElement {
     }
 };
 
+std::unique_ptr<ui::Element> makeRandomControl(){
+    const auto dist = std::uniform_int_distribution<int>{0, 3};
+
+    switch (dist(randeng)){
+    case 0:
+        return std::make_unique<ui::ToggleButton>(
+            false,
+            getFont(),
+            std::function<void(bool)>{},
+            std::pair<ui::String, ui::String>{"bada bing", "bada boooooom"}
+        );
+    case 1:
+        return std::make_unique<ui::CallbackButton>(
+            "Bang",
+            getFont(),
+            [](){
+                std::cout << "Bang!\n";
+            }
+        );
+    case 2:
+        return std::make_unique<ui::TextEntry>(
+            getFont()
+        );
+    case 3:
+        return std::make_unique<ui::CallbackTextEntry>(
+            getFont(),
+            [](const ui::String& s){
+                std::cout << "You entered: \"" + s.toAnsiString() + "\"\n";
+            },
+            [](const ui::String& s){
+                return std::find(s.begin(), s.end(), ' ') == s.end();
+            },
+            [](const ui::String& s){
+                std::cout << "The text was changed to: \"" + s.toAnsiString() + "\"\n";
+            }
+        );
+    }
+    throw std::runtime_error("Aaaarg");
+}
+
 std::unique_ptr<ui::GridContainer> makeGridLayout(){
     auto cont = std::make_unique<ui::GridContainer>(3, 3);
     /*cont->setRowHeight(0, 1.0f);
@@ -231,17 +271,8 @@ std::unique_ptr<ui::GridContainer> makeGridLayout(){
         cont->setHorizontalFill(i, j, true);
         cont->setVerticalFill(i, j, true);
         c.setBackgroundColor(color);
-        //auto& c2 = c.add<BoxContainer>(ui::FreeContainer::Center, ui::FreeContainer::Center);
-        //c2.setBackgroundColor(0xFFFFFFFF);
-        //c2.setSize({25.0f, 25.0f}, true);
-        //c.add<ui::Text>(ui::FreeContainer::Center, ui::FreeContainer::Center, "X", getFont());
-
-        auto btn = std::make_unique<ui::ToggleButton>(false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boooooom"});
-        c.adopt(std::move(btn), ui::FreeContainer::Center, ui::FreeContainer::Center);
-
-        //c.add<ui::CallbackButton>(ui::FreeContainer::Center, ui::FreeContainer::Center, "Bang!", getFont());
-
-        //c.add<ui::ToggleButton>(ui::FreeContainer::Center, ui::FreeContainer::Center, false, getFont(), std::function<void(bool)>{}, std::pair<ui::String, ui::String>{"bada bing", "bada boom"});
+        
+        c.adopt(makeRandomControl(), ui::FreeContainer::Center, ui::FreeContainer::Center);
     };
     
     add_cell(0, 0, 0xBBBBBBFF);

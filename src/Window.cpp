@@ -147,21 +147,15 @@ namespace ui {
 
                 } */
                 case sf::Event::TextEntered: {
-                    if (m_text_entry){
-                        m_text_entry->type(event.text.unicode);
-                    }
+                    handleType(event.text.unicode);
                     break;
                 }
                 case sf::Event::KeyPressed: {
-                    if (m_focus_elem){
-                        m_focus_elem->onKeyDown(event.key.code);
-                    }
+                    handleKeyDown(event.key.code);
                     break;
                 }
                 case sf::Event::KeyReleased: {
-                    if (m_focus_elem){
-                        m_focus_elem->onKeyUp(event.key.code);
-                    }
+                    handleKeyUp(event.key.code);
                     break;
                 }
                 case sf::Event::MouseWheelScrolled: {
@@ -284,30 +278,17 @@ namespace ui {
     }
 
     void Window::handleKeyDown(sf::Keyboard::Key key){
-        // search for longest matching set of keys in registered commands
-		size_t max = 0;
-		auto current_cmd = m_commands.end();
-		for (auto cmd_it = m_commands.begin(), end = m_commands.end(); cmd_it != end; ++cmd_it) {
-			if (cmd_it->first.first == key) {
-				bool match = true;
-				for (int i = 0; i < cmd_it->first.second.size() && match; i++) {
-					match = sf::Keyboard::isKeyPressed(cmd_it->first.second[i]);
-				}
-				if (match && cmd_it->first.second.size() >= max) {
-					max = cmd_it->first.second.size();
-					current_cmd = cmd_it;
-				}
-			}
-		}
+        if (handleTextEntryKeyDown(key)){
+            return;
+        }
 
-		if (current_cmd != m_commands.end()) {
-			// if one was found, invoke that command
-			current_cmd->second();
-			return;
-		}
+        if (handleCommand(key)){
+            return;
+        }
 
 		// if no command was found, send key stroke to the current element
 		auto elem = propagate(m_focus_elem, &Control::onKeyDown, key);
+
 		// and send key up to last element receiving same keystroke
 		// in case of switching focus while key is held
 		auto key_it = m_keypressed_elems.find(key);
@@ -330,6 +311,12 @@ namespace ui {
 		    it->second->onKeyUp(key);
 			m_keypressed_elems.erase(it);
 		}
+    }
+
+    void Window::handleType(sf::Int32 unicode){
+        if (m_text_entry){
+            m_text_entry->type(unicode);
+        }
     }
 
     void Window::handleScroll(vec2 pos, vec2 scroll){
@@ -387,6 +374,101 @@ namespace ui {
         if (m_drag_elem){
             propagate(newElem, &Control::onHover, m_drag_elem);
         }
+    }
+
+    bool Window::handleCommand(Key key){
+        // search for longest matching set of keys in registered commands
+		size_t max = 0;
+		auto current_cmd = m_commands.end();
+		for (auto cmd_it = m_commands.begin(), end = m_commands.end(); cmd_it != end; ++cmd_it) {
+			if (cmd_it->first.first == key) {
+				bool match = true;
+				for (int i = 0; i < cmd_it->first.second.size() && match; i++) {
+					match = sf::Keyboard::isKeyPressed(cmd_it->first.second[i]);
+				}
+				if (match && cmd_it->first.second.size() >= max) {
+					max = cmd_it->first.second.size();
+					current_cmd = cmd_it;
+				}
+			}
+		}
+
+		if (current_cmd != m_commands.end()) {
+			// if one was found, invoke that command
+			current_cmd->second();
+			return true;
+		}
+        return false;
+    }
+
+    bool Window::handleTextEntryKeyDown(Key key){
+        if (!m_text_entry){
+            return false;
+        }
+
+        const bool ctrl =
+            sf::Keyboard::isKeyPressed(Key::LControl) ||
+            sf::Keyboard::isKeyPressed(Key::RControl);
+
+        switch (key){
+            case Key::BackSpace:
+			    m_text_entry->handleBackspace();
+			    break;
+		    case Key::Delete:
+			    m_text_entry->handleDelete();
+			    break;
+		    case Key::Left:
+			    m_text_entry->handleLeft();
+			    break;
+		    case Key::Right:
+			    m_text_entry->handleRight();
+			    break;
+		    case Key::Home:
+			    m_text_entry->handleHome();
+			    break;
+		    case Key::End:
+			    m_text_entry->handleEnd();
+			    break;
+		    case Key::Enter:
+			    m_text_entry->handleReturn();
+			    break;
+            case Key::Insert:
+                m_text_entry->handleInsert();
+                break;
+            case Key::A:
+                if (ctrl){
+                    m_text_entry->handleSelectAll();
+                    break;
+                } else {
+                    return false;
+                }
+            case Key::C:
+                if (ctrl){
+                    m_text_entry->handleCopy();
+                    break;
+                } else {
+                    return false;
+                }
+            case Key::X:
+                if (ctrl){
+                    m_text_entry->handleCut();
+                    break;
+                } else {
+                    return false;
+                }
+            case Key::V:
+                if (ctrl){
+                    m_text_entry->handlePaste();
+                    break;
+                } else {
+                    return false;
+                }
+            default:
+                return false;
+            // NOTE: typing of actual characters is handled by the text entered event
+        }
+
+        return true;
     }
 
     void Window::onRemoveElement(Element* elem){
@@ -472,6 +554,10 @@ namespace ui {
         m_focus_elem = control;
     }
 
+    Control* Window::currentControl() const {
+        return m_focus_elem;
+    }
+
     void Window::startDrag(Draggable* d, vec2 o){
         m_drag_elem = d;
         m_drag_offset = o;
@@ -486,7 +572,9 @@ namespace ui {
     }
 
     void Window::startTyping(TextEntry* te){
+        assert(te);
         m_text_entry = te;
+        focusTo(te);
     }
 
     void Window::stopTyping(){

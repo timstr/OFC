@@ -76,11 +76,17 @@ namespace ui {
         void handleKeyDown(sf::Keyboard::Key key);
         void handleKeyUp(sf::Keyboard::Key key);
 
+        void handleType(sf::Int32 unicode);
+
         void handleScroll(vec2 pos, vec2 scroll);
 
         void handleDrag();
 
         void handleHover(vec2 pos);
+
+        bool handleCommand(Key);
+
+        bool handleTextEntryKeyDown(Key);
 
         // clean up all listeners for a window
         void onRemoveElement(Element*);
@@ -91,6 +97,8 @@ namespace ui {
         // the new one.
         // passing null will remove the focus from all elements.
         void focusTo(Control*);
+
+        Control* currentControl() const;
 
         // Simulate the moving of the mouse to a control, effectively
         // calling onMouseOut on all controls from the currently one
@@ -159,6 +167,7 @@ namespace ui {
         std::vector<Element*> m_updateQueue;
 
         // registered keyboard commands
+        // TODO: move this to context?
         std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> m_commands;
 
         std::unique_ptr<Container> m_root;
