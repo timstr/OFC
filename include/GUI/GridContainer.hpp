@@ -53,6 +53,8 @@ namespace ui {
         std::vector<float> m_heights;
 
         vec2 update() override;
+
+        void onRemoveChild(const Element*) override;
     };
 
     // Template definitions

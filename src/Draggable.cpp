@@ -7,7 +7,9 @@ namespace ui {
 
     void Draggable::startDrag(){
         if (auto win = getParentWindow()){
-            win->startDrag(this, localMousePos());
+            auto mp = localMousePos();
+            assert(mp);
+            win->startDrag(this, *mp);
         }
     }
 

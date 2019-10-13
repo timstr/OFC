@@ -20,6 +20,55 @@ const sf::Font& getFont() {
 	return font;
 }
 
+std::unique_ptr<ui::PullDownMenu<ui::String>> makeBasicPullDown(){
+    return std::make_unique<ui::PullDownMenu<ui::String>>(
+        std::vector<ui::String>{"Bread", "Butter", "Apricots", "Orphans", "Oregonians", "Orifices", "Mankind"},
+        getFont(),
+        [](const ui::String& s) {
+            std::cout << "You chose \"" << s.toAnsiString() << "\"\n";
+		}
+    );
+}
+
+std::unique_ptr<ui::PullDownMenu<ui::Color>> makeRedPullDown(){
+    std::vector<std::pair<ui::Color, ui::String>> color_options {
+		{0xcf302dff, "red"},
+		{0x990f04ff, "cherry"},
+		{0xe2252bff, "rose"},
+		{0x600f0cff, "jam"},
+		{0x600f0cff, "merlot"},
+		{0x5f0a03ff, "garnet"},
+		{0xb80f0aff, "crimson"},
+		{0x900604ff, "ruby"},
+		{0x920c09ff, "scarlet"},
+		{0x4c0805ff, "wine"},
+		{0x7e2811ff, "brick"},
+		{0xa91b0dff, "apple"},
+		{0x420d09ff, "mahogany"},
+		{0x720d05ff, "blood"},
+		{0x5e1915ff, "sangria"},
+		{0x7a1913ff, "berry"},
+		{0x670c09ff, "currant"},
+		{0xbc5449ff, "blush"},
+		{0xd31505ff, "candy"},
+		{0x9c1003ff, "lipstick"}
+	};
+	auto pdptr = std::make_unique<ui::PullDownMenu<ui::Color>>(
+        color_options,
+        getFont()
+    );
+
+    auto& pd = *pdptr;
+
+    pd.setOnChange([&pd](const ui::Color& c){
+        pd.setNormalColor(c);
+        pd.setHoverColor(ui::interpolate(c, 0xFFFFFFFF, 0.5f));
+        pd.setActiveColor(ui::interpolate(c, 0x000000FF, 0.3f));
+    });
+
+    return pdptr;
+}
+
 struct TestElement : ui::Control, ui::FlowContainer, ui::BoxElement, ui::Draggable {
 	TestElement(ui::String name) : name(name), label(add<ui::Text>(name, getFont())) {
 
@@ -34,43 +83,6 @@ struct TestElement : ui::Control, ui::FlowContainer, ui::BoxElement, ui::Draggab
 		colorbtn.setNormalColor(0xFF0000FF);
 		colorbtn.setActiveColor(0x00FF00FF);
 		colorbtn.setHoverColor(0x0000FFFF);
-
-		add<ui::PullDownMenu<ui::String>>(
-            std::vector<ui::String>{"Bread", "Butter", "Apricots", "Orphans", "Oregonians", "Orifices", "Mankind"},
-            getFont(),
-            [this](const ui::String& s) {
-                this->label.setText(s);
-		    }
-        );
-		std::vector<std::pair<ui::Color, ui::String>> color_options {
-			{0xcf302dff, "red"},
-			{0x990f04ff, "cherry"},
-			{0xe2252bff, "rose"},
-			{0x600f0cff, "jam"},
-			{0x600f0cff, "merlot"},
-			{0x5f0a03ff, "garnet"},
-			{0xb80f0aff, "crimson"},
-			{0x900604ff, "ruby"},
-			{0x920c09ff, "scarlet"},
-			{0x4c0805ff, "wine"},
-			{0x7e2811ff, "brick"},
-			{0xa91b0dff, "apple"},
-			{0x420d09ff, "mahogany"},
-			{0x720d05ff, "blood"},
-			{0x5e1915ff, "sangria"},
-			{0x7a1913ff, "berry"},
-			{0x670c09ff, "currant"},
-			{0xbc5449ff, "blush"},
-			{0xd31505ff, "candy"},
-			{0x9c1003ff, "lipstick"}
-		};
-		auto& redmenu = add<ui::PullDownMenu<ui::Color>>(color_options, getFont(), [this](const ui::Color& color) {
-			this->setBackgroundColor(color);
-		});
-
-		redmenu.setNormalColor(0xFF0000FF);
-		redmenu.setActiveColor(0x00FF00FF);
-		redmenu.setHoverColor(0x0000FFFF);
 
 		add<ui::CallbackTextEntry>(getFont(), [this](const ui::String& text) {
 			this->label.setText(text);
@@ -109,7 +121,9 @@ struct TestElement : ui::Control, ui::FlowContainer, ui::BoxElement, ui::Draggab
 		std::cout << name << " was left released" << std::endl;
 		if (dragging()) {
 			stopDrag();
-			drop(localMousePos());
+            if (auto mp = localMousePos()){
+                drop(*mp);
+            }
 		}
 	}
 
@@ -218,7 +232,7 @@ struct BoxContainer : ui::FreeContainer, ui::BoxElement {
 };
 
 std::unique_ptr<ui::Element> makeRandomControl(){
-    const auto dist = std::uniform_int_distribution<int>{0, 3};
+    const auto dist = std::uniform_int_distribution<int>{0, 5};
 
     switch (dist(randeng)){
     case 0:
@@ -248,11 +262,12 @@ std::unique_ptr<ui::Element> makeRandomControl(){
             },
             [](const ui::String& s){
                 return std::find(s.begin(), s.end(), ' ') == s.end();
-            },
-            [](const ui::String& s){
-                std::cout << "The text was changed to: \"" + s.toAnsiString() + "\"\n";
             }
         );
+    case 4:
+        return makeBasicPullDown();
+    case 5:
+        return makeRedPullDown();
     }
     throw std::runtime_error("Aaaarg");
 }
@@ -272,7 +287,7 @@ std::unique_ptr<ui::GridContainer> makeGridLayout(){
         cont->setVerticalFill(i, j, true);
         c.setBackgroundColor(color);
         
-        c.adopt(makeRandomControl(), ui::FreeContainer::Center, ui::FreeContainer::Center);
+        c.adopt(ui::FreeContainer::Center, ui::FreeContainer::InsideTop, makeRandomControl());
     };
     
     add_cell(0, 0, 0xBBBBBBFF);

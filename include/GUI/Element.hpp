@@ -2,7 +2,9 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <cassert>
 #include <functional>
+#include <optional>
 
 namespace ui {
     
@@ -39,7 +41,7 @@ namespace ui {
         vec2 rootPos();
 
         // The position of the mouse relative to the element
-        vec2 localMousePos();
+        std::optional<vec2> localMousePos();
 
         // called whenever the element's position is changed
         virtual void onMove();
@@ -88,9 +90,16 @@ namespace ui {
         // Throws an exception if the element has no parent
         std::unique_ptr<Element> orphan();
 
-        // Removes the element from its parent and destroys it
-        // Throws an exception if the element has no parent
-        // Do not use the element after calling close.
+        // Cause the element to be rendered in front of its siblings
+        void bringToFront();
+
+        // Called whenever the element is removed from the UI, either
+        // directly (from its parent container) or indirectly.
+        virtual void onRemove();
+
+        // Removes the element from its parent and destroys it.
+        // Throws an exception if the element has no parent.
+        // DO NOT use the element after calling close.
         // Dereferencing the element will cause Undefined Behavior.
         void close();
 
@@ -196,6 +205,8 @@ namespace ui {
         // This method is called when the element's size or position is queried.
         void forceUpdate();
 
+        void cancelUpdate();
+
         void requireDeepUpdate();
 
     private:
@@ -210,10 +221,15 @@ namespace ui {
         Container* m_parent;
 
         virtual Container* toContainer();
+        const Container* toContainer() const;
         virtual Control* toControl();
+        const Control* toControl() const;
         virtual Draggable* toDraggable();
+        const Draggable* toDraggable() const;
         virtual Text* toText();
+        const Text* toText() const;
         virtual TextEntry* toTextEntry();
+        const TextEntry* toTextEntry() const;
 
         virtual Window* getWindow() const;
 
@@ -221,5 +237,13 @@ namespace ui {
         friend class Control;
         friend class Window;
     };
+
+    template<typename T>
+    std::unique_ptr<T> makeOrphan(T& element){
+        static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
+        auto ptr = dynamic_cast<T*>(element.orphan().release());
+        assert(ptr);
+        return std::unique_ptr<T>{ptr};
+    }
 
 } // namespace ui

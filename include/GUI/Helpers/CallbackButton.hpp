@@ -50,6 +50,8 @@ namespace ui {
 		State m_state;
 
 		void fadeColor(Color from, Color to);
+
+        void onRemove() override;
 	};
 
 } // namespace ui

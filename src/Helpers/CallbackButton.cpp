@@ -18,6 +18,7 @@ namespace ui {
 
     void CallbackButton::setNormalColor(Color c){
         m_normalColor = c;
+        setBackgroundColor(c);
     }
 
     Color CallbackButton::getNormalColor() const {
@@ -53,17 +54,22 @@ namespace ui {
     }
 
     bool CallbackButton::onLeftClick(int clicks){
-        if (m_callback){
-            m_callback();
-        }
         m_state = State::Active;
         clearTransitions();
         setBackgroundColor(m_activeColor);
+        if (m_callback){
+            m_callback();
+        }
         return true;
     }
 
     void CallbackButton::onLeftRelease(){
-        if (hit(pos() + localMousePos())){
+        auto mp = localMousePos();
+        if (!mp){
+            setBackgroundColor(m_normalColor);
+            return;
+        }
+        if (hit(pos() + *mp)){
             m_state = State::Hover;
             fadeColor(backgroundColor(), m_hoverColor);
         } else {
@@ -74,7 +80,14 @@ namespace ui {
 
     bool CallbackButton::onKeyDown(ui::Key key){
         if (key == ui::Key::Return || key == ui::Key::Space){
-            return onLeftClick(1);
+            fadeColor(
+                m_activeColor,
+                m_state == State::Hover ? m_hoverColor : m_normalColor
+            );
+            if (m_callback){
+                m_callback();
+            }
+            return true;
         }
         return false;
     }
@@ -105,6 +118,11 @@ namespace ui {
                 setBackgroundColor(interpolate(from, to, static_cast<float>(t)));
             }
         );
+    }
+
+    void CallbackButton::onRemove(){
+        m_state = State::Normal;
+        setBackgroundColor(m_normalColor);
     }
 
 }

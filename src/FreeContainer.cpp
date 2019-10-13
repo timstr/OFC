@@ -10,7 +10,7 @@ namespace ui {
         m_styles.try_emplace(eptr, ElementStyle{PositionStyle::None, PositionStyle::None});
     }
 
-    void FreeContainer::adopt(std::unique_ptr<Element> e, PositionStyle xstyle, PositionStyle ystyle){
+    void FreeContainer::adopt(PositionStyle xstyle, PositionStyle ystyle, std::unique_ptr<Element> e){
         const Element* eptr = e.get();
         Container::adopt(std::move(e));
         m_styles.try_emplace(eptr, ElementStyle{xstyle, ystyle});
@@ -56,14 +56,19 @@ namespace ui {
             auto it = m_styles.find(elem);
             assert(it != m_styles.end());
             const auto& style = it->second;
-            const auto x = compute_position(style.y, left(), width(), elem->left(), elem->width());
-            const auto y = compute_position(style.x, top(), height(), elem->top(), elem->height());
+            const auto x = compute_position(style.x, left(), width(), elem->left(), elem->width());
+            const auto y = compute_position(style.y, top(), height(), elem->top(), elem->height());
             elem->setPos({std::floor(x), std::floor(y)});
             //elem->update({0.0f, 0.0f});
 
             const auto req = getRequiredSize(elem);
-            maxSize.x = std::max(maxSize.x, req.x);
-            maxSize.y = std::max(maxSize.y, req.y);
+            if (
+                (style.x != PositionStyle::OutsideBegin && style.x != PositionStyle::OutsideEnd) &&
+                (style.y != PositionStyle::OutsideBegin && style.y != PositionStyle::OutsideEnd)
+            ){
+                maxSize.x = std::max(maxSize.x, req.x);
+                maxSize.y = std::max(maxSize.y, req.y);
+            }
         }
 
         if (maxSize.x > width()){
@@ -74,6 +79,12 @@ namespace ui {
         }
 
         return maxSize;
+    }
+
+    void FreeContainer::onRemoveChild(const Element* e){
+        auto it = m_styles.find(e);
+        assert(it != m_styles.end());
+        m_styles.erase(it);
     }
 
 } // namespace ui

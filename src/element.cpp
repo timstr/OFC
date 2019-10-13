@@ -21,7 +21,7 @@ namespace ui {
 
     Element::Element() :
         m_position({0.0f, 0.0f}),
-        m_size({100.0f, 100.0f}),
+        m_size({0.0f, 0.0f}),
         m_minsize({0.0f, 0.0f}),
         m_maxsize({really_big, really_big}),
         m_needs_update(false),
@@ -29,23 +29,34 @@ namespace ui {
         m_parent(nullptr) {
         
     }
+    
     Element::~Element(){
-        if (Window* win = getWindow()){
+        if (auto win = getParentWindow()){
             win->onRemoveElement(this);
         }
     }
+    
     float Element::left(){
-        forceUpdate();
+        if (m_parent){
+            m_parent->forceUpdate();
+        }
         return m_position.x;
     }
+    
     float Element::top(){
-        forceUpdate();
+        if (m_parent){
+            m_parent->forceUpdate();
+        }
         return m_position.y;
     }
+    
     vec2 Element::pos(){
-        forceUpdate();
+        if (m_parent){
+            m_parent->forceUpdate();
+        }
         return m_position;
     }
+    
     void Element::setLeft(float v){
         if (different(v, m_position.x)){
             m_position.x = v;
@@ -54,6 +65,7 @@ namespace ui {
             }
         }
     }
+    
     void Element::setTop(float v){
         if (different(v, m_position.y)){
             m_position.y = v;
@@ -62,6 +74,7 @@ namespace ui {
             }
         }
     }
+    
     void Element::setPos(vec2 v){
         if (different(v, m_position)){
             m_position = v;
@@ -70,29 +83,37 @@ namespace ui {
             }
         }
     }
+    
     vec2 Element::rootPos(){
         return pos() + (m_parent ? m_parent->rootPos() : vec2{});
     }
-    vec2 Element::localMousePos(){
-        auto win = getParentWindow();
-        assert(win);
-        return win->getMousePosition() - rootPos();
+    
+    std::optional<vec2> Element::localMousePos(){
+        if (auto win = getParentWindow()){
+            return win->getMousePosition() - rootPos();
+        }
+        return {};
     }
+    
     void Element::onMove(){
 
     }
+    
     float Element::width(){
         forceUpdate();
         return m_size.x;
     }
+    
     float Element::height(){
         forceUpdate();
         return m_size.y;
     }
+    
     vec2 Element::size(){
         forceUpdate();
         return m_size;
     }
+    
     void Element::setWidth(float v, bool force){
         v = std::abs(v);
         if (force){
@@ -105,6 +126,7 @@ namespace ui {
             requireUpdate();
         }
     }
+    
     void Element::setMinWidth(float v){
         v = std::abs(v);
         m_minsize.x = v;
@@ -115,6 +137,7 @@ namespace ui {
             setWidth(v);
         }
     }
+    
     void Element::setMaxWidth(float v){
         v = std::abs(v);
         m_maxsize.x = v;
@@ -125,6 +148,7 @@ namespace ui {
             setWidth(v);
         }
     }
+    
     void Element::setHeight(float v, bool force){
         v = std::abs(v);
         if (force){
@@ -137,6 +161,7 @@ namespace ui {
             requireUpdate();
         }
     }
+    
     void Element::setMinHeight(float v){
         v = std::abs(v);
         m_minsize.y = v;
@@ -147,6 +172,7 @@ namespace ui {
             setHeight(v);
         }
     }
+    
     void Element::setMaxHeight(float v){
         v = std::abs(v);
         m_maxsize.y = v;
@@ -157,21 +183,26 @@ namespace ui {
             setHeight(v);
         }
     }
+    
     void Element::setSize(vec2 v, bool force){
         setWidth(v.x, force);
         setHeight(v.y, force);
     }
+    
     void Element::setMinSize(vec2 v){
         setMinWidth(v.x);
         setMinHeight(v.y);
     }
+    
     void Element::setMaxSize(vec2 v){
         setMaxWidth(v.x);
         setMaxHeight(v.y);
     }
+    
     void Element::onResize(){
 
     }
+    
     bool Element::hit(vec2 p) const {
         return
             (p.x >= m_position.x) &&
@@ -179,9 +210,11 @@ namespace ui {
             (p.y >= m_position.y) &&
             (p.y < m_position.y + m_size.y);
     }
+    
     Element* Element::findElementAt(vec2 p){
         return hit(p) ? this : nullptr;
     }
+    
     void Element::startTransition(double duration, std::function<void(double)> fn, std::function<void()> on_complete){
         if (auto win = getParentWindow()){
             win->addTransition(
@@ -205,33 +238,84 @@ namespace ui {
         }
         return m_parent->release(this);
     }
+    
+    void Element::bringToFront(){
+        if (m_parent) {
+			auto& c = m_parent->m_children;
+			auto it = std::find_if(
+                c.begin(),
+                c.end(),
+                [this](const Container::ChildData& cd){
+                    return cd.child.get() == this;
+                }
+            );
+            assert(it != c.end());
+            auto cd = std::move(*it);
+            c.erase(it);
+            c.push_back(std::move(cd));
+		}
+    }
+
+    void Element::onRemove(){
+    
+    }
+
     void Element::close(){
         orphan();
     }
+    
     Container* Element::getParentContainer(){
         return m_parent;
     }
+    
     const Container* Element::getParentContainer() const {
         return m_parent;
     }
+    
     Window* Element::getParentWindow() const {
         return getWindow();
     }
+    
     Container* Element::toContainer(){
         return nullptr;
     }
+    
+    const Container* Element::toContainer() const {
+        return const_cast<const Container*>(const_cast<Element*>(this)->toContainer());
+    }
+    
     Control* Element::toControl(){
         return nullptr;
     }
+    
+    const Control* Element::toControl() const {
+        return const_cast<const Control*>(const_cast<Element*>(this)->toControl());
+    }
+    
     Draggable* Element::toDraggable(){
         return nullptr;
     }
+    
+    const Draggable* Element::toDraggable() const {
+        return const_cast<const Draggable*>(const_cast<Element*>(this)->toDraggable());
+    }
+    
     Text* Element::toText(){
         return nullptr;
     }
+    
+    const Text* Element::toText() const {
+        return const_cast<const Text*>(const_cast<Element*>(this)->toText());
+    }
+    
     TextEntry* Element::toTextEntry(){
         return nullptr;
     }
+    
+    const TextEntry* Element::toTextEntry() const {
+        return const_cast<const TextEntry*>(const_cast<Element*>(this)->toTextEntry());
+    }
+    
     Window* Element::getWindow() const {
         if (m_parent){
             return m_parent->getWindow();
@@ -281,6 +365,14 @@ namespace ui {
                 win->updateOneElement(this);
                 assert(!m_needs_update);
             }
+        }
+    }
+
+    void Element::cancelUpdate(){
+        if (auto win = getParentWindow()){
+            win->cancelUpdate(this);
+            m_needs_update = false;
+            m_isUpdating = false;
         }
     }
 

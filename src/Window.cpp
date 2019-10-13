@@ -13,10 +13,17 @@ namespace ui {
         // the element is returned. Otherwise, the process is repeated on its
         // ancestor controls, until one handles the event, or null is returned.
         template<typename... ArgsT>
-        Control* propagate(Control* elem, bool (Control::* handlerFn)(ArgsT...), ArgsT... args){
+        Control* propagate(Window* self, Control* elem, bool (Control::* handlerFn)(ArgsT...), ArgsT... args){
             while (elem){
+                assert(elem->getParentWindow() == self);
                 if ((elem->*handlerFn)(args...)){
-                    return elem;
+                    if (elem->getParentWindow() != self){
+                        // NOTE: if the element was removed from the UI, it should not be
+                        // used in the future.
+                        return nullptr;
+                    } else {
+                        return elem;
+                    }
                 }
                 elem = elem->getParentControl();
             }
@@ -251,11 +258,11 @@ namespace ui {
         }
 
         if (btn == sf::Mouse::Left) {
-			m_lclick_elem = propagate(hitCtrl, &Control::onLeftClick, numClicks);
+			m_lclick_elem = propagate(this, hitCtrl, &Control::onLeftClick, numClicks);
 		} else if (btn == sf::Mouse::Middle) {
-			m_mclick_elem = propagate(hitCtrl, &Control::onMiddleClick, numClicks);
+			m_mclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
 		} else if (btn == sf::Mouse::Middle) {
-			m_rclick_elem = propagate(hitCtrl, &Control::onMiddleClick, numClicks);
+			m_rclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
 		}
 
         m_last_click_btn = btn;
@@ -287,7 +294,7 @@ namespace ui {
         }
 
 		// if no command was found, send key stroke to the current element
-		auto elem = propagate(m_focus_elem, &Control::onKeyDown, key);
+		auto elem = propagate(this, m_focus_elem, &Control::onKeyDown, key);
 
 		// and send key up to last element receiving same keystroke
 		// in case of switching focus while key is held
@@ -321,7 +328,7 @@ namespace ui {
 
     void Window::handleScroll(vec2 pos, vec2 scroll){
         auto elem = findControlAt(pos);
-        propagate(elem, &Control::onScroll, scroll);
+        propagate(this, elem, &Control::onScroll, scroll);
     }
 
     void Window::handleDrag(){
@@ -372,7 +379,7 @@ namespace ui {
         m_hover_elem = newElem;
 
         if (m_drag_elem){
-            propagate(newElem, &Control::onHover, m_drag_elem);
+            propagate(this, newElem, &Control::onHover, m_drag_elem);
         }
     }
 
@@ -471,49 +478,58 @@ namespace ui {
         return true;
     }
 
-    void Window::onRemoveElement(Element* elem){
+    void Window::onRemoveElement(Element* e){
         // NOTE: this function will be called during the
         // destructor of Element. Do not call any virtual functions.
-        if (!elem){
-            return;
-        }
-        if (elem == m_focus_elem){
-            m_focus_elem = m_focus_elem->getParentControl();
-        }
-        if (elem == m_drag_elem){
-            m_drag_elem->stopDrag();
-        }
-        if (elem == m_hover_elem){
-            m_hover_elem = m_hover_elem->getParentControl();
-            if (m_hover_elem){
-                m_drag_offset += elem->rootPos() - m_hover_elem->rootPos();
+        assert(e);
+
+        auto parentControl = e->getParentControl();
+
+        const auto cleanup = [&](const Element* elem){
+            if (elem == m_focus_elem){
+                m_focus_elem = parentControl;
             }
-        }
-        if (elem == m_text_entry){
-            m_text_entry->stopTyping();
-        }
-        if (elem == m_lclick_elem){
-            m_lclick_elem = nullptr;
-        }
-        if (elem == m_mclick_elem){
-            m_lclick_elem = nullptr;
-        }
-        if (elem == m_rclick_elem){
-            m_lclick_elem = nullptr;
-        }
-        for (auto it = m_keypressed_elems.begin(), end = m_keypressed_elems.end(); it != end;){
-            const auto& [key, ctrl] = *it;
-            if (elem == ctrl){
-                m_keypressed_elems.erase(it++);
-                break;
-            } else {
-                ++it;
+            if (elem == m_drag_elem){
+                stopDrag();
             }
-        }
-        m_updateQueue.erase(std::remove(
-            m_updateQueue.begin(),
-            m_updateQueue.end(),
-        elem), m_updateQueue.end());
+            if (elem == m_hover_elem){
+                m_hover_elem = parentControl;
+            }
+            if (elem == m_text_entry){
+                stopTyping();
+            }
+            if (elem == m_lclick_elem){
+                m_lclick_elem = nullptr;
+            }
+            if (elem == m_mclick_elem){
+                m_lclick_elem = nullptr;
+            }
+            if (elem == m_rclick_elem){
+                m_lclick_elem = nullptr;
+            }
+            for (auto it = m_keypressed_elems.begin(), end = m_keypressed_elems.end(); it != end;){
+                const auto& [key, ctrl] = *it;
+                if (elem == ctrl){
+                    m_keypressed_elems.erase(it++);
+                    break;
+                } else {
+                    ++it;
+                }
+            }
+            cancelUpdate(elem);
+            removeTransitions(elem);
+        };
+
+        std::function<void(const Element*)> cleanupAll = [&](const Element* elem){
+            cleanup(elem);
+            if (auto cont = elem->toContainer()){
+                for (auto child : cont->children()){
+                    cleanupAll(child);
+                }
+            }
+        };
+
+        cleanupAll(e);
     }
 
     void Window::focusTo(Control* control){
@@ -674,15 +690,21 @@ namespace ui {
         elem->m_size.y = std::clamp(elem->m_size.y, elem->m_minsize.y, elem->m_maxsize.y);
 
         // Tell the element to update its contents and get the size it actually needs
-        const auto actualSize = elem->update();
+        const auto actualRequiredSize = elem->update();
 
         // Let the container know the required size (which may differ from the final size)
         if (auto p = elem->getParentContainer()){
-            p->setRequiredSize(elem, actualSize);
+            p->setRequiredSize(
+                elem,
+                {
+                    std::clamp(actualRequiredSize.x, elem->m_minsize.x, elem->m_maxsize.x),
+                    std::clamp(actualRequiredSize.y, elem->m_minsize.y, elem->m_maxsize.y)
+                }
+            );
         }
 
         if (!availSize){
-            elem->m_size = actualSize;
+            elem->m_size = actualRequiredSize;
         }
 
         // Limit the element's size according to its minimum and maximum size
@@ -692,10 +714,13 @@ namespace ui {
         // mark the element as clean
         elem->m_needs_update = false;
 
-        // cache the element's previous sizes to allow efficient rerendering decisions
-        // (see getPreviousSize() above)
         if (auto c = elem->toContainer()){
+            // cache the element's previous sizes to allow efficient rerendering decisions
+            // (see getPreviousSize() above)
             c->updatePreviousSizes();
+
+            // see if any children moved, call onMove on those that did
+            c->updatePositions();
         }
 
         elem->m_isUpdating = false;
@@ -709,8 +734,8 @@ namespace ui {
             );
         
         const auto couldUseLessSpace = 
-            (actualSize.x < elem->m_size.x) ||
-            (actualSize.y < elem->m_size.y);
+            (actualRequiredSize.x < elem->m_size.x) ||
+            (actualRequiredSize.y < elem->m_size.y);
 
         if (sizeChanged){
             elem->onResize();
@@ -720,6 +745,27 @@ namespace ui {
             elem->m_parent->requireUpdate();
             elem->m_parent->forceUpdate();
         }
+    }
+
+    void Window::cancelUpdate(const Element* elem){
+        /*const auto isDecendent = [&](const Element* e){
+            const std::function<bool(const Element*)> impl = [&](const Element* x){
+                if (elem == x){
+                    return true;
+                }
+                if (auto c = x->getParentContainer()){
+                    return impl(c);
+                }
+                return false;
+            };
+            return impl(e);
+        };*/
+        assert(!elem->m_isUpdating);
+        m_updateQueue.erase(std::remove/*_if*/(
+            m_updateQueue.begin(),
+            m_updateQueue.end(),
+            elem /*isDecendent*/
+        ), m_updateQueue.end());
     }
 
 } // namespace ui

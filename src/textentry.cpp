@@ -50,10 +50,11 @@ namespace ui {
         if (s.getSize() > 0){
             std::size_t min = static_cast<std::size_t>(-1);
             float minDist = 1e6f;
-            const auto mousePos = localMousePos().x;
+            const auto mp = localMousePos();
+            assert(mp);
             for (std::size_t i = 0; i < s.getSize(); ++i){
                 const auto charPos = m_text.findCharacterPos(i).x;
-                const auto dist = std::abs(charPos - mousePos);
+                const auto dist = std::abs(charPos - mp->x);
                 if (dist < minDist){
                     minDist = dist;
                     min = i;
@@ -104,7 +105,9 @@ namespace ui {
             } else {
                 m_cursorHead -= 1;
             }
-            const auto cut = s.substring(0, m_cursorHead) + s.substring(m_cursorTail);
+            const auto [i0, i1] = selection();
+            const auto cut = s.substring(0, i0) + s.substring(i1);
+            m_cursorHead = i0;
             m_cursorTail = m_cursorHead;
             setText(cut);
             handleChange();

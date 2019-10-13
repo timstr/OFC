@@ -90,13 +90,11 @@ namespace ui {
 
     void GridContainer::setRowHeight(size_t row, float height){
 		assert(row >= 0 && row < m_rows);
-        assert(height > 0.0f);
         m_heights[row] = height;
     }
 
     void GridContainer::setColumnWidth(size_t column, float width){
 		assert(column >= 0 && column < m_cols);
-        assert(width > 0.0f);
         m_widths[column] = width;
     }
 
@@ -117,6 +115,7 @@ namespace ui {
         if (prev){
             release(prev);
         }
+        assert(!getCell(row, column));
         auto eptr = e.get();
         adopt(std::move(e));
         m_cells[row][column].child = eptr;
@@ -294,6 +293,17 @@ namespace ui {
 
         // TODO: allow size to be exceeded
         return {minWidth, minHeight};
+    }
+
+    void GridContainer::onRemoveChild(const Element* e){
+        for (auto& row : m_cells){
+            for (auto& cell : row){
+                if (cell.child == e){
+                    cell.child = nullptr;
+                    return;
+                }
+            }
+        }
     }
 
 } // namespace ui

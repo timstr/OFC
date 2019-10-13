@@ -37,6 +37,8 @@ namespace ui {
         
         vec2 update() override;
 
+        void onRemoveChild(const Element*) override;
+
         float m_padding;
 
         struct WhiteSpace {

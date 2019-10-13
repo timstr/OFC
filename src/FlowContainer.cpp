@@ -91,4 +91,8 @@ namespace ui {
         // and return that.
     }
 
+    void FlowContainer::onRemoveChild(const Element* e){
+        // TODO
+    }
+
 } // namespace ui

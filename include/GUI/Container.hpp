@@ -14,6 +14,7 @@ namespace ui {
     class Container : virtual public Element {
     public:
         Container();
+        ~Container();
 
         void render(sf::RenderWindow&) override;
 
@@ -25,6 +26,8 @@ namespace ui {
         void adopt(std::unique_ptr<Element>);
 
         std::unique_ptr<Element> release(const Element*);
+
+        virtual void onRemoveChild(const Element*);
 
         std::vector<Element*> children();
         std::vector<const Element*> children() const;
@@ -47,6 +50,7 @@ namespace ui {
             std::optional<vec2> availableSize;
             std::optional<vec2> previousSize;
             std::optional<vec2> requiredSize;
+            std::optional<vec2> previousPos;
         };
 
         std::vector<ChildData> m_children;
@@ -58,6 +62,9 @@ namespace ui {
         // Call this after computing the layout
         void updatePreviousSizes();
         std::optional<vec2> getPreviousSize(const Element* child) const;
+
+        // Finds any children that moved and calls onMove on each one
+        void updatePositions();
 
         void setRequiredSize(const Element* child, vec2 size);
 

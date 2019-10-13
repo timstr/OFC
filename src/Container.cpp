@@ -1,5 +1,7 @@
 #include <GUI/Container.hpp>
 
+#include <GUI/Window.hpp>
+
 #include <algorithm>
 #include <cassert>
 
@@ -9,6 +11,12 @@ namespace ui {
 
     Container::Container()
         : m_parentWindow(nullptr) {
+    }
+
+    Container::~Container(){
+        if (auto win = getParentWindow()){
+            win->onRemoveElement(this);
+        }
     }
     
     void Container::adopt(std::unique_ptr<Element> e){
@@ -30,10 +38,32 @@ namespace ui {
         if (it == m_children.end()){
             throw std::runtime_error("Attempted to remove a nonexistent child window");
         }
+        if (auto win = getParentWindow()){
+            win->onRemoveElement(it->child.get());
+        }
+
+        std::function<void(Element*)> callOnRemove = [&](Element* elem){
+            elem->onRemove();
+            if (const auto& cont = elem->toContainer()){
+                for (const auto& ch : cont->children()){
+                    callOnRemove(ch);
+                }
+            }
+        };
+        callOnRemove(it->child.get());
+
+
+        onRemoveChild(it->child.get());
         std::unique_ptr<Element> ret = std::move(it->child);
+        assert(ret->m_parent == this);
+        ret->m_parent = nullptr;
         m_children.erase(it);
         requireUpdate();
         return ret;
+    }
+
+    void Container::onRemoveChild(const Element*){
+
     }
 
     std::vector<Element*> Container::children(){
@@ -140,6 +170,16 @@ namespace ui {
         );
         assert(it != m_children.end());
         return it->previousSize;
+    }
+
+    void Container::updatePositions(){
+        for (auto& cd : m_children){
+            const auto pos = cd.child->m_position;
+            if (!cd.previousPos || (std::abs(cd.previousPos->x - pos.x) > 1e-6f || std::abs(cd.previousSize->y - pos.y) > 1e-6f)){
+                cd.previousPos = pos;
+                cd.child->onMove();
+            }
+        }
     }
 
     void Container::setRequiredSize(const Element* child, vec2 size){

@@ -55,7 +55,7 @@ namespace ui {
         T& add(PositionStyle xstyle, PositionStyle ystyle, Args&&... args);
 
         void adopt(std::unique_ptr<Element>);
-        void adopt(std::unique_ptr<Element>, PositionStyle xstyle, PositionStyle ystyle);
+        void adopt(PositionStyle xstyle, PositionStyle ystyle, std::unique_ptr<Element>);
 
         std::unique_ptr<Element> release(const Element*);
         
@@ -65,6 +65,8 @@ namespace ui {
 
         vec2 update() override;
 
+        void onRemoveChild(const Element*) override;
+
         // mapping of all elements with fixed position style
         struct ElementStyle {
             PositionStyle x;
@@ -72,6 +74,8 @@ namespace ui {
         };
 
         std::map<const Element*, ElementStyle> m_styles;
+
+
     };
 
     // Template definitions

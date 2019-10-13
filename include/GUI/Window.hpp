@@ -124,6 +124,7 @@ namespace ui {
         void enqueueForUpdate(Element*);
         void updateAllElements();
         void updateOneElement(Element*);
+        void cancelUpdate(const Element*);
 
     private:
 
@@ -173,9 +174,10 @@ namespace ui {
         std::unique_ptr<Container> m_root;
         sf::RenderWindow m_sfwindow;
 
+        friend class Element;
+        friend class Container;
         friend class Context;
         friend class Control;
-        friend class Element;
         friend class Draggable;
         friend class TextEntry;
     };
