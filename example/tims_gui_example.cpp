@@ -232,7 +232,7 @@ struct BoxContainer : ui::FreeContainer, ui::BoxElement {
 };
 
 std::unique_ptr<ui::Element> makeRandomControl(){
-    const auto dist = std::uniform_int_distribution<int>{0, 5};
+    const auto dist = std::uniform_int_distribution<int>{0, 7};
 
     switch (dist(randeng)){
     case 0:
@@ -268,6 +268,26 @@ std::unique_ptr<ui::Element> makeRandomControl(){
         return makeBasicPullDown();
     case 5:
         return makeRedPullDown();
+    case 6:
+        return std::make_unique<ui::Slider<float>>(
+            5.0f,
+            0.0f,
+            10.0f,
+            getFont(),
+            [](float v){
+                std::cout << "The value is now " << v << '\n';
+            }
+        );
+    case 7:
+        return std::make_unique<ui::Slider<int>>(
+            5,
+            0,
+            10,
+            getFont(),
+            [](int v){
+                std::cout << "The value is now " << v << '\n';
+            }
+        );
     }
     throw std::runtime_error("Aaaarg");
 }

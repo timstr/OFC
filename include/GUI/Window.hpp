@@ -88,6 +88,8 @@ namespace ui {
 
         bool handleTextEntryKeyDown(Key);
 
+        void transferResponseTo(Control*);
+
         // clean up all listeners for a window
         void onRemoveElement(Element*);
 
@@ -155,6 +157,8 @@ namespace ui {
         // elements which handled a key press
         std::map<Key, Control*> m_keypressed_elems;
 
+        Control* m_currentEventResponder;
+
         struct Transition {
             Element* element;
             double duration;
@@ -180,6 +184,9 @@ namespace ui {
         friend class Control;
         friend class Draggable;
         friend class TextEntry;
+
+        template<typename... ArgsT>
+        friend Control* propagate(Window*, Control*, bool (Control::*)(ArgsT...), ArgsT...);
     };
 
     // template definitions

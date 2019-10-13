@@ -41,6 +41,9 @@ namespace ui {
         bool hasFocus() const;
         void grabFocus();
 
+    protected:
+        void transferEventResposeTo(Control* other);
+
     private:
         Control* toControl() noexcept override final;
     };

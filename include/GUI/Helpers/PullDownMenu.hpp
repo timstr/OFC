@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <GUI/Control.hpp>
 #include <GUI/FreeContainer.hpp>
@@ -8,9 +8,11 @@
 
 namespace ui {
 
+    // TODO: up/down/home/end to move selection
+
     namespace detail {
         template<typename T>
-        class PullDownMenuBase : public FreeContainer {
+        class PullDownMenuBase : public FreeContainer, public Control {
         public:
             PullDownMenuBase(std::vector<std::pair<T, String>> options, const sf::Font& font, std::function<void(const T&)> onChange = {});
             
@@ -27,6 +29,8 @@ namespace ui {
             void expand();
 
             void collapse();
+
+            void onLoseFocus() override;
 
             std::vector<std::pair<T, String>> m_options;
             std::function<void(const T&)> m_onChange;
@@ -166,6 +170,13 @@ namespace ui {
             assert(m_listItems.getParentContainer() == this);
             m_listItemsUP = makeOrphan(m_listItems);
             assert(m_listItems.getParentContainer() == nullptr);
+        }
+
+        template<typename T>
+        inline void PullDownMenuBase<T>::onLoseFocus(){
+            if (!m_listItemsUP){
+                collapse();
+            }
         }
 
     } // namespace detail

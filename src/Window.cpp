@@ -6,29 +6,33 @@
 
 namespace ui {
 
-    namespace {
-        // Generic function for propagating an event through handler callbacks
-        // Calls `handlerFn` on the element with the given arguments. If the
-        // element returns `true`, that element has responded to the event, and
-        // the element is returned. Otherwise, the process is repeated on its
-        // ancestor controls, until one handles the event, or null is returned.
-        template<typename... ArgsT>
-        Control* propagate(Window* self, Control* elem, bool (Control::* handlerFn)(ArgsT...), ArgsT... args){
-            while (elem){
-                assert(elem->getParentWindow() == self);
-                if ((elem->*handlerFn)(args...)){
-                    if (elem->getParentWindow() != self){
-                        // NOTE: if the element was removed from the UI, it should not be
-                        // used in the future.
-                        return nullptr;
-                    } else {
-                        return elem;
-                    }
+    // Generic function for propagating an event through handler callbacks
+    // Calls `handlerFn` on the element with the given arguments. If the
+    // element returns `true`, that element has responded to the event, and
+    // the element is returned. Otherwise, the process is repeated on its
+    // ancestor controls, until one handles the event, or null is returned.
+    template<typename... ArgsT>
+    Control* propagate(Window* self, Control* elem, bool (Control::* handlerFn)(ArgsT...), ArgsT... args){
+        self->m_currentEventResponder = nullptr;
+        while (elem){
+            assert(elem->getParentWindow() == self);
+            if ((elem->*handlerFn)(args...)){
+                // Test to see whether response was transferred to a different element
+                if (self->m_currentEventResponder){
+                    assert(self->m_currentEventResponder->getParentWindow() == self);
+                    return self->m_currentEventResponder;
                 }
-                elem = elem->getParentControl();
+                if (elem->getParentWindow() != self){
+                    // NOTE: if the element was removed from the UI, it should not be
+                    // used in the future.
+                    return nullptr;
+                } else {
+                    return elem;
+                }
             }
-            return nullptr;
+            elem = elem->getParentControl();
         }
+        return nullptr;
     }
 
     Window::Window(unsigned width, unsigned height, const String& title) :
@@ -41,6 +45,7 @@ namespace ui {
         m_lclick_elem(nullptr),
         m_mclick_elem(nullptr),
         m_rclick_elem(nullptr),
+        m_currentEventResponder(nullptr),
         m_last_click_time(),
         m_last_click_btn(),
         m_keypressed_elems(),
@@ -253,18 +258,20 @@ namespace ui {
 			// achieved by faking an old timestamp
 			m_last_click_time = Context::get().getProgramTime() - Context::get().getDoubleClickTime();
         } else {
-            focusTo(hitCtrl);
             m_last_click_time = Context::get().getProgramTime();
         }
 
         if (btn == sf::Mouse::Left) {
 			m_lclick_elem = propagate(this, hitCtrl, &Control::onLeftClick, numClicks);
+            focusTo(m_lclick_elem);
 		} else if (btn == sf::Mouse::Middle) {
 			m_mclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
+            focusTo(m_mclick_elem);
 		} else if (btn == sf::Mouse::Middle) {
 			m_rclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
+            focusTo(m_rclick_elem);
 		}
-
+        
         m_last_click_btn = btn;
     }
 
@@ -476,6 +483,10 @@ namespace ui {
         }
 
         return true;
+    }
+
+    void Window::transferResponseTo(Control* c){
+        m_currentEventResponder = c;
     }
 
     void Window::onRemoveElement(Element* e){
