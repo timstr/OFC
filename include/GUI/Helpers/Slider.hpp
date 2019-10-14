@@ -7,8 +7,7 @@
 
 namespace ui {
 
-    // TODO: left/right/home/end to adjust
-    // TODO: shift+left/right for fine adjustment
+    // TODO: shift+drag for fine adjustment
 
     template<typename Number>
     class Slider : public Control, public FreeContainer, public BoxElement {
@@ -32,9 +31,14 @@ namespace ui {
 
         bool onLeftClick(int) override;
 
+        bool onKeyDown(Key) override;
+
+        void onResize() override;
+
         Number m_value;
         Number m_minimum;
         Number m_maximum;
+        std::optional<float> m_fineDragStartPos;
         std::function<void(Number)> m_onChange;
         Text& m_label;
         Dragger& m_dragger;
@@ -52,17 +56,25 @@ namespace ui {
         }
 
         bool onLeftClick(int) override {
+            if (keyDown(Key::LShift) || keyDown(Key::RShift)){
+                m_parent.m_fineDragStartPos = left();
+            }
             startDrag();
             return true;
         }
 
         void onLeftRelease() override {
             stopDrag();
+            m_parent.m_fineDragStartPos.reset();
         }
 
         void onDrag() override {
             const auto max = m_parent.width() - width();
-            const auto x = std::clamp(left(), 0.0f, max);
+            const auto l = m_parent.m_fineDragStartPos ?
+                (left() * 0.1f + 0.9f * *m_parent.m_fineDragStartPos) :
+                left();
+            const auto x = 
+                std::clamp(l, 0.0f, max);
             setLeft(x);
             setTop(0.0f);
             m_parent.updateFromDragger();
@@ -82,6 +94,9 @@ namespace ui {
         , m_onChange(std::move(onChange))
         , m_label(add<Text>(FreeContainer::InsideLeft, FreeContainer::Center, "", font))
         , m_dragger(add<Dragger>(*this)) {
+
+        static_assert(std::is_arithmetic_v<Number>, "Slider must use a numeric type as a template parameter");
+
         setBackgroundColor(0xDDDDDDFF);
         setSize({100.0f, 20.0f}, true);
         setBorderRadius(10.0f);
@@ -140,13 +155,82 @@ namespace ui {
 
     template<typename Number>
     bool Slider<Number>::onLeftClick(int){
-        auto mp = localMousePos();
-        assert(mp);
-        const auto x = (mp->x - m_dragger.width() * 0.5f);
-        m_dragger.setLeft(x);
+        if (keyDown(Key::LShift) || keyDown(Key::RShift)){
+            m_fineDragStartPos = m_dragger.left();
+        } else {
+            auto mp = localMousePos();
+            assert(mp);
+            const auto x = (mp->x - m_dragger.width() * 0.5f);
+            m_dragger.setLeft(x);
+        }
         m_dragger.startDrag();
         transferEventResposeTo(&m_dragger);
         return true;
+    }
+
+    template<typename Number>
+    inline bool Slider<Number>::onKeyDown(Key key){
+        const auto shift = keyDown(Key::LShift) || keyDown(Key::RShift);
+        const auto ctrl = keyDown(Key::LControl) || keyDown(Key::RControl);
+
+        const auto adjust = [&](double sign){
+            // normal speed: power of ten that is closest to moving one pixel,
+            // or simply 1 if Number is integral and that speed would be less than 1
+            // coarse speed: 10x normal
+            // fine speed: 0.1x normal (minimum of 1 if integral)
+            const auto multiplier = ctrl ? 10.0 : (shift ? 0.1 : 1.0);
+            const auto spacePerPixel =
+                static_cast<double>(m_maximum - m_minimum)
+                / static_cast<double>(width() - m_dragger.width());
+            const auto mag = std::log10(spacePerPixel);
+            const auto baseStep = std::pow(10.0, std::round(mag)) * multiplier;
+            
+            Number step;
+            if (std::is_integral_v<Number> && baseStep < 1.0){
+                step = static_cast<Number>(sign);
+            } else {
+                step = static_cast<Number>(baseStep * sign);
+            }
+            
+            // Lazy option for now
+            const auto v = std::clamp(
+                m_value + step,
+                m_minimum,
+                m_maximum
+            );
+            if (m_value != v){
+                m_value = v;
+                updateFromValue();
+            }
+        };
+
+        if (key == Key::Home){
+            m_value = m_minimum;
+            updateFromValue();
+            return true;
+        } else if (key == Key::End){
+            m_value = m_maximum;
+            updateFromValue();
+            return true;
+        } else if (key == Key::Left){
+            adjust(-1.0);
+            return true;
+        } else if (key == Key::Right){
+            adjust(1.0);
+            return true;
+        }
+
+        return false;
+    }
+    
+    template<typename Number>
+    inline void Slider<Number>::onResize(){
+        BoxElement::onResize();
+        assert(width() > height());
+        setBorderRadius(height() / 2.0f);
+        m_dragger.setSize({height(), height()}, true);
+        m_dragger.setBorderRadius(height() / 2.0f);
+        updateFromValue();
     }
 
 } // namespace ui

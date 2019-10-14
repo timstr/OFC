@@ -8,7 +8,9 @@
 
 namespace ui {
 
-    // TODO: up/down/home/end to move selection
+    // TODO: up/down/home/end to move selection (when collapsed)
+
+    // TODO: when expanding, focus to the button with the current selection
 
     namespace detail {
         template<typename T>

@@ -65,10 +65,18 @@ namespace ui {
     }
 
     bool Control::keyDown(Key key) const {
-        if (!hasFocus()){
+        const auto win = getParentWindow();
+        if (!win){
             return false;
         }
-        return sf::Keyboard::isKeyPressed(key);
+        auto focus = win->currentControl();
+        while (focus){
+            if (focus == this){
+                return sf::Keyboard::isKeyPressed(key);
+            }
+            focus = focus->getParentControl();
+        }
+        return false;
     }
 
     bool Control::onScroll(vec2){

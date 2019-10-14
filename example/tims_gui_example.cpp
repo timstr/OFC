@@ -280,9 +280,9 @@ std::unique_ptr<ui::Element> makeRandomControl(){
         );
     case 7:
         return std::make_unique<ui::Slider<int>>(
-            5,
+            50,
             0,
-            10,
+            100,
             getFont(),
             [](int v){
                 std::cout << "The value is now " << v << '\n';
