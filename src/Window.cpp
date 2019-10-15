@@ -13,26 +13,62 @@ namespace ui {
     // ancestor controls, until one handles the event, or null is returned.
     template<typename... ArgsT>
     Control* propagate(Window* self, Control* elem, bool (Control::* handlerFn)(ArgsT...), ArgsT... args){
+        if (!elem){
+            return nullptr;
+        }
+
+        // List of ancestral controls that are still part of the UI initially
+        // This is used to find the next highest control that is still part of the ui,
+        // in case a control is removed while responding to an event and
+        // focus needs to be transferred
+        std::vector<Control*> ancestors;
+        {
+            auto curr = elem->getParentControl();
+            while (curr){
+                ancestors.insert(ancestors.begin(), curr);
+                curr = curr->getParentControl();
+            }
+        }
+
+        // Pointer to the (optional) control that will receive the
+        // corresponding end event (i.e. onKeyUp for responding to onKeyDown).
+        // Controls may modify this while responding to an event by calling
+        // transferEventResponseTo()
         self->m_currentEventResponder = nullptr;
-        while (elem){
+
+
+        while (true){
             assert(elem->getParentWindow() == self);
             if ((elem->*handlerFn)(args...)){
-                // Test to see whether response was transferred to a different element
                 if (self->m_currentEventResponder){
                     assert(self->m_currentEventResponder->getParentWindow() == self);
                     return self->m_currentEventResponder;
                 }
                 if (elem->getParentWindow() != self){
                     // NOTE: if the element was removed from the UI, it should not be
-                    // used in the future.
+                    // used in the future, and focus should be transferred to its closest
+                    // previous ancestor that is still part of the UI
+                    while (ancestors.size() > 0){
+                        if (ancestors.back()->getParentWindow() == self){
+                            return ancestors.back();
+                        }
+                        ancestors.pop_back();
+                    }
                     return nullptr;
                 } else {
                     return elem;
                 }
             }
-            elem = elem->getParentControl();
+            assert(
+                (elem->getParentControl() == nullptr && ancestors.empty())
+                || elem->getParentControl() == ancestors.back()
+            );
+            if (ancestors.empty()){
+                return nullptr;
+            }
+            elem = ancestors.back();
+            ancestors.pop_back();
         }
-        return nullptr;
     }
 
     Window::Window(unsigned width, unsigned height, const String& title) :
@@ -532,25 +568,30 @@ namespace ui {
         };
 
         std::function<void(const Element*)> cleanupAll = [&](const Element* elem){
-            cleanup(elem);
             if (auto cont = elem->toContainer()){
                 for (auto child : cont->children()){
                     cleanupAll(child);
                 }
             }
+            cleanup(elem);
         };
 
         cleanupAll(e);
     }
 
     void Window::focusTo(Control* control){
+        assert(!control || control->getParentWindow() == this);
+
         auto prev = m_focus_elem;
 
         std::vector<Control*> pathUp, pathDown;
+
         auto curr = m_focus_elem;
-        while (curr){
-            pathUp.push_back(curr);
-            curr = curr->getParentControl();
+        if (curr && curr->getParentWindow() == this){
+            while (curr){
+                pathUp.push_back(curr);
+                curr = curr->getParentControl();
+            }
         }
 
         curr = control;
@@ -559,9 +600,9 @@ namespace ui {
             curr = curr->getParentControl();
         }
 
-        while (pathUp.size() > 0 && pathDown.size() > 0 && pathUp.front() == pathDown.front()){
-            pathUp.erase(pathUp.begin());
-            pathDown.erase(pathDown.begin());
+        while (pathUp.size() > 0 && pathDown.size() > 0 && pathUp.back() == pathDown.back()){
+            pathUp.pop_back();
+            pathDown.pop_back();
         }
 
         for (auto it = pathUp.rbegin(), itEnd = pathUp.rend(); it != itEnd; ++it){
@@ -759,7 +800,9 @@ namespace ui {
     }
 
     void Window::cancelUpdate(const Element* elem){
-        /*const auto isDecendent = [&](const Element* e){
+        assert(elem);
+        assert(!elem->m_isUpdating);
+        const auto isDecendent = [&](const Element* e){
             const std::function<bool(const Element*)> impl = [&](const Element* x){
                 if (elem == x){
                     return true;
@@ -770,12 +813,11 @@ namespace ui {
                 return false;
             };
             return impl(e);
-        };*/
-        assert(!elem->m_isUpdating);
-        m_updateQueue.erase(std::remove/*_if*/(
+        };
+        m_updateQueue.erase(std::remove_if(
             m_updateQueue.begin(),
             m_updateQueue.end(),
-            elem /*isDecendent*/
+            isDecendent
         ), m_updateQueue.end());
     }
 

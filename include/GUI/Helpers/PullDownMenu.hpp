@@ -28,13 +28,20 @@ namespace ui {
 		    Color getActiveColor() const;
 
         private:
+            void select(std::size_t i, bool invokeCallback = true);
+
+            bool isExpanded() const;
+
             void expand();
 
             void collapse();
 
             void onLoseFocus() override;
 
+            bool onKeyDown(Key) override;
+
             std::vector<std::pair<T, String>> m_options;
+            std::size_t m_selection;
             std::function<void(const T&)> m_onChange;
             CallbackButton& m_label;
             GridContainer& m_listItems;
@@ -67,6 +74,7 @@ namespace ui {
             std::function<void(const T&)> onChange
         )
             : m_options(std::move(options))
+            , m_selection(0)
             , m_onChange(std::move(onChange))
             , m_label(add<CallbackButton>(
                 FreeContainer::InsideLeft,
@@ -85,8 +93,6 @@ namespace ui {
             
             m_label.setMinWidth(50.0f);
 
-            m_label.getCaption().setText(m_options.front().second);
-
             m_listItems.setMinWidth(50.0f);
 
             for (std::size_t i = 0; i < m_options.size(); ++i){
@@ -94,8 +100,7 @@ namespace ui {
                     m_options[i].second,
                     font,
                     [this,i](){
-                        m_label.getCaption().setText(m_options[i].second);
-                        m_onChange(m_options[i].first);
+                        select(i);
                         collapse();
                     }
                 );
@@ -104,6 +109,8 @@ namespace ui {
                 m_listItems.putCell(i, 0, std::move(cb));
                 m_listItems.setHorizontalFill(i, 0, true);
             }
+
+            select(0, false);
 
             collapse();
         }
@@ -120,6 +127,9 @@ namespace ui {
             for (const auto& b : m_buttons){
                 b->setNormalColor(c);
             }
+            m_buttons[m_selection]->setNormalColor(
+                interpolate(getNormalColor(), 0xFFFFFFFF, 0.2f)
+            );
         }
 
         template<typename T>
@@ -154,8 +164,27 @@ namespace ui {
         }
 
         template<typename T>
+        inline void PullDownMenuBase<T>::select(std::size_t i, bool invoke){
+            assert(i < m_options.size());
+            m_buttons[m_selection]->setNormalColor(getNormalColor());
+            m_selection = i;
+            m_buttons[m_selection]->setNormalColor(
+                interpolate(getNormalColor(), 0xFFFFFFFF, 0.2f)
+            );
+            m_label.getCaption().setText(m_options[m_selection].second);
+            if (invoke){
+                m_onChange(m_options[i].first);
+            }
+        }
+
+        template<typename T>
+        inline bool PullDownMenuBase<T>::isExpanded() const {
+            return !m_listItemsUP;
+        }
+
+        template<typename T>
         inline void PullDownMenuBase<T>::expand(){
-            assert(m_listItemsUP);
+            assert(!isExpanded());
             assert(m_listItems.getParentContainer() == nullptr);
             adopt(
                 FreeContainer::InsideLeft,
@@ -168,7 +197,7 @@ namespace ui {
 
         template<typename T>
         inline void PullDownMenuBase<T>::collapse(){
-            assert(!m_listItemsUP);
+            assert(isExpanded());
             assert(m_listItems.getParentContainer() == this);
             m_listItemsUP = makeOrphan(m_listItems);
             assert(m_listItems.getParentContainer() == nullptr);
@@ -179,6 +208,24 @@ namespace ui {
             if (!m_listItemsUP){
                 collapse();
             }
+        }
+
+        template<typename T>
+        inline bool PullDownMenuBase<T>::onKeyDown(Key key){
+            if (key == Key::Up){
+                select(std::max(m_selection, 1ull) - 1);
+                return true;
+            } else if (key == Key::Down){
+                select(std::min(m_selection + 1, m_options.size() - 1));
+                return true;
+            } else if (key == Key::Home){
+                select(0);
+                return true;
+            } else if (key == Key::End){
+                select(m_options.size() - 1);
+                return true;
+            }
+            return false;
         }
 
     } // namespace detail

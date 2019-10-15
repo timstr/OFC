@@ -23,8 +23,7 @@ namespace ui {
         e->m_parent = this;
         auto eptr = e.get();
         m_children.push_back({std::move(e), {}, {}, {}});
-        eptr->requireDeepUpdate();
-        requireUpdate();
+        requireDeepUpdate();
     }
 
     std::unique_ptr<Element> Container::release(const Element* e){

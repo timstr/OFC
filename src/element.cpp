@@ -368,14 +368,6 @@ namespace ui {
         }
     }
 
-    void Element::cancelUpdate(){
-        if (auto win = getParentWindow()){
-            win->cancelUpdate(this);
-            m_needs_update = false;
-            m_isUpdating = false;
-        }
-    }
-
     void Element::requireDeepUpdate(){
         auto win = getParentWindow();
         if (!win){

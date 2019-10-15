@@ -205,8 +205,6 @@ namespace ui {
         // This method is called when the element's size or position is queried.
         void forceUpdate();
 
-        void cancelUpdate();
-
         void requireDeepUpdate();
 
     private:
