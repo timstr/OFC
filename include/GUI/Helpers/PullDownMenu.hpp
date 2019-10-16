@@ -8,10 +8,6 @@
 
 namespace ui {
 
-    // TODO: up/down/home/end to move selection (when collapsed)
-
-    // TODO: when expanding, focus to the button with the current selection
-
     namespace detail {
         template<typename T>
         class PullDownMenuBase : public FreeContainer, public Control {
@@ -87,8 +83,8 @@ namespace ui {
                 add<GridContainer>(
                     FreeContainer::InsideLeft,
                     FreeContainer::OutsideBottom,
-                    m_options.size(),
-                    1
+                    1,
+                    m_options.size()
               )) {
             
             m_label.setMinWidth(50.0f);
@@ -106,8 +102,7 @@ namespace ui {
                 );
                 cb->setBorderRadius(0.0f);
                 m_buttons.push_back(cb.get());
-                m_listItems.putCell(i, 0, std::move(cb));
-                m_listItems.setHorizontalFill(i, 0, true);
+                m_listItems.putCell(0, i, std::move(cb));
             }
 
             select(0, false);

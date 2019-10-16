@@ -157,6 +157,17 @@ namespace ui {
         return tex.copyToImage();
     }
 
+    void Window::addKeyboardCommand(Key trigger, std::function<void()> callback){
+        addKeyboardCommand(trigger, {}, std::move(callback));
+    }
+
+    void Window::addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback){
+        m_commands.insert_or_assign(
+            std::make_pair(trigger, std::move(requiredKeys)),
+            std::move(callback)
+        );
+    }
+
     void Window::close(){
         Context::get().removeWindow(this);
     }

@@ -15,9 +15,13 @@ namespace ui {
         Slider(Number default_val, Number min, Number max, const sf::Font& font, std::function<void(Number)> onChange);
 
         void setValue(Number);
-        Number value();
+        Number value() const;
 
-        // TODO: colours
+        void setMinimum(Number);
+        Number minimum() const;
+
+        void setMaximum(Number);
+        Number maximum() const;
 
     private:
 
@@ -77,7 +81,15 @@ namespace ui {
                 std::clamp(l, 0.0f, max);
             setLeft(x);
             setTop(0.0f);
-            m_parent.updateFromDragger();
+            const auto t = static_cast<double>(x / max);
+            const auto v = static_cast<double>(m_parent.m_minimum)
+                + t * static_cast<double>(m_parent.m_maximum - m_parent.m_minimum);
+            if constexpr (std::is_integral_v<Number>){
+                m_parent.setValue(static_cast<Number>(std::round(v)));
+            } else {
+                m_parent.setValue(static_cast<Number>(v));
+            }
+            //m_parent.updateFromDragger();
         }
 
     private:
@@ -110,6 +122,17 @@ namespace ui {
         m_dragger.setBorderColor(0x888888FF);
 
         updateFromValue();
+    }
+
+    template<typename Number>
+    inline void Slider<Number>::setValue(Number v){
+        m_value = std::clamp(v, m_minimum, m_maximum);
+        updateFromValue();
+    }
+
+    template<typename Number>
+    inline Number Slider<Number>::value() const {
+        return m_value;
     }
 
     template<typename Number>

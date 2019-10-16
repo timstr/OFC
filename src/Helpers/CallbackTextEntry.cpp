@@ -18,7 +18,7 @@ namespace ui {
         
     }
 
-    void CallbackTextEntry::onChange(){
+    void CallbackTextEntry::onType(){
         if (m_onChange){
             m_onChange(text());
         }

@@ -10,7 +10,6 @@ namespace ui {
         void startDrag();
         void stopDrag();
 
-        // TODO: can onMove replace onDrag?
         virtual void onDrag();
 
         void drop(vec2 local_point = {0.0f, 0.0f});

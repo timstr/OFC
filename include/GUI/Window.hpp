@@ -9,6 +9,8 @@
 
 namespace ui {
 
+    // TODO: change cursors when mouse is over control, text entry, draggable, etc
+
     class Window {
     public:
         Window(const Window&) = delete;
@@ -38,6 +40,9 @@ namespace ui {
 
         // take a screenshot
         sf::Image screenshot() const;
+
+        void addKeyboardCommand(Key trigger, std::function<void()> callback);
+        void addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback);
 
         // close the window, destroying it in the process
         // DO NOT use the object after calling close()
@@ -101,13 +106,6 @@ namespace ui {
         void focusTo(Control*);
 
         Control* currentControl() const;
-
-        // Simulate the moving of the mouse to a control, effectively
-        // calling onMouseOut on all controls from the currently one
-        // up to the common ancestor, then calling on all controls down to
-        // the new one.
-        // passing null will remove the focus from all elements.
-        void hoverTo(Control*);
 
         void startDrag(Draggable*, vec2);
         void stopDrag();

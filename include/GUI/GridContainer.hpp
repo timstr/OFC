@@ -3,40 +3,36 @@
 #include <GUI/Container.hpp>
 
 namespace ui {
-
-    // TODO: replace row,column (i.e. y,x) indexing with x,y indexing. y before x is confusing.
-
+    
     class GridContainer : public Container {
     public:
         GridContainer();
-        GridContainer(size_t rows, size_t columns);
+        GridContainer(size_t xDim, size_t yDim);
 
         void setRows(size_t);
         void setColumns(size_t);
-        void setDimensions(size_t rows, size_t columns);
-        void addRow(float size = 1.0f);
-        void addColumn(float size = 1.0f);
+        void setDimensions(size_t xDim, size_t yDim);
+        void appendRow(float weight = 1.0f);
+        void appendColumn(float weight = 1.0f);
+        void insertRow(size_t y, float weight = 1.0f);
+        void insertColumn(size_t x, float weight = 1.0f);
 
         size_t rows() const;
         size_t columns() const;
 
-        // TODO: rename these to "weight" to avoid ambiguity with physical size
-        void setRowHeight(size_t row, float height);
-        void setColumnWidth(size_t column, float width);
-        float rowHeight(size_t row) const;
-        float columnHeight(size_t column) const;
+        void setRowWeight(size_t y, float weight);
+        void setColumnWeight(size_t x, float weight);
+        float rowWeight(size_t y) const;
+        float columnWeight(size_t x) const;
 
         template<typename T, typename... Args>
-        T& putCell(size_t row, size_t column, Args&&... args);
+        T& putCell(size_t x, size_t y, Args&&... args);
 
-        void putCell(size_t row, size_t column, std::unique_ptr<Element>);
-        void clearCell(size_t row, size_t column);
+        void putCell(size_t x, size_t y, std::unique_ptr<Element>);
+        void clearCell(size_t x, size_t y);
 
-        Element* getCell(size_t row, size_t column);
-        const Element* getCell(size_t row, size_t column) const;
-        
-        void setHorizontalFill(size_t row, size_t column, bool enabled);
-        void setVerticalFill(size_t row, size_t column, bool enabled);
+        Element* getCell(size_t x, size_t y);
+        const Element* getCell(size_t x, size_t y) const;
 
     private:
         size_t m_rows;
@@ -44,8 +40,6 @@ namespace ui {
 
         struct CellData {
             Element* child;
-            bool fillX;
-            bool fillY;
         };
 
         std::vector<std::vector<CellData>> m_cells;
@@ -60,10 +54,10 @@ namespace ui {
     // Template definitions
 
     template<typename T, typename... Args>
-    T& GridContainer::putCell(size_t row, size_t column, Args&&... args){
+    T& GridContainer::putCell(size_t x, size_t y, Args&&... args){
         auto uptr = std::make_unique<T>(std::forward<Args>(args)...);
         T& ret = *uptr;
-        putCell(row, column, std::move(uptr));
+        putCell(x, y, std::move(uptr));
         return ret;
     }
 

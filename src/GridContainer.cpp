@@ -16,7 +16,7 @@ namespace ui {
         m_heights.push_back(1.0f);
     }
 
-    GridContainer::GridContainer(size_t rows, size_t columns) :
+    GridContainer::GridContainer(size_t columns, size_t rows) :
         m_rows(rows),
         m_cols(columns) {
 
@@ -66,18 +66,20 @@ namespace ui {
         }
     }
 
-    void GridContainer::setDimensions(size_t rows, size_t columns){
+    void GridContainer::setDimensions(size_t columns, size_t rows){
         assert(rows > 0 && columns > 0);
         setColumns(columns);
 		setRows(rows);
     }
 
-    void GridContainer::addRow(float size){
+    void GridContainer::appendRow(float weight){
 		setRows(m_rows + 1);
+        setRowWeight(m_rows - 1, weight);
     }
 
-    void GridContainer::addColumn(float size){
+    void GridContainer::appendColumn(float weight){
 		setColumns(m_cols + 1);
+		setColumnWeight(m_cols - 1, weight);
     }
 
     size_t GridContainer::rows() const {
@@ -88,27 +90,27 @@ namespace ui {
 		return m_cols;
     }
 
-    void GridContainer::setRowHeight(size_t row, float height){
+    void GridContainer::setRowWeight(size_t row, float height){
 		assert(row >= 0 && row < m_rows);
         m_heights[row] = height;
     }
 
-    void GridContainer::setColumnWidth(size_t column, float width){
+    void GridContainer::setColumnWeight(size_t column, float width){
 		assert(column >= 0 && column < m_cols);
         m_widths[column] = width;
     }
 
-    float GridContainer::rowHeight(size_t row) const {
+    float GridContainer::rowWeight(size_t row) const {
 		assert(row >= 0 && row < m_rows);
         return m_widths[row];
     }
 
-    float GridContainer::columnHeight(size_t column) const {
+    float GridContainer::columnWeight(size_t column) const {
 		assert(column >= 0 && column < m_cols);
         return m_heights[column];
     }
 
-    void GridContainer::putCell(size_t row, size_t column, std::unique_ptr<Element> e){
+    void GridContainer::putCell(size_t column, size_t row, std::unique_ptr<Element> e){
 		assert(row >= 0 && row < m_rows);
 		assert(column >= 0 && column < m_cols);
         auto prev = m_cells[row][column].child;
@@ -121,32 +123,18 @@ namespace ui {
         m_cells[row][column].child = eptr;
     }
 
-    void GridContainer::clearCell(size_t row, size_t column){
+    void GridContainer::clearCell(size_t column, size_t row){
         putCell(row, column, nullptr);
     }
 
-    Element* GridContainer::getCell(size_t row, size_t column){
+    Element* GridContainer::getCell(size_t column, size_t row){
 		return const_cast<Element*>(const_cast<const GridContainer*>(this)->getCell(row, column));
     }
 
-    const Element* GridContainer::getCell(size_t row, size_t column) const {
+    const Element* GridContainer::getCell(size_t column, size_t row) const {
 		assert(row >= 0 && row < m_rows);
 		assert(column >= 0 && column < m_cols);
         return m_cells[row][column].child;
-    }
-
-    void GridContainer::setHorizontalFill(size_t row, size_t column, bool enabled){
-        assert(row < m_rows);
-        assert(column < m_cols);
-        m_cells[row][column].fillX = enabled;
-        requireUpdate();
-    }
-
-    void GridContainer::setVerticalFill(size_t row, size_t column, bool enabled){
-        assert(row < m_rows);
-        assert(column < m_cols);
-        m_cells[row][column].fillY = enabled;
-        requireUpdate();
     }
 
     vec2 GridContainer::update(){
@@ -182,19 +170,11 @@ namespace ui {
             for (size_t i = 0; i < m_rows; ++i){
                 for (size_t j = 0; j < m_cols; ++j){
                     if (auto c = m_cells[i][j]; c.child){
-                        auto avail = vec2{};//getRequiredSize(c.child);
                         c.child->setPos({colPositions[j], rowPositions[i]});
-                        //if (c.fillX){
-                            avail.x = colPositions[j + 1] - colPositions[j];
-                        //}
-                        //if (c.fillY){
-                            avail.y = rowPositions[i + 1] - rowPositions[i];
-                        //}
-                        //if (c.fillX || c.fillY){
-                            setAvailableSize(c.child, avail);
-                        /*} else {
-                            unsetAvailableSize(c.child);
-                        }*/
+                        setAvailableSize(c.child, {
+                            colPositions[j + 1] - colPositions[j],
+                            rowPositions[i + 1] - rowPositions[i]
+                        });
 
                         const auto required = getRequiredSize(c.child);
 
@@ -203,8 +183,6 @@ namespace ui {
                     }
                 }
             }
-
-            //setSize({colPositions.back(), rowPositions.back()});
 
             return std::make_pair(minWidths, minHeights);
         };

@@ -73,7 +73,7 @@ namespace ui {
         return true;
     }
 
-    void TextEntry::onChange(){
+    void TextEntry::onType(){
 
     }
 
@@ -256,6 +256,9 @@ namespace ui {
         Text::render(rw);
 
         if (isTyping()){
+            assert(m_cursorHead <= text().getSize());
+            assert(m_cursorTail <= text().getSize());
+
             sf::RectangleShape rect;
 
             const auto posHead = m_text.findCharacterPos(m_cursorHead).x;
@@ -289,6 +292,12 @@ namespace ui {
 
             rw.draw(rect);
         }
+    }
+
+    void TextEntry::onChange(){
+        const auto l = text().getSize();
+        m_cursorHead = std::clamp(m_cursorHead, 0ull, l);
+        m_cursorTail = std::clamp(m_cursorTail, 0ull, l);
     }
 
     TextEntry* TextEntry::toTextEntry(){

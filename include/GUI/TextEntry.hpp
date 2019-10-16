@@ -18,7 +18,7 @@ namespace ui {
 
     protected:
 
-        virtual void onChange();
+        virtual void onType();
 
         virtual void onReturn();
 
@@ -33,6 +33,8 @@ namespace ui {
         void onLoseFocus() override;
 
         void render(sf::RenderWindow&) override;
+
+        void onChange() override;
 
         void handleBackspace();
         

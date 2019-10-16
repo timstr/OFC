@@ -20,6 +20,7 @@ namespace ui {
         m_text.setString(str);
         const auto bb = m_text.getLocalBounds();
         setSize({bb.width + bb.left, static_cast<float>(m_text.getCharacterSize())}, true);
+        onChange();
     }
 
     const Font& Text::font() const {
@@ -69,6 +70,10 @@ namespace ui {
 
     void Text::setOutlineThickness(float v){
         m_text.setOutlineThickness(v);
+    }
+
+    void Text::onChange(){
+
     }
 
     void Text::render(sf::RenderWindow& rw){

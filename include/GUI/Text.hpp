@@ -37,10 +37,13 @@ namespace ui {
         void setOutlineColor(const Color&);
         void setOutlineThickness(float);
 
-        void render(sf::RenderWindow& rw) override;
+    protected:
+        virtual void onChange();
 
     private:
         Text* toText() override;
+
+        void render(sf::RenderWindow& rw) override;
 
         sf::Text m_text;
 

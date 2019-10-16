@@ -69,170 +69,102 @@ std::unique_ptr<ui::PullDownMenu<ui::Color>> makeRedPullDown(){
     return pdptr;
 }
 
-struct TestElement : ui::Control, ui::FlowContainer, ui::BoxElement, ui::Draggable {
-	TestElement(ui::String name) : name(name), label(add<ui::Text>(name, getFont())) {
-
-		std::cout << static_cast<std::string>(name) << " was constructed" << std::endl;
-		changeColor();
-
-		auto& colorbtn = add<ui::CallbackButton>("Change Colour", getFont(), [this] {
-			changeColor();
-		});
-
-
-		colorbtn.setNormalColor(0xFF0000FF);
-		colorbtn.setActiveColor(0x00FF00FF);
-		colorbtn.setHoverColor(0x0000FFFF);
-
-		add<ui::CallbackTextEntry>(getFont(), [this](const ui::String& text) {
-			this->label.setText(text);
-		});
-	}
-	~TestElement() {
-		std::cout << name << " was destroyed" << std::endl;
-	}
-
+class BoxContainer : public ui::FreeContainer, public ui::BoxElement {
+private:
     void render(sf::RenderWindow& rw) override {
         ui::BoxElement::render(rw);
-        ui::FlowContainer::render(rw);
-    }
-    
-	void changeColor() {
-		std::uniform_int_distribution<unsigned> dist(0, 0xFF);
-		setBackgroundColor(ui::Color(
-			(uint8_t)dist(randeng),
-			(uint8_t)dist(randeng),
-			(uint8_t)dist(randeng),
-			255));
-	}
-
-	bool onLeftClick(int clicks) override {
-		if (clicks == 1) {
-			std::cout << name << " was left-clicked" << std::endl;
-			startDrag();
-		} else if (clicks == 2) {
-			std::cout << name << " was left-clicked twice" << std::endl;
-			changeColor();
-		}
-		return true;
-	}
-
-	void onLeftRelease() override {
-		std::cout << name << " was left released" << std::endl;
-		if (dragging()) {
-			stopDrag();
-            if (auto mp = localMousePos()){
-                drop(*mp);
-            }
-		}
-	}
-
-	bool onRightClick(int clicks) override {
-		if (clicks == 1) {
-			std::cout << name << " was right-clicked once" << std::endl;
-			std::uniform_int_distribution<int> sdist { 20, 300 };
-			std::uniform_int_distribution<int> mdist { 0, 20 };
-			ui::vec2 oldsize = size();
-			ui::vec2 newsize = { (float)sdist(randeng), (float)sdist(randeng) };
-			startTransition(1.0, [=](double t) {
-				double x = 0.5 - 0.5 * std::cos(t * 3.141592654f);
-				setSize(oldsize * static_cast<float>(1.0 - x) + newsize * static_cast<float>(x));
-			});
-		} else if (clicks == 2) {
-			std::cout << name << " was right-clicked twice" << std::endl;
-		}
-		return true;
-	}
-
-	void onRightRelease() override {
-		std::cout << name << " was right released" << std::endl;
-	}
-
-	bool onMiddleClick(int clicks) override {
-		std::cout << name << " was " << (clicks == 2 ? "double-" : "") << "middle clicked" << std::endl;
-		return true;
-	}
-
-	void onMiddleRelease() override {
-		std::cout << name << " was middle released" << std::endl;
-	}
-
-	void onGainFocus() override {
-		std::cout << name << " gained focus" << std::endl;
-	}
-
-	void onLoseFocus() override {
-		std::cout << name << " lost focus" << std::endl;
-	}
-
-	bool onKeyDown(ui::Key key) override {
-		std::cout << name << " - [" << key << "] was pressed" << std::endl;
-		if (key == ui::Key::Delete) {
-			close();
-		}
-		return true;
-	}
-
-	void onKeyUp(ui::Key key) override {
-		std::cout << name << " - [" << key << "] was released" << std::endl;
-	}
-
-	bool onScroll(ui::vec2 d) override {
-		std::cout << name << " was scrolled (" << d.x << ", " << d.y << ')' << std::endl;
-		return true;
-	}
-
-	bool onDrop(Draggable* d) override {
-		if (d) {
-			if (auto w = dynamic_cast<TestElement*>(d)) {
-				adopt(w->orphan());
-				std::cout << w->name;
-			} else {
-				std::cout << "An element";
-			}
-		} else {
-			std::cout << "Mystery???";
-		}
-		std::cout << " was dropped onto " << name << std::endl;
-		return true;
-    }
-
-	const std::string name;
-	ui::Text& label;
-
-	struct SizeButton : ui::Control, ui::BoxElement, ui::Draggable {
-		SizeButton(TestElement& _parent) : parent(_parent) {
-			setSize({ 20.0f, 20.0f }, true);
-			setBackgroundColor(0x808080FF);
-			setBorderThickness(0.0f);
-		}
-
-		bool onLeftClick(int) override {
-			startDrag();
-			return true;
-		}
-
-		void onLeftRelease() override {
-			stopDrag();
-		}
-
-		void onDrag() override {
-			parent.setSize(pos() + size());
-		}
-
-		TestElement& parent;
-	};
-};
-
-struct BoxContainer : ui::FreeContainer, ui::BoxElement {
-    void render(sf::RenderWindow& rw) override {
-        ui::BoxElement::render(rw);
-        ui::Container::render(rw);
+        ui::FreeContainer::render(rw);
     }
 };
+
+
+std::unique_ptr<ui::Element> makeExampleProcessor(){
+    class Knob : public ui::Control, public ui::BoxElement {
+    public:
+        Knob(){
+            setSize({30.0f, 30.0f}, true);
+            setBackgroundColor(0x22CC44FF);
+            setBorderColor(0x80);
+            setBorderRadius(15.0f);
+            setBorderThickness(2.0f);
+        }
+    private:
+        void onMouseOver() override {
+            setBackgroundColor(0x116622FF);
+        }
+
+        void onMouseOut() override {
+            setBackgroundColor(0x22CC44FF);
+        }
+    };
+
+    class DragButton : public ui::Control, public ui::BoxElement {
+    public:
+        DragButton(ui::Draggable& parent) : m_parent(parent) {
+            setBackgroundColor(0x0088AAFF);
+            setSize({30.0, 30.0f}, true);
+        }
+
+    private:
+        bool onLeftClick(int) override {
+            m_parent.startDrag();
+            return true;
+        }
+
+        void onLeftRelease() override {
+            m_parent.stopDrag();
+        }
+
+        ui::Draggable& m_parent;
+    };
+
+    class DraggableGrid : public ui::GridContainer, public ui::Draggable {
+    public:
+        using ui::GridContainer::GridContainer;
+    };
+
+    auto mainCont = std::make_unique<DraggableGrid>(3, 2);
+
+    auto& left = mainCont->putCell<ui::GridContainer>(0, 1, 1, 3);
+    left.putCell<Knob>(0, 0);
+    left.putCell<Knob>(0, 1);
+    left.putCell<Knob>(0, 2);
+
+    auto& topCont = mainCont->putCell<ui::FreeContainer>(1, 0);
+    auto& top = topCont.add<ui::GridContainer>(
+        ui::FreeContainer::InsideRight,
+        ui::FreeContainer::Center,
+        2,
+        1
+    );
+
+    top.putCell<Knob>(0, 0);
+    top.putCell<Knob>(1, 0);
+
+    auto& corner = mainCont->putCell<DragButton>(
+        0,
+        0,
+        *mainCont
+    );
+
+    auto& right = mainCont->putCell<ui::FreeContainer>(2, 1);
+
+    right.add<Knob>(ui::FreeContainer::Center, ui::FreeContainer::Center);
+
+    auto& body = mainCont->putCell<BoxContainer>(1, 1);
+    body.setBackgroundColor(0x008800FF);
+    body.add<ui::Text>(
+        ui::FreeContainer::Center,
+        ui::FreeContainer::Center,
+        "Example Processor",
+        getFont()
+    );
+
+    return mainCont;
+}
 
 std::unique_ptr<ui::Element> makeRandomControl(){
-    const auto dist = std::uniform_int_distribution<int>{0, 7};
+    const auto dist = std::uniform_int_distribution<int>{0, 9};
 
     switch (dist(randeng)){
     case 0:
@@ -288,6 +220,18 @@ std::unique_ptr<ui::Element> makeRandomControl(){
                 std::cout << "The value is now " << v << '\n';
             }
         );
+    case 8:
+        return makeExampleProcessor();
+    case 9:
+        return std::make_unique<ui::NumberTextEntry<double>>(
+            0.0,
+            0.0,
+            1.0,
+            getFont(),
+            [](double v){
+                std::cout << "You entered " << v << '\n';
+            }
+        );
     }
     throw std::runtime_error("Aaaarg");
 }
@@ -301,23 +245,21 @@ std::unique_ptr<ui::GridContainer> makeGridLayout(){
     cont->setColumnWidth(1, 1.0f);
     cont->setColumnWidth(2, 1.0f);*/
 
-    const auto add_cell = [&cont](size_t i, size_t j, ui::Color color){
-        auto& c = cont->putCell<BoxContainer>(i, j);
-        cont->setHorizontalFill(i, j, true);
-        cont->setVerticalFill(i, j, true);
+    const auto add_cell = [&cont](size_t x, size_t y, ui::Color color){
+        auto& c = cont->putCell<BoxContainer>(x, y);
         c.setBackgroundColor(color);
         
         c.adopt(ui::FreeContainer::Center, ui::FreeContainer::InsideTop, makeRandomControl());
     };
     
     add_cell(0, 0, 0xBBBBBBFF);
-    add_cell(0, 1, 0xDDDDDDFF);
-    add_cell(0, 2, 0xBBBBBBFF);
     add_cell(1, 0, 0xDDDDDDFF);
-    add_cell(1, 1, 0xBBBBBBFF);
-    add_cell(1, 2, 0xDDDDDDFF);
     add_cell(2, 0, 0xBBBBBBFF);
+    add_cell(0, 1, 0xDDDDDDFF);
+    add_cell(1, 1, 0xBBBBBBFF);
     add_cell(2, 1, 0xDDDDDDFF);
+    add_cell(0, 2, 0xBBBBBBFF);
+    add_cell(1, 2, 0xDDDDDDFF);
     add_cell(2, 2, 0xBBBBBBFF);
 
     return cont;
@@ -330,23 +272,6 @@ std::unique_ptr<ui::FlowContainer> makeFlowLayout(){
 
     return cont;
 }
-
-class DragButton : public ui::Draggable, public ui::Control, public ui::BoxElement {
-public:
-    DragButton(){
-        setSize({100, 100});
-        setBackgroundColor(0x008000FF);
-    }
-
-    bool onLeftClick(int clicks) override {
-        startDrag();
-        return true;
-    }
-
-    void onLeftRelease() override {
-        stopDrag();
-    }
-};
 
 int main(){
     
@@ -364,7 +289,7 @@ int main(){
     gc.setPos({50.0f, 50.0f});
 
     //gc.putCell(2, 0, makeFlowLayout());
-    gc.putCell(2, 0, makeGridLayout());
+    gc.putCell(0, 2, makeGridLayout());
 
     //makeFlowLayout(win);
 

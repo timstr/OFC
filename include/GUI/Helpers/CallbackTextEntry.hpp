@@ -20,7 +20,7 @@ namespace ui {
 
         bool validate() const override;
 
-        void onChange() override;
+        void onType() override;
 
         std::function<void(const String&)> m_onReturn;
         std::function<bool(const String&)> m_validate;
