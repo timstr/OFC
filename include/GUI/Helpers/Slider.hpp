@@ -7,8 +7,6 @@
 
 namespace ui {
 
-    // TODO: shift+drag for fine adjustment
-
     template<typename Number>
     class Slider : public Control, public FreeContainer, public BoxElement {
     public:
@@ -49,7 +47,7 @@ namespace ui {
     };
 
 
-
+    // TODO: move the following definitions to a .tpp file
 
     template<typename Number>
     class Slider<Number>::Dragger : public Draggable, public Control, public BoxElement {

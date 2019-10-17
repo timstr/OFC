@@ -61,6 +61,8 @@ namespace ui {
         std::vector<std::pair<String, String>> adaptOptions(const std::vector<String>& options) const;
     };
 
+    // TODO: move the following definitions to a .tpp file
+
     namespace detail {
 
         template<typename T>

@@ -18,6 +18,9 @@ namespace ui {
 
         void render(sf::RenderWindow&) override;
 
+        bool clipping() const;
+        void setClipping(bool enabled);
+
     protected:
 
         template<typename T, typename... Args>
@@ -31,6 +34,8 @@ namespace ui {
 
         std::vector<Element*> children();
         std::vector<const Element*> children() const;
+
+        // TODO: scale?
 
         // The available size is the space an element is allowed to fill
         void setAvailableSize(const Element* child, vec2 size);
@@ -56,6 +61,8 @@ namespace ui {
         std::vector<ChildData> m_children;
 
         Window* m_parentWindow;
+
+        bool m_clipping;
 
         Window* getWindow() const override final;
         

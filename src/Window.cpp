@@ -392,8 +392,7 @@ namespace ui {
             if (const auto c = m_drag_elem->getParentContainer()){
                 rootPos = c->rootPos();
             }
-            // TODO: why not setPos()?
-            m_drag_elem->m_position = mousePos - rootPos - m_drag_offset;
+            m_drag_elem->setPos(mousePos - rootPos - m_drag_offset);
             m_drag_elem->onDrag();
         }
     }

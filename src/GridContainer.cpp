@@ -265,11 +265,6 @@ namespace ui {
         // TODO: avoid this when possible
         placeCells(newWidths, newHeights);
 
-        // TODO: remove this difference from unconstrained cells proportionally
-        // while shifting constrained cells into new position
-        // TODO: return sum of horizontal and vertical sizes
-
-        // TODO: allow size to be exceeded
         return {minWidth, minHeight};
     }
 

@@ -4,6 +4,9 @@
 
 namespace ui {
 
+    // TODO per-element or per-freecontainer margins
+    // TODO: offsets from edge-relative positions
+
     class FreeContainer : public Container {
     public:
         

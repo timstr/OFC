@@ -248,8 +248,10 @@ std::unique_ptr<ui::GridContainer> makeGridLayout(){
     const auto add_cell = [&cont](size_t x, size_t y, ui::Color color){
         auto& c = cont->putCell<BoxContainer>(x, y);
         c.setBackgroundColor(color);
-        
-        c.adopt(ui::FreeContainer::Center, ui::FreeContainer::InsideTop, makeRandomControl());
+        c.setClipping(true);
+
+        c.adopt(ui::FreeContainer::Center, ui::FreeContainer::Center, makeRandomControl());
+        //c.adopt(makeRandomControl());
     };
     
     add_cell(0, 0, 0xBBBBBBFF);
@@ -289,7 +291,7 @@ int main(){
     gc.setPos({50.0f, 50.0f});
 
     //gc.putCell(2, 0, makeFlowLayout());
-    gc.putCell(0, 2, makeGridLayout());
+    gc.putCell(2, 2, makeGridLayout());
 
     //makeFlowLayout(win);
 

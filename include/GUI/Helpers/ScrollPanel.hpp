@@ -5,11 +5,35 @@
 
 namespace ui {
 
-    class ScrollPanel : public Control, public Container {
-        // TODO
+    // TODO
 
+    template<typename ContainerType>
+    class ScrollPanel : public Control, public Container {
     public:
-        Container& inner();
+        template<typename... Args>
+        ScrollPanel(bool horizontalScroll, bool verticalScroll, bool resizeButton, Args&&... args);
+
+		void showHorizontalScrollBar(bool enable);
+
+		void showVerticalScrollBar(bool enable);
+
+		void showResizeButton(bool enable);
+
+        ContainerType& inner();
+        const ContainerType& inner() const;
+
+    private:
+
+        void onResize() override;
+
+        class ScrollButton;
+        class HorizontalScrollButton;
+        class VerticalScrollButton;
+        class ResizeButton;
+
+        class InnerContent;
+
+        ContainerType& m_inner;
     };
 
 } // namespace ui

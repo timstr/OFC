@@ -10,7 +10,9 @@ namespace ui {
     // TODO: put all the search code into a single helper function
 
     Container::Container()
-        : m_parentWindow(nullptr) {
+        : m_parentWindow(nullptr)
+        , m_clipping(false) {
+
     }
 
     Container::~Container(){
@@ -89,6 +91,14 @@ namespace ui {
             }
         );
         return ret;
+    }
+
+    bool Container::clipping() const {
+        return m_clipping;
+    }
+
+    void Container::setClipping(bool enabled){
+        m_clipping = enabled;
     }
 
     void Container::setAvailableSize(const Element* child, vec2 size){
@@ -194,16 +204,54 @@ namespace ui {
     }
 
     void Container::render(sf::RenderWindow& rw){
-        const auto old_view = rw.getView();
-        // TODO: handle clipping here
+        const auto oldView = rw.getView();
+
+        auto clippedView = oldView;
+        if (m_clipping){
+
+            const auto oldVP = oldView.getViewport();
+            
+            const auto rp = rootPos();
+            const auto newTopLeft = vec2{
+                rp.x / static_cast<float>(rw.getSize().x),
+                rp.y / static_cast<float>(rw.getSize().y)
+            };
+            const auto newBottomRight = vec2{
+                (rp.x + width()) / static_cast<float>(rw.getSize().x),
+                (rp.y + height()) / static_cast<float>(rw.getSize().y)
+            };
+            
+            const auto effTopLeft = vec2{
+                std::max(oldVP.left, newTopLeft.x),
+                std::max(oldVP.top, newTopLeft.y)
+            };
+            const auto effBottomRight = vec2{
+                std::min(oldVP.left + oldVP.width, newBottomRight.x),
+                std::min(oldVP.top + oldVP.height, newBottomRight.y)
+            };
+
+            if (effTopLeft.x >= effBottomRight.x || effTopLeft.y >= effBottomRight.y){
+                return;
+            }
+
+            clippedView.setViewport(sf::FloatRect{
+                effTopLeft,
+                effBottomRight - effTopLeft
+            });
+
+            clippedView.setCenter(size() * 0.5f);
+            clippedView.setSize(size());
+        }
+        
         for (const auto& cd : m_children){
-            auto child_view = old_view;
+            auto childView = clippedView;
             auto pos = cd.child->pos();
-            child_view.move(-pos);
-            rw.setView(child_view);
+            childView.move(-pos);
+            rw.setView(childView);
             cd.child->render(rw);
         }
-        rw.setView(old_view);
+
+        rw.setView(oldView);
     }
 
     Container* Container::toContainer(){
@@ -211,13 +259,17 @@ namespace ui {
     }
 
     Element* Container::findElementAt(vec2 p){
+        const bool hitThis = hit(p);
+        if (m_clipping && !hitThis){
+            return false;
+        }
         for (auto it = m_children.rbegin(), end = m_children.rend(); it != end; ++it){
             auto& c = it->child;
             if (auto e = c->findElementAt(p - pos())){
                 return e;
             }
         }
-        return hit(p) ? this : nullptr;
+        return hitThis ? this : nullptr;
     }
 
     Window* Container::getWindow() const {

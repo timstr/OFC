@@ -54,6 +54,7 @@ namespace ui {
 
     vec2 FlowContainer::update(){
         // TODO: margins
+        // TODO: other layout styles apart from inline
 
         const auto avail = size();
         auto max = vec2{};
@@ -81,18 +82,19 @@ namespace ui {
             max.y = std::max(max.y, s.y);
         }
         return {max.x + 2.0f * m_padding, max.y + 2.0f * m_padding};
-
-        // TODO
-        // Available size is simply size()
-        // Position each element in textual order
-        // at the given size
-        // If the available size must be exceeded,
-        // simply keep track of the required width and height
-        // and return that.
     }
 
     void FlowContainer::onRemoveChild(const Element* e){
-        // TODO
+        m_layout.erase(std::remove_if(
+            m_layout.begin(),
+            m_layout.end(),
+            [&](const LayoutObject& lo){
+                if (auto el = std::get_if<ElementLayout>(&lo)){
+                    return el->element == e;
+                }
+                return false;
+            }
+        ), m_layout.end());
     }
 
 } // namespace ui

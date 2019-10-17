@@ -61,12 +61,17 @@ namespace ui {
             elem->setPos({std::floor(x), std::floor(y)});
             //elem->update({0.0f, 0.0f});
 
+            const auto isContraining = [](PositionStyle ps){
+                return ps == PositionStyle::InsideBegin
+                    || ps == PositionStyle::InsideEnd
+                    || ps == PositionStyle::Center;
+            };
+
             const auto req = getRequiredSize(elem);
-            if (
-                (style.x != PositionStyle::OutsideBegin && style.x != PositionStyle::OutsideEnd) &&
-                (style.y != PositionStyle::OutsideBegin && style.y != PositionStyle::OutsideEnd)
-            ){
+            if (isContraining(style.x)){
                 maxSize.x = std::max(maxSize.x, req.x);
+            }
+            if (isContraining(style.y)){
                 maxSize.y = std::max(maxSize.y, req.y);
             }
         }

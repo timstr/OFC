@@ -155,49 +155,8 @@ namespace ui {
         void requireUpdate();
 
     private:
-        /* Possible workflow:
-        - The element is resized to have the maximum available size
-        - The element is updated (recomputes the layouts of its contents, given its new size; nothing else)
-        - The element returns the width/height it actually needs
-        - Using x/y fill and min/max size, the element's width and height are modified
-          to be the actual size it needs / can take on
-
-
-        When an element is modified, it is marked dirty and is added to the window's update queue.
-        At some point just before rendering (or if the dirty element's size or position is queried),
-        that element is taken from the queue and is updated (how to get the maximum available size?)
-        and is made clean again (possible optimization: update parents before their children to save
-        work).
-
-        The maximum available size should probably be computed/cached by each container:
-            - Flow container: inline elements use their own size as available size
-                block elements are given width of container as available width.
-            - Free container: maximum size is simply the element's size. x/y fill has
-              no effect, the element is only resized if its contents exceed its own size.
-            - Grid container: maximum size is easy to cache / compute.
-        Nice!
-
-        NOTE: This maximum size should be made available through the Container or Element interface
-        so that the update queue can use it.
-
-        TODO: How can a container query the updated size of one of its children when the container is
-        recomputing its layout in a call to update()?
-        - Available size is determined (how will vary by container)
-        - Element's size is is modified using setSize(), which might
-          mark the element as dirty if the size is different
-        - If the container needs access to the element's size, it will
-          call getSize() *which will force an update if the element is dirty*
-        - Otherwise, if the element's size is not needed to continue,
-          the element will remain on the update queue and will be dealt
-          with before rendering.
-          NOTE: if the child element is updated while the container itself is
-          in the update() method, it may cause the container to get queued for
-          updating again as a result of the child's size changing. This should
-          be no problem if the container is marked as clean unconditionally after
-          it is updated, and if clean elements are silently taken off the update
-          queue without updating.
-          
-        */
+        // Make the element's contents up to date.
+        // This used mainly by Containers to position and resize their children
         virtual vec2 update();
 
         // Causes the element to immediately be updated if it or its parent have

@@ -5,10 +5,11 @@
 #include <GUI/Helpers/Pi.hpp>
 
 #include <cassert>
+#include <cctype>
 
 namespace ui {
 
-    // TODO: allow multiline?
+    // TODO: allow multiline? create a TextField class?
 
     TextEntry::TextEntry(const sf::Font& font, unsigned height)
         : Text("", font, {}, height, {})
@@ -216,10 +217,19 @@ namespace ui {
     }
 
     void TextEntry::handlePaste(){
-        // TODO: remove linebreaks and tabs
+        const auto isSpace = [](sf::Uint32 ch){
+            if (ch > std::numeric_limits<unsigned char>::max()){
+                return false;
+            }
+            return std::isspace(static_cast<int>(ch)) != 0;
+        };
 
         const auto s = text();
-        const auto pasted = sf::Clipboard::getString();
+        auto pasted = sf::Clipboard::getString();
+        auto last = std::remove_if(pasted.begin(), pasted.end(), isSpace);
+        if (last != pasted.end()){
+            pasted.erase(last - pasted.begin(), pasted.end() - last);
+        }
         const auto [i0, i1] = selection();
         const auto s1 = s.substring(0, m_cursorHead) + pasted + s.substring(m_cursorTail);
         m_cursorHead = i0 + pasted.getSize();
