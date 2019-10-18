@@ -25,6 +25,10 @@ namespace ui {
         float rowWeight(size_t y) const;
         float columnWeight(size_t x) const;
 
+        // TODO: the following functions will easily create confusion by prepending
+        // two size_t's to a parameter pack.
+        // Consider replacing them with something like struct Cell { size_t x, y; };
+
         template<typename T, typename... Args>
         T& putCell(size_t x, size_t y, Args&&... args);
 
@@ -55,6 +59,7 @@ namespace ui {
 
     template<typename T, typename... Args>
     T& GridContainer::putCell(size_t x, size_t y, Args&&... args){
+        static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
         auto uptr = std::make_unique<T>(std::forward<Args>(args)...);
         T& ret = *uptr;
         putCell(x, y, std::move(uptr));

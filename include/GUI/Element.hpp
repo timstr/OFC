@@ -40,6 +40,8 @@ namespace ui {
         // the element's position relative to the window
         vec2 rootPos();
 
+        // TODO: make this return vec2 instead of optional<vec2>,
+        // and just throw an exception if the element does not belong to a window
         // The position of the mouse relative to the element
         std::optional<vec2> localMousePos();
 
