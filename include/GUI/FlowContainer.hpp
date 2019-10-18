@@ -33,6 +33,15 @@ namespace ui {
 		// write a tab
 		void writeTab(float width = 50.0f);
 
+        template<typename T, typename... Args>
+        T& add(Args&&... args);
+
+        template<typename T, typename... Args>
+        T& add(LayoutStyle, Args&&... args);
+
+        void adopt(std::unique_ptr<Element>);
+        void adopt(LayoutStyle, std::unique_ptr<Element>);
+
     private:
         
         vec2 update() override;
@@ -60,5 +69,22 @@ namespace ui {
 
         std::vector<LayoutObject> m_layout;
     };
+
+    // TODO: move these to a .tpp file
+
+    template<typename T, typename... Args>
+    inline T& FlowContainer::add(Args&&... args){
+        return this->add<T>(LayoutStyle::Inline, std::forward<Args>(args)...);
+    }
+
+    template<typename T, typename... Args>
+    inline T& FlowContainer::add(LayoutStyle ls, Args&&... args){
+        static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
+        auto ep = std::make_unique<T>(std::forward<Args>(args)...);
+        auto ptr = ep.get();
+        m_layout.push_back(ElementLayout{ptr, ls});
+        Container::adopt(std::move(ep));
+        return *ptr;
+    }
 
 } // namespace ui

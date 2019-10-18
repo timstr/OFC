@@ -232,6 +232,12 @@ std::unique_ptr<ui::Element> makeRandomControl(){
                 std::cout << "You entered " << v << '\n';
             }
         );
+    /*case 10:
+        {
+            auto sp = std::make_unique<ui::ScrollPanel<ui::FlowContainer>>(true, true, true);
+            sp->inner().add<ui::Image>("C:/Users/Tim/Pictures/untitled.png");
+            return sp;
+        }*/
     }
     throw std::runtime_error("Aaaarg");
 }

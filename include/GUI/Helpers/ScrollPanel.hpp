@@ -5,13 +5,11 @@
 
 namespace ui {
 
-    // TODO
-
     template<typename ContainerType>
     class ScrollPanel : public Control, public Container {
     public:
         template<typename... Args>
-        ScrollPanel(bool horizontalScroll, bool verticalScroll, bool resizeButton, Args&&... args);
+        ScrollPanel(Args&&... args);
 
 		void showHorizontalScrollBar(bool enable);
 

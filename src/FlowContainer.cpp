@@ -52,6 +52,15 @@ namespace ui {
         m_layout.push_back(WhiteSpace{WhiteSpace::Tab, width});
     }
 
+    void FlowContainer::adopt(std::unique_ptr<Element> e){
+        adopt(LayoutStyle::Inline, std::move(e));
+    }
+
+    void FlowContainer::adopt(LayoutStyle ls, std::unique_ptr<Element> e){
+        m_layout.push_back(ElementLayout{e.get(), ls});
+        Container::adopt(std::move(e));
+    }
+
     vec2 FlowContainer::update(){
         // TODO: margins
         // TODO: other layout styles apart from inline
