@@ -30,4 +30,19 @@ namespace ui {
         RoundedRectangle m_rect;
     };
 
+    // Convenient template for mixing BoxElement with any container
+    template<typename ContainerType>
+    class Boxed : public ContainerType, public BoxElement {
+    public:
+        static_assert(std::is_base_of_v<Container, ContainerType>, "ContainerType must derive from Container");
+
+        using ContainerType::ContainerType;
+
+    private:
+        void render(sf::RenderWindow& rw) override {
+            BoxElement::render(rw);
+            ContainerType::render(rw);
+        }
+    };
+
 } // namespace ui
