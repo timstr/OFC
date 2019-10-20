@@ -20,7 +20,7 @@ namespace ui {
         m_rows(rows),
         m_cols(columns) {
 
-        assert(rows > 0 && columns > 0);
+        //assert(rows > 0 && columns > 0);
 		
         m_cells.resize(rows);
         for (auto& row : m_cells){
@@ -36,6 +36,11 @@ namespace ui {
 
     void GridContainer::setRows(size_t r){
 		while (m_rows > r){
+            for (const auto& c : m_cells.back()){
+                if (c.child){
+                    release(c.child);
+                }
+            }
             m_cells.erase(--m_cells.end());
             m_heights.erase(--m_heights.end());
             --m_rows;
@@ -52,6 +57,9 @@ namespace ui {
     void GridContainer::setColumns(size_t c){
 		while (m_cols > c){
             for (auto& row : m_cells){
+                if (auto child = row.back().child){
+                    release(child);
+                }
                 row.erase(--row.end());
             }
             m_widths.erase(--m_widths.end());
@@ -138,6 +146,11 @@ namespace ui {
     }
 
     vec2 GridContainer::update(){
+        if (m_rows == 0 || m_cols == 0){
+            assert(children().size() == 0);
+            return {0.0f, 0.0f};
+        }
+
         const auto placeCells = [&](const std::vector<float>& widths, const std::vector<float>& heights){
             auto rowPositions = std::vector<float>(m_rows + 1, 0.0f);
             auto colPositions = std::vector<float>(m_cols + 1, 0.0f);
@@ -210,7 +223,6 @@ namespace ui {
             auto assignedSizes = std::vector<float>(n, 0.0f);
 
             const auto divideRemainingSpace = [&](){
-                assert(availSize > 0.0f);
                 float totalWeight = 0.0f;
                 for (const auto i : active){
                     totalWeight += weights[i];

@@ -52,10 +52,9 @@ namespace ui {
             std::size_t min = static_cast<std::size_t>(-1);
             float minDist = 1e6f;
             const auto mp = localMousePos();
-            assert(mp);
             for (std::size_t i = 0; i < s.getSize(); ++i){
                 const auto charPos = m_text.findCharacterPos(i).x;
-                const auto dist = std::abs(charPos - mp->x);
+                const auto dist = std::abs(charPos - mp.x);
                 if (dist < minDist){
                     minDist = dist;
                     min = i;
@@ -308,6 +307,7 @@ namespace ui {
         const auto l = text().getSize();
         m_cursorHead = std::clamp(m_cursorHead, 0ull, l);
         m_cursorTail = std::clamp(m_cursorTail, 0ull, l);
+        onType();
     }
 
     TextEntry* TextEntry::toTextEntry(){
@@ -347,6 +347,7 @@ namespace ui {
     }
 
     void TextEntry::handleChange(){
+        // TODO: this ruins styling
         setBackgroundColor(validate() ? 0xFFFFFFFF : 0xFF8888FF);
         onChange();
         setMinSize({50.0f, static_cast<float>(characterSize())});

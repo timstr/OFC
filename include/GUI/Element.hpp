@@ -40,10 +40,9 @@ namespace ui {
         // the element's position relative to the window
         vec2 rootPos();
 
-        // TODO: make this return vec2 instead of optional<vec2>,
-        // and just throw an exception if the element does not belong to a window
         // The position of the mouse relative to the element
-        std::optional<vec2> localMousePos();
+        // Throws an exception if the element does not belong to a window
+        vec2 localMousePos();
 
         // called whenever the element's position is changed
         virtual void onMove();
@@ -73,7 +72,7 @@ namespace ui {
 
         // find an element that is hit at the given position
         // (in local coordinates)
-        virtual Element* findElementAt(vec2 p);
+        virtual Element* findElementAt(vec2 p, const Element* exclude);
 
         // draws the window
         virtual void render(sf::RenderWindow&) = 0;

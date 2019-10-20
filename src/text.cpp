@@ -19,7 +19,7 @@ namespace ui {
     void Text::setText(const String& str){
         m_text.setString(str);
         const auto bb = m_text.getLocalBounds();
-        setSize({bb.width + bb.left, static_cast<float>(m_text.getCharacterSize())}, true);
+        setSize({bb.width + bb.left, static_cast<float>(m_text.getCharacterSize())});
         onChange();
     }
 

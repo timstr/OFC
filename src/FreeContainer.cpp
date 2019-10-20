@@ -68,10 +68,8 @@ namespace ui {
             };
 
             const auto req = getRequiredSize(elem);
-            if (isContraining(style.x)){
+            if (isContraining(style.x) && isContraining(style.y)){
                 maxSize.x = std::max(maxSize.x, req.x);
-            }
-            if (isContraining(style.y)){
                 maxSize.y = std::max(maxSize.y, req.y);
             }
         }

@@ -69,7 +69,7 @@ namespace ui {
         // redraw the UI
         void redraw();
 
-        Control* findControlAt(vec2 p);
+        Control* findControlAt(vec2 p, const Element* exclude = nullptr);
 
         // emulates the releasing of all held
         // keys and mouse buttons
@@ -94,6 +94,8 @@ namespace ui {
         bool handleTextEntryKeyDown(Key);
 
         void transferResponseTo(Control*);
+
+        void dropDraggable(Draggable* d, vec2 pos);
 
         // clean up all listeners for a window
         void onRemoveElement(Element*);

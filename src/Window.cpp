@@ -17,58 +17,28 @@ namespace ui {
             return nullptr;
         }
 
-        // List of ancestral controls that are still part of the UI initially
-        // This is used to find the next highest control that is still part of the ui,
-        // in case a control is removed while responding to an event and
-        // focus needs to be transferred
-        std::vector<Control*> ancestors;
-        {
-            auto curr = elem->getParentControl();
-            while (curr){
-                ancestors.insert(ancestors.begin(), curr);
-                curr = curr->getParentControl();
-            }
-        }
-
         // Pointer to the (optional) control that will receive the
         // corresponding end event (i.e. onKeyUp for responding to onKeyDown).
         // Controls may modify this while responding to an event by calling
         // transferEventResponseTo()
-        self->m_currentEventResponder = nullptr;
+        self->m_currentEventResponder = elem;
 
-
-        while (true){
-            assert(elem->getParentWindow() == self);
-            if ((elem->*handlerFn)(args...)){
-                if (self->m_currentEventResponder){
+        while (self->m_currentEventResponder){
+            assert(self->m_currentEventResponder->getParentWindow() == self);
+            const auto currentElem = elem;
+            if ((self->m_currentEventResponder->*handlerFn)(args...)){
+                if (self->m_currentEventResponder == nullptr){
+                    return nullptr;
+                } else if (self->m_currentEventResponder != currentElem){
                     assert(self->m_currentEventResponder->getParentWindow() == self);
                     return self->m_currentEventResponder;
-                }
-                if (elem->getParentWindow() != self){
-                    // NOTE: if the element was removed from the UI, it should not be
-                    // used in the future, and focus should be transferred to its closest
-                    // previous ancestor that is still part of the UI
-                    while (ancestors.size() > 0){
-                        if (ancestors.back()->getParentWindow() == self){
-                            return ancestors.back();
-                        }
-                        ancestors.pop_back();
-                    }
-                    return nullptr;
                 } else {
-                    return elem;
+                    return self->m_currentEventResponder;
                 }
             }
-            assert(
-                (elem->getParentControl() == nullptr && ancestors.empty())
-                || elem->getParentControl() == ancestors.back()
-            );
-            if (ancestors.empty()){
-                return nullptr;
-            }
-            elem = ancestors.back();
-            ancestors.pop_back();
+            self->m_currentEventResponder = self->m_currentEventResponder->getParentControl();
         }
+        return nullptr;
     }
 
     Window::Window(unsigned width, unsigned height, const String& title) :
@@ -251,8 +221,8 @@ namespace ui {
         applyTransitions();
     }
 
-    Control* Window::findControlAt(vec2 p){
-        const auto hitElem = m_root->findElementAt(p);
+    Control* Window::findControlAt(vec2 p, const Element* exclude){
+        const auto hitElem = m_root->findElementAt(p, exclude);
         if (!hitElem){
             return nullptr;
         }
@@ -284,6 +254,8 @@ namespace ui {
     void Window::handleMouseDown(sf::Mouse::Button btn, vec2 pos){
         const auto hitCtrl = findControlAt(pos);
 
+        focusTo(hitCtrl);
+
         bool recent = (Context::get().getProgramTime() - m_last_click_time) <= Context::get().getDoubleClickTime();
 
         bool sameBtn = btn == m_last_click_btn;
@@ -310,14 +282,11 @@ namespace ui {
 
         if (btn == sf::Mouse::Left) {
 			m_lclick_elem = propagate(this, hitCtrl, &Control::onLeftClick, numClicks);
-            focusTo(m_lclick_elem);
 		} else if (btn == sf::Mouse::Middle) {
 			m_mclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
-            focusTo(m_mclick_elem);
 		} else if (btn == sf::Mouse::Middle) {
 			m_rclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
-            focusTo(m_rclick_elem);
-		}
+        }
         
         m_last_click_btn = btn;
     }
@@ -398,10 +367,7 @@ namespace ui {
     }
 
     void Window::handleHover(vec2 pos){
-        auto newElem = findControlAt(pos);
-        if (newElem == m_hover_elem){
-            return;
-        }
+        auto newElem = findControlAt(pos, m_hover_elem);
 
         std::vector<Control*> pathUp, pathDown;
         auto curr = m_hover_elem;
@@ -535,6 +501,17 @@ namespace ui {
         m_currentEventResponder = c;
     }
 
+    void Window::dropDraggable(Draggable* d, vec2 pos){
+        assert(d);
+        auto c = findControlAt(pos, d);
+        while (c){
+            if (c->onDrop(d)){
+                return;
+            }
+            c = c->getParentControl();
+        }
+    }
+
     void Window::onRemoveElement(Element* e){
         // NOTE: this function will be called during the
         // destructor of Element. Do not call any virtual functions.
@@ -563,6 +540,9 @@ namespace ui {
             }
             if (elem == m_rclick_elem){
                 m_lclick_elem = nullptr;
+            }
+            if (elem == m_currentEventResponder){
+                m_currentEventResponder = nullptr;
             }
             for (auto it = m_keypressed_elems.begin(), end = m_keypressed_elems.end(); it != end;){
                 const auto& [key, ctrl] = *it;

@@ -159,8 +159,12 @@ namespace ui {
             it->child->requireUpdate();
         }
         it->child->forceUpdate();
-        assert(it->requiredSize);
-        return *it->requiredSize;
+        // TODO: an assertion here to make sure requiredSize was not empty was causing problems
+        // This is a cheap workaround, but this should be investigated
+        if (it->requiredSize){
+            return *it->requiredSize;
+        }
+        return {};
     }
 
     void Container::updatePreviousSizes(){
@@ -258,14 +262,17 @@ namespace ui {
         return this;
     }
 
-    Element* Container::findElementAt(vec2 p){
+    Element* Container::findElementAt(vec2 p, const Element* exclude){
+        if (this == exclude){
+            return false;
+        }
         const bool hitThis = hit(p);
         if (m_clipping && !hitThis){
             return false;
         }
         for (auto it = m_children.rbegin(), end = m_children.rend(); it != end; ++it){
             auto& c = it->child;
-            if (auto e = c->findElementAt(p - pos())){
+            if (auto e = c->findElementAt(p - pos(), exclude)){
                 return e;
             }
         }

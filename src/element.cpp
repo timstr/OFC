@@ -88,11 +88,11 @@ namespace ui {
         return pos() + (m_parent ? m_parent->rootPos() : vec2{});
     }
     
-    std::optional<vec2> Element::localMousePos(){
+    vec2 Element::localMousePos(){
         if (auto win = getParentWindow()){
             return win->getMousePosition() - rootPos();
         }
-        return {};
+        throw std::runtime_error("The Element must belong to a window");
     }
     
     void Element::onMove(){
@@ -211,7 +211,10 @@ namespace ui {
             (p.y < m_position.y + m_size.y);
     }
     
-    Element* Element::findElementAt(vec2 p){
+    Element* Element::findElementAt(vec2 p, const Element* exclude){
+        if (this == exclude){
+            return false;
+        }
         return hit(p) ? this : nullptr;
     }
     

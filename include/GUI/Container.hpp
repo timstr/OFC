@@ -48,7 +48,7 @@ namespace ui {
 
         Container* toContainer() override;
 
-        Element* findElementAt(vec2 p) override;
+        Element* findElementAt(vec2 p, const Element* exclude) override;
 
         struct ChildData {
             std::unique_ptr<Element> child;
