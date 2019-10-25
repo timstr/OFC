@@ -23,10 +23,11 @@ namespace ui {
     
     }
 
-    void Draggable::drop(vec2 localPoint){
+    bool Draggable::drop(vec2 localPoint){
         if (auto win = getParentWindow()){
-            win->dropDraggable(this, rootPos() + localPoint);
+            return win->dropDraggable(this, rootPos() + localPoint);
         }
+        return false;
     }
 
     bool Draggable::dragging() const {

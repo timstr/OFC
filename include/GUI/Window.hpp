@@ -95,7 +95,7 @@ namespace ui {
 
         void transferResponseTo(Control*);
 
-        void dropDraggable(Draggable* d, vec2 pos);
+        bool dropDraggable(Draggable* d, vec2 pos);
 
         // clean up all listeners for a window
         void onRemoveElement(Element*);

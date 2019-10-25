@@ -233,15 +233,15 @@ namespace ui {
     }
 
     void Window::releaseAllButtons(){
-        if (m_lclick_elem){
+        if (m_lclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Left)){
             m_lclick_elem->onLeftRelease();
             m_lclick_elem = nullptr;
         }
-        if (m_mclick_elem){
+        if (m_mclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Middle)){
             m_mclick_elem->onMiddleRelease();
             m_mclick_elem = nullptr;
         }
-        if (m_rclick_elem){
+        if (m_rclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Right)){
             m_rclick_elem->onRightRelease();
             m_rclick_elem = nullptr;
         }
@@ -501,15 +501,16 @@ namespace ui {
         m_currentEventResponder = c;
     }
 
-    void Window::dropDraggable(Draggable* d, vec2 pos){
+    bool Window::dropDraggable(Draggable* d, vec2 pos){
         assert(d);
         auto c = findControlAt(pos, d);
         while (c){
             if (c->onDrop(d)){
-                return;
+                return true;
             }
             c = c->getParentControl();
         }
+        return false;
     }
 
     void Window::onRemoveElement(Element* e){

@@ -12,7 +12,7 @@ namespace ui {
 
         virtual void onDrag();
 
-        void drop(vec2 localPoint = {0.0f, 0.0f});
+        bool drop(vec2 localPoint = {0.0f, 0.0f});
 
         bool dragging() const;
 
