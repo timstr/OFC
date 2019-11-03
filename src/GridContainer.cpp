@@ -20,7 +20,7 @@ namespace ui {
         m_rows(rows),
         m_cols(columns) {
 
-        //assert(rows > 0 && columns > 0);
+        // assert(rows > 0 && columns > 0);
 		
         m_cells.resize(rows);
         for (auto& row : m_cells){

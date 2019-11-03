@@ -24,10 +24,12 @@ set(tims-gui_headers
 	include/GUI/GridContainer.hpp
 	include/GUI/GUI.hpp
 	include/GUI/Helpers.hpp
+    include/GUI/HorizontalList.hpp
 	include/GUI/Image.hpp
 	include/GUI/RoundedRectangle.hpp
 	include/GUI/Text.hpp
 	include/GUI/TextEntry.hpp
+    include/GUI/VerticalList.hpp
 	include/GUI/Window.hpp
 	include/GUI/Helpers/CallbackButton.hpp
     include/GUI/Helpers/CallbackTextEntry.hpp
@@ -51,10 +53,12 @@ set(tims-gui_srcs
 	src/FreeContainer.cpp
 	src/GridContainer.cpp
 	src/GUI.cpp
+    src/HorizontalList.cpp
 	src/Image.cpp
 	src/RoundedRectangle.cpp
 	src/Text.cpp
 	src/TextEntry.cpp
+    src/VerticalList.cpp
 	src/Window.cpp
 	src/Helpers/CallbackButton.cpp
     src/Helpers/CallbackTextEntry.cpp

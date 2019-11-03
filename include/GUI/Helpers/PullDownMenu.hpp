@@ -8,6 +8,8 @@
 
 namespace ui {
 
+    // TODO: replace GridContainer with VerticalList once it supports uniform width
+
     namespace detail {
         template<typename T>
         class PullDownMenuBase : public FreeContainer, public Control {
@@ -40,7 +42,7 @@ namespace ui {
             std::size_t m_selection;
             std::function<void(const T&)> m_onChange;
             CallbackButton& m_label;
-            GridContainer& m_listItems;
+            VerticalList& m_listItems;
             std::unique_ptr<GridContainer> m_listItemsUP;
             std::vector<ui::CallbackButton*> m_buttons;
         };

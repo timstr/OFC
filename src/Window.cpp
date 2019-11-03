@@ -233,7 +233,10 @@ namespace ui {
     }
 
     void Window::releaseAllButtons(){
-        if (m_lclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+        // TODO: rethink this, since it sends redundent signals to elements which
+        // have already received a mouse-released event
+
+        /*if (m_lclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Left)){
             m_lclick_elem->onLeftRelease();
             m_lclick_elem = nullptr;
         }
@@ -244,7 +247,7 @@ namespace ui {
         if (m_rclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Right)){
             m_rclick_elem->onRightRelease();
             m_rclick_elem = nullptr;
-        }
+        }*/
         for (auto& [key, ctrl] : m_keypressed_elems){
             ctrl->onKeyUp(key);
         }

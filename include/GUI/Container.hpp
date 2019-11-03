@@ -30,6 +30,8 @@ namespace ui {
 
         std::unique_ptr<Element> release(const Element*);
 
+        void clear();
+
         virtual void onRemoveChild(const Element*);
 
         std::vector<Element*> children();

@@ -63,6 +63,12 @@ namespace ui {
         return ret;
     }
 
+    void Container::clear(){
+        while (m_children.size() > 0){
+            release(m_children.back().child.get());
+        }
+    }
+
     void Container::onRemoveChild(const Element*){
 
     }
