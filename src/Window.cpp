@@ -701,96 +701,112 @@ namespace ui {
         // NOTE: the size is being accessed directly instead of through
         // get/setSize() to avoid adding the element to the queue again
 
-        assert(elem);
-        assert(!elem->m_isUpdating);
-        elem->m_isUpdating = true;
+        const auto maxUpdates = std::size_t{10};
+        for (std::size_t i = 0; i < maxUpdates; ++i){
+            assert(elem);
+            assert(!elem->m_isUpdating);
+            elem->m_isUpdating = true;
 
-        // Remove the element from the queue
-        {
-            auto it = std::find(m_updateQueue.begin(), m_updateQueue.end(), elem);
-            assert(it != m_updateQueue.end());
-            m_updateQueue.erase(it);
-        }
-
-        // Get the element's original size
-        const auto prevSize = elem->m_parent ?
-            elem->m_parent->getPreviousSize(elem) :
-            std::optional<vec2>{};
-
-        // Retrieve the element's available size
-        const auto availSize = [&](){
-            if (auto p = elem->getParentContainer()){
-                return p->getAvailableSize(elem);
-            } else {
-                assert(elem == m_root.get());
-                return std::optional{getSize()};
+            // Remove the element from the queue
+            {
+                auto it = std::find(m_updateQueue.begin(), m_updateQueue.end(), elem);
+                assert(it != m_updateQueue.end());
+                m_updateQueue.erase(it);
             }
-        }();
 
-        // Set the element's size to be the available size
-        if (availSize){
-            elem->m_size = *availSize;
-        }
-        // Limit the element's size according to its minimum and maximum size
-        elem->m_size.x = std::clamp(elem->m_size.x, elem->m_minsize.x, elem->m_maxsize.x);
-        elem->m_size.y = std::clamp(elem->m_size.y, elem->m_minsize.y, elem->m_maxsize.y);
+            // Get the element's original size
+            const auto prevSize = elem->m_parent ?
+                elem->m_parent->getPreviousSize(elem) :
+                std::optional<vec2>{};
 
-        // Tell the element to update its contents and get the size it actually needs
-        const auto actualRequiredSize = elem->update();
-
-        // Let the container know the required size (which may differ from the final size)
-        if (auto p = elem->getParentContainer()){
-            p->setRequiredSize(
-                elem,
-                {
-                    std::clamp(actualRequiredSize.x, elem->m_minsize.x, elem->m_maxsize.x),
-                    std::clamp(actualRequiredSize.y, elem->m_minsize.y, elem->m_maxsize.y)
+            // Retrieve the element's available size
+            const auto availSize = [&](){
+                if (auto p = elem->getParentContainer()){
+                    return p->getAvailableSize(elem);
+                } else {
+                    assert(elem == m_root.get());
+                    return std::optional{getSize()};
                 }
-            );
-        }
+            }();
 
-        if (!availSize){
-            elem->m_size = actualRequiredSize;
-        }
+            // Set the element's size to be the available size
+            if (availSize){
+                elem->m_size = *availSize;
+            }
+            // Limit the element's size according to its minimum and maximum size
+            elem->m_size.x = std::clamp(elem->m_size.x, elem->m_minsize.x, elem->m_maxsize.x);
+            elem->m_size.y = std::clamp(elem->m_size.y, elem->m_minsize.y, elem->m_maxsize.y);
 
-        // Limit the element's size according to its minimum and maximum size
-        elem->m_size.x = std::clamp(elem->m_size.x, elem->m_minsize.x, elem->m_maxsize.x);
-        elem->m_size.y = std::clamp(elem->m_size.y, elem->m_minsize.y, elem->m_maxsize.y);
+            // Tell the element to update its contents and get the size it actually needs
+            const auto actualRequiredSize = elem->update();
 
-        // mark the element as clean
-        elem->m_needs_update = false;
+            // Let the container know the required size (which may differ from the final size)
+            if (auto p = elem->getParentContainer()){
+                p->setRequiredSize(
+                    elem,
+                    {
+                        std::clamp(actualRequiredSize.x, elem->m_minsize.x, elem->m_maxsize.x),
+                        std::clamp(actualRequiredSize.y, elem->m_minsize.y, elem->m_maxsize.y)
+                    }
+                );
+            }
 
-        if (auto c = elem->toContainer()){
-            // cache the element's previous sizes to allow efficient rerendering decisions
-            // (see getPreviousSize() above)
-            c->updatePreviousSizes();
+            if (!availSize){
+                elem->m_size = actualRequiredSize;
+            }
 
-            // see if any children moved, call onMove on those that did
-            c->updatePositions();
-        }
+            // Limit the element's size according to its minimum and maximum size
+            elem->m_size.x = std::clamp(elem->m_size.x, elem->m_minsize.x, elem->m_maxsize.x);
+            elem->m_size.y = std::clamp(elem->m_size.y, elem->m_minsize.y, elem->m_maxsize.y);
 
-        elem->m_isUpdating = false;
+            // mark the element as clean
+            elem->m_needs_update = false;
 
-        // If the element's size changed from its previous size, or if the parent
-        // is dirty, update it too
-        const auto sizeChanged = 
-            !prevSize.has_value() || (
-                std::abs(elem->m_size.x - prevSize->x) > 1e-6 ||
-                std::abs(elem->m_size.y - prevSize->y) > 1e-6
-            );
+            if (auto c = elem->toContainer()){
+                // cache the element's previous sizes to allow efficient rerendering decisions
+                // (see getPreviousSize() above)
+                c->updatePreviousSizes();
+
+                // see if any children moved, call onMove on those that did
+                c->updatePositions();
+            }
+
+            elem->m_isUpdating = false;
+
+            // If the element's size changed from its previous size, or if the parent
+            // is dirty, update it too
+            const auto sizeChanged = 
+                !prevSize.has_value() || (
+                    std::abs(elem->m_size.x - prevSize->x) > 1e-6 ||
+                    std::abs(elem->m_size.y - prevSize->y) > 1e-6
+                );
         
-        const auto couldUseLessSpace = 
-            (actualRequiredSize.x < elem->m_size.x) ||
-            (actualRequiredSize.y < elem->m_size.y);
+            const auto couldUseLessSpace = 
+                (actualRequiredSize.x < elem->m_size.x) ||
+                (actualRequiredSize.y < elem->m_size.y);
 
-        if (sizeChanged){
-            elem->onResize();
-        }
+            if (auto p = elem->m_parent){
+                p->updatePreviousSizes(elem);
+                p->updatePositions(elem);
+            }
 
-        if (elem->m_parent && (elem->m_parent->m_needs_update || sizeChanged || couldUseLessSpace)){
-            elem->m_parent->requireUpdate();
-            elem->m_parent->forceUpdate();
+            if (sizeChanged){
+                elem->onResize();
+            }
+
+            // If the parent container possibly needs to update, update it now
+            if (elem->m_parent && (elem->m_parent->m_needs_update || sizeChanged || couldUseLessSpace)){
+                elem->m_parent->requireUpdate();
+                elem->m_parent->forceUpdate();
+            }
+
+            // If the element is still up-to-date after updating its parents,
+            // stop right there
+            if (!elem->m_needs_update){
+                return;
+            }
         }
+        throw std::runtime_error("Exceeded maximum updated count");
     }
 
     void Window::cancelUpdate(const Element* elem){

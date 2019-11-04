@@ -69,11 +69,11 @@ namespace ui {
         Window* getWindow() const override final;
         
         // Call this after computing the layout
-        void updatePreviousSizes();
+        void updatePreviousSizes(const Element* which = nullptr);
         std::optional<vec2> getPreviousSize(const Element* child) const;
 
         // Finds any children that moved and calls onMove on each one
-        void updatePositions();
+        void updatePositions(const Element* which = nullptr);
 
         void setRequiredSize(const Element* child, vec2 size);
 

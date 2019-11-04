@@ -7,8 +7,10 @@
 
 namespace ui {
 
+    // TODO: safety checks in case max==min
+
     template<typename Number>
-    class Slider : public Control, public FreeContainer, public BoxElement {
+    class Slider : public Control, public ui::Boxed<ui::FreeContainer> {
     public:
         Slider(Number default_val, Number min, Number max, const sf::Font& font, std::function<void(Number)> onChange);
 
@@ -24,8 +26,6 @@ namespace ui {
     private:
 
         class Dragger;
-
-        void render(sf::RenderWindow&) override;
 
         void updateFromDragger();
 
@@ -82,12 +82,14 @@ namespace ui {
             const auto t = static_cast<double>(x / max);
             const auto v = static_cast<double>(m_parent.m_minimum)
                 + t * static_cast<double>(m_parent.m_maximum - m_parent.m_minimum);
+            assert(m_parent.m_onChange);
             if constexpr (std::is_integral_v<Number>){
-                m_parent.setValue(static_cast<Number>(std::round(v)));
+                m_parent.m_value = static_cast<Number>(std::round(v));
+                m_parent.m_onChange(m_parent.m_value);
             } else {
-                m_parent.setValue(static_cast<Number>(v));
+                m_parent.m_value = static_cast<Number>(v);
+                m_parent.m_onChange(m_parent.m_value);
             }
-            //m_parent.updateFromDragger();
         }
 
     private:
@@ -134,9 +136,39 @@ namespace ui {
     }
 
     template<typename Number>
-    inline void Slider<Number>::render(sf::RenderWindow& rw){
-        BoxElement::render(rw);
-        FreeContainer::render(rw);
+    inline void Slider<Number>::setMinimum(Number v){
+        m_minimum = v;
+        m_maximum = std::max(m_maximum, m_minimum);
+        auto vc = std::clamp(m_value, m_minimum, m_maximum);
+        if (vc != m_value){
+            m_value = vc;
+            updateFromValue();
+            assert(m_onChange);
+            m_onChange(m_value);
+        }
+    }
+
+    template<typename Number>
+    inline Number Slider<Number>::minimum() const {
+        return m_minimum;
+    }
+
+    template<typename Number>
+    inline void Slider<Number>::setMaximum(Number v){
+        m_maximum = v;
+        m_minimum = std::min(m_minimum, m_maximum);
+        auto vc = std::clamp(m_value, m_minimum, m_maximum);
+        if (vc != m_value){
+            m_value = vc;
+            updateFromValue();
+            assert(m_onChange);
+            m_onChange(m_value);
+        }
+    }
+
+    template<typename Number>
+    inline Number Slider<Number>::maximum() const {
+        return m_maximum;
     }
 
     template<typename Number>
@@ -180,8 +212,7 @@ namespace ui {
             m_fineDragStartPos = m_dragger.left();
         } else {
             auto mp = localMousePos();
-            assert(mp);
-            const auto x = (mp->x - m_dragger.width() * 0.5f);
+            const auto x = (mp.x - m_dragger.width() * 0.5f);
             m_dragger.setLeft(x);
         }
         m_dragger.startDrag();
@@ -213,7 +244,6 @@ namespace ui {
                 step = static_cast<Number>(baseStep * sign);
             }
             
-            // Lazy option for now
             const auto v = std::clamp(
                 m_value + step,
                 m_minimum,
@@ -221,16 +251,22 @@ namespace ui {
             );
             if (m_value != v){
                 m_value = v;
+                assert(m_onChange);
+                m_onChange(m_value);
                 updateFromValue();
             }
         };
 
         if (key == Key::Home){
             m_value = m_minimum;
+            assert(m_onChange);
+            m_onChange(m_value);
             updateFromValue();
             return true;
         } else if (key == Key::End){
             m_value = m_maximum;
+            assert(m_onChange);
+            m_onChange(m_value);
             updateFromValue();
             return true;
         } else if (key == Key::Left){

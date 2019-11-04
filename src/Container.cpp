@@ -120,7 +120,7 @@ namespace ui {
             (std::abs(it->availableSize->x - size.x) > 1e-6 || std::abs(it->availableSize->y - size.y) > 1e-6)){
             it->child->requireUpdate();
         }
-        it->previousSize.reset();
+        //it->previousSize.reset();
         it->availableSize = size;
     }
 
@@ -136,7 +136,7 @@ namespace ui {
         if (it->availableSize.has_value()){
             it->child->requireUpdate();
         }
-        it->previousSize.reset();
+        //it->previousSize.reset();
         it->availableSize.reset();
     }
 
@@ -173,8 +173,11 @@ namespace ui {
         return {};
     }
 
-    void Container::updatePreviousSizes(){
+    void Container::updatePreviousSizes(const Element* e){
         for (auto& cd : m_children){
+            if (e && e != cd.child.get()){
+                continue;
+            }
             cd.previousSize = cd.child->m_size;
         }
     }
@@ -191,8 +194,11 @@ namespace ui {
         return it->previousSize;
     }
 
-    void Container::updatePositions(){
+    void Container::updatePositions(const Element* e){
         for (auto& cd : m_children){
+            if (e && e != cd.child.get()){
+                continue;
+            }
             const auto pos = cd.child->m_position;
             if (!cd.previousPos || (std::abs(cd.previousPos->x - pos.x) > 1e-6f || std::abs(cd.previousSize->y - pos.y) > 1e-6f)){
                 cd.previousPos = pos;
