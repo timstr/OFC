@@ -70,6 +70,10 @@ namespace ui {
         // the element (in local coordinates)
         virtual bool hit(vec2 p) const;
 
+        bool visible() const noexcept;
+
+        void setVisible(bool visible) noexcept;
+
         // find an element that is hit at the given position
         // (in local coordinates)
         virtual Element* findElementAt(vec2 p, const Element* exclude);
@@ -172,6 +176,7 @@ namespace ui {
         mutable vec2 m_size;
         vec2 m_minsize;
         vec2 m_maxsize;
+        bool m_visible;
 
         bool m_needs_update;
         bool m_isUpdating;

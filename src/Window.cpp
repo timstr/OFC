@@ -370,7 +370,7 @@ namespace ui {
     }
 
     void Window::handleHover(vec2 pos){
-        auto newElem = findControlAt(pos, m_hover_elem);
+        auto newElem = findControlAt(pos, m_drag_elem);
 
         std::vector<Control*> pathUp, pathDown;
         auto curr = m_hover_elem;
@@ -390,13 +390,13 @@ namespace ui {
             pathDown.erase(pathDown.begin());
         }
 
-        for (auto it = pathUp.rbegin(), itEnd = pathUp.rend(); it != itEnd; ++it){
-            (*it)->onMouseOut();
-        }
+        for (auto it = pathUp.begin(); it != pathUp.end(); ++it) {
+			(*it)->onMouseOut();
+		}
 
-        for (auto& c : pathDown){
-            c->onMouseOver();
-        }
+		for (auto it = pathDown.rbegin(); it != pathDown.rend(); ++it) {
+			(*it)->onMouseOver();
+		}
 
         m_hover_elem = newElem;
 

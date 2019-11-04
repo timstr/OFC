@@ -19,14 +19,15 @@ namespace ui {
         const float really_big = 1e6f;
     };
 
-    Element::Element() :
-        m_position({0.0f, 0.0f}),
-        m_size({0.0f, 0.0f}),
-        m_minsize({0.0f, 0.0f}),
-        m_maxsize({really_big, really_big}),
-        m_needs_update(false),
-        m_isUpdating(false),
-        m_parent(nullptr) {
+    Element::Element()
+        : m_position({0.0f, 0.0f})
+        , m_size({0.0f, 0.0f})
+        , m_minsize({0.0f, 0.0f})
+        , m_maxsize({really_big, really_big})
+        , m_visible(true)
+        , m_needs_update(false)
+        , m_isUpdating(false)
+        , m_parent(nullptr) {
         
     }
     
@@ -210,9 +211,17 @@ namespace ui {
             (p.y >= m_position.y) &&
             (p.y < m_position.y + m_size.y);
     }
+
+    bool Element::visible() const noexcept {
+        return m_visible;
+    }
+
+    void Element::setVisible(bool visible) noexcept {
+        m_visible = visible;
+    }
     
     Element* Element::findElementAt(vec2 p, const Element* exclude){
-        if (this == exclude){
+        if (!visible() || this == exclude){
             return false;
         }
         return hit(p) ? this : nullptr;

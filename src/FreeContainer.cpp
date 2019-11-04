@@ -30,13 +30,14 @@ namespace ui {
             it->second.x = xstyle;
             it->second.y = ystyle;
         }
+        requireUpdate();
     }
 
     vec2 FreeContainer::update(){
         const auto compute_position = [](PositionStyle style, float pos, float size, float epos, float esize){
             switch (style){
             case PositionStyle::OutsideBegin:
-                return -epos;
+                return -esize;
             case PositionStyle::InsideBegin:
                 return 0.0f;
             case PositionStyle::Center:
