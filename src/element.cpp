@@ -226,6 +226,10 @@ namespace ui {
         }
         return hit(p) ? this : nullptr;
     }
+
+    void Element::render(sf::RenderWindow&){
+
+    }
     
     void Element::startTransition(double duration, std::function<void(double)> fn, std::function<void()> on_complete){
         if (auto win = getParentWindow()){

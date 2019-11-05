@@ -38,7 +38,6 @@ namespace ui {
 
         using ContainerType::ContainerType;
 
-    private:
         void render(sf::RenderWindow& rw) override {
             BoxElement::render(rw);
             ContainerType::render(rw);

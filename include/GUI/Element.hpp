@@ -79,7 +79,7 @@ namespace ui {
         virtual Element* findElementAt(vec2 p, const Element* exclude);
 
         // draws the window
-        virtual void render(sf::RenderWindow&) = 0;
+        virtual void render(sf::RenderWindow&);
 
         // start a transition
         //  duration    - total time the transition will take, in seconds
