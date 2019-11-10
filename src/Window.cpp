@@ -51,6 +51,9 @@ namespace ui {
         m_lclick_elem(nullptr),
         m_mclick_elem(nullptr),
         m_rclick_elem(nullptr),
+        m_lClickReleased(false),
+        m_mClickReleased(false),
+        m_rClickReleased(false),
         m_currentEventResponder(nullptr),
         m_last_click_time(),
         m_last_click_btn(),
@@ -233,21 +236,18 @@ namespace ui {
     }
 
     void Window::releaseAllButtons(){
-        // TODO: rethink this, since it sends redundent signals to elements which
-        // have already received a mouse-released event
-
-        /*if (m_lclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+        if (m_lclick_elem && !m_lClickReleased){
             m_lclick_elem->onLeftRelease();
             m_lclick_elem = nullptr;
         }
-        if (m_mclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Middle)){
+        if (m_mclick_elem && !m_mClickReleased){
             m_mclick_elem->onMiddleRelease();
             m_mclick_elem = nullptr;
         }
-        if (m_rclick_elem && sf::Mouse::isButtonPressed(sf::Mouse::Right)){
+        if (m_rclick_elem && !m_rClickReleased){
             m_rclick_elem->onRightRelease();
             m_rclick_elem = nullptr;
-        }*/
+        }
         for (auto& [key, ctrl] : m_keypressed_elems){
             ctrl->onKeyUp(key);
         }
@@ -285,10 +285,13 @@ namespace ui {
 
         if (btn == sf::Mouse::Left) {
 			m_lclick_elem = propagate(this, hitCtrl, &Control::onLeftClick, numClicks);
+            m_lClickReleased = false;
 		} else if (btn == sf::Mouse::Middle) {
 			m_mclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
+            m_mClickReleased = false;
 		} else if (btn == sf::Mouse::Middle) {
 			m_rclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
+            m_rClickReleased = false;
         }
         
         m_last_click_btn = btn;
@@ -298,14 +301,17 @@ namespace ui {
         if (btn == sf::Mouse::Left) {
 			if (m_lclick_elem) {
 				m_lclick_elem->onLeftRelease();
+                m_lClickReleased = true;
 			}
 		} else if (btn == sf::Mouse::Middle) {
 			if (m_mclick_elem) {
 				m_mclick_elem->onRightRelease();
+                m_mClickReleased = true;
 			}
 		} else if (btn == sf::Mouse::Right) {
 			if (m_rclick_elem) {
 				m_rclick_elem->onRightRelease();
+                m_rClickReleased = true;
 			}
 		}
     }

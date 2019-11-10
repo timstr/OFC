@@ -149,6 +149,9 @@ namespace ui {
         Control* m_lclick_elem;
         Control* m_mclick_elem;
         Control* m_rclick_elem;
+        bool m_lClickReleased;
+        bool m_mClickReleased;
+        bool m_rClickReleased;
 
         // last click event
         sf::Time m_last_click_time;
