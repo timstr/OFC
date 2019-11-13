@@ -11,7 +11,8 @@ namespace ui {
 
     Container::Container()
         : m_parentWindow(nullptr)
-        , m_clipping(false) {
+        , m_clipping(false)
+        , m_shrink(false) {
 
     }
 
@@ -105,6 +106,19 @@ namespace ui {
 
     void Container::setClipping(bool enabled){
         m_clipping = enabled;
+    }
+
+    bool Container::shrink() const {
+        return m_shrink;
+    }
+
+    void Container::setShrink(bool enable){
+        if (m_shrink != enable){
+            m_shrink = enable;
+            if (m_shrink){
+                requireDeepUpdate();
+            }
+        }
     }
 
     void Container::setAvailableSize(const Element* child, vec2 size){

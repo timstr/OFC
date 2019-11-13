@@ -42,7 +42,7 @@ namespace ui {
             std::size_t m_selection;
             std::function<void(const T&)> m_onChange;
             CallbackButton& m_label;
-            VerticalList& m_listItems;
+            GridContainer& m_listItems;
             std::unique_ptr<GridContainer> m_listItemsUP;
             std::vector<ui::CallbackButton*> m_buttons;
         };

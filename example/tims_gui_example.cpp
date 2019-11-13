@@ -124,22 +124,21 @@ std::unique_ptr<ui::Element> makeExampleProcessor(){
     };
 
     auto mainCont = std::make_unique<DraggableGrid>(3, 2);
+    mainCont->setShrink(true);
 
-    auto& left = mainCont->putCell<ui::GridContainer>(0, 1, 1, 3);
-    left.putCell<Knob>(0, 0);
-    left.putCell<Knob>(0, 1);
-    left.putCell<Knob>(0, 2);
+    auto& left = mainCont->putCell<ui::VerticalList>(0, 1);
+    left.push_back<Knob>();
+    left.push_back<Knob>();
+    left.push_back<Knob>();
 
     auto& topCont = mainCont->putCell<ui::FreeContainer>(1, 0);
-    auto& top = topCont.add<ui::GridContainer>(
+    auto& top = topCont.add<ui::HorizontalList>(
         ui::FreeContainer::InsideRight,
-        ui::FreeContainer::Center,
-        2,
-        1
+        ui::FreeContainer::Center
     );
 
-    top.putCell<Knob>(0, 0);
-    top.putCell<Knob>(1, 0);
+    top.push_back<Knob>();
+    top.push_back<Knob>();
 
     auto& corner = mainCont->putCell<DragButton>(
         0,
@@ -147,17 +146,43 @@ std::unique_ptr<ui::Element> makeExampleProcessor(){
         *mainCont
     );
 
-    auto& right = mainCont->putCell<ui::FreeContainer>(2, 1);
+    auto& right = mainCont->putCell<ui::VerticalList>(2, 1);
 
-    right.add<Knob>(ui::FreeContainer::Center, ui::FreeContainer::Center);
+    right.push_back<Knob>();
 
     auto& body = mainCont->putCell<BoxContainer>(1, 1);
     body.setBackgroundColor(0x008800FF);
-    body.add<ui::Text>(
+    auto& content = body.add<ui::VerticalList>(
         ui::FreeContainer::Center,
-        ui::FreeContainer::Center,
+        ui::FreeContainer::Center
+    );
+    content.setPadding(5.0f);
+    content.push_back<ui::Text>(
         "Example Processor",
         getFont()
+    );
+    content.push_back<ui::CallbackButton>(
+        "Add Output",
+        getFont(),
+        [&](){
+            auto& fc = right.push_back<ui::Boxed<ui::FreeContainer>>();
+            fc.setBackgroundColor(0x4040FFFF);
+            fc.setBorderRadius(10.0f);
+            fc.setBorderColor(0xFF);
+            fc.setBorderThickness(1.0f);
+            fc.setMinWidth(75.0f);
+            fc.add<Knob>(ui::FreeContainer::InsideRight, ui::FreeContainer::Center);
+            fc.add<ui::CallbackButton>(
+                ui::FreeContainer::InsideLeft,
+                ui::FreeContainer::Center,
+                "x",
+                getFont(),
+                [&](){
+                    fc.close();
+                }
+            );
+            //right.push_back<Knob>();
+        }
     );
 
     return mainCont;

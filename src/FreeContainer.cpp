@@ -53,33 +53,43 @@ namespace ui {
 
         auto maxSize = vec2{};
 
-        for (auto& elem : children()){
-            auto it = m_styles.find(elem);
-            assert(it != m_styles.end());
-            const auto& style = it->second;
-            const auto x = compute_position(style.x, left(), width(), elem->left(), elem->width());
-            const auto y = compute_position(style.y, top(), height(), elem->top(), elem->height());
-            elem->setPos({std::floor(x), std::floor(y)});
-            //elem->update({0.0f, 0.0f});
+        const auto doUpdate = [&](){
+            for (auto& elem : children()){
+                auto it = m_styles.find(elem);
+                assert(it != m_styles.end());
+                const auto& style = it->second;
+                const auto x = compute_position(style.x, left(), width(), elem->left(), elem->width());
+                const auto y = compute_position(style.y, top(), height(), elem->top(), elem->height());
+                elem->setPos({std::floor(x), std::floor(y)});
+                //elem->update({0.0f, 0.0f});
 
-            const auto isContraining = [](PositionStyle ps){
-                return ps == PositionStyle::InsideBegin
-                    || ps == PositionStyle::InsideEnd
-                    || ps == PositionStyle::Center;
-            };
+                const auto isContraining = [](PositionStyle ps){
+                    return ps == PositionStyle::InsideBegin
+                        || ps == PositionStyle::InsideEnd
+                        || ps == PositionStyle::Center;
+                };
 
-            const auto req = getRequiredSize(elem);
-            if (isContraining(style.x) && isContraining(style.y)){
-                maxSize.x = std::max(maxSize.x, req.x);
-                maxSize.y = std::max(maxSize.y, req.y);
+                const auto req = getRequiredSize(elem);
+                if (isContraining(style.x) && isContraining(style.y)){
+                    maxSize.x = std::max(maxSize.x, req.x);
+                    maxSize.y = std::max(maxSize.y, req.y);
+                }
             }
-        }
 
-        if (maxSize.x > width()){
-            setWidth(maxSize.x);
-        }
-        if (maxSize.y > height()){
-            setHeight(maxSize.y);
+            auto sizeChanged = false;
+            if (maxSize.x > width()){
+                setWidth(maxSize.x);
+                sizeChanged = true;
+            }
+            if (maxSize.y > height()){
+                setHeight(maxSize.y);
+                sizeChanged = true;
+            }
+            return sizeChanged;
+        };
+
+        if (doUpdate()){
+            doUpdate();
         }
 
         return maxSize;

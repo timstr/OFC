@@ -21,6 +21,9 @@ namespace ui {
         bool clipping() const;
         void setClipping(bool enabled);
 
+        bool shrink() const;
+        void setShrink(bool enable);
+
     protected:
 
         template<typename T, typename... Args>
@@ -65,6 +68,7 @@ namespace ui {
         Window* m_parentWindow;
 
         bool m_clipping;
+        bool m_shrink;
 
         Window* getWindow() const override final;
         

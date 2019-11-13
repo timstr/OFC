@@ -727,7 +727,9 @@ namespace ui {
 
             // Retrieve the element's available size
             const auto availSize = [&](){
-                if (auto p = elem->getParentContainer()){
+                if (auto c = elem->toContainer(); c && c->shrink()){
+                    return std::optional{vec2{0.0f, 0.0f}};
+                } else if (auto p = elem->getParentContainer()){
                     return p->getAvailableSize(elem);
                 } else {
                     assert(elem == m_root.get());
@@ -800,10 +802,14 @@ namespace ui {
                 elem->onResize();
             }
 
-            // If the parent container possibly needs to update, update it now
-            if (elem->m_parent && (elem->m_parent->m_needs_update || sizeChanged || couldUseLessSpace)){
-                elem->m_parent->requireUpdate();
-                elem->m_parent->forceUpdate();
+            // If the parent container possibly needs to update, make sure it gets updated soon
+            if (elem->m_parent && (sizeChanged || couldUseLessSpace)){
+                if (!elem->m_parent->m_isUpdating){
+                    if (std::find(m_updateQueue.begin(), m_updateQueue.end(), elem->m_parent) == m_updateQueue.end()){
+                        m_updateQueue.push_back(elem->m_parent);
+                        elem->m_parent->m_needs_update = true;
+                    }
+                }
             }
 
             // If the element is still up-to-date after updating its parents,
