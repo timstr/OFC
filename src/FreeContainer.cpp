@@ -26,11 +26,15 @@ namespace ui {
 
     void FreeContainer::setElementStyle(const Element* e, PositionStyle xstyle, PositionStyle ystyle){
         auto it = m_styles.find(e);
-        if (it != m_styles.end()){
+        if (it == m_styles.end()){
+            throw std::runtime_error("No such element");
+        }
+
+        if (it->second.x != xstyle || it->second.y != ystyle){
             it->second.x = xstyle;
             it->second.y = ystyle;
+            requireUpdate();
         }
-        requireUpdate();
     }
 
     vec2 FreeContainer::update(){
