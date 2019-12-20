@@ -1,5 +1,7 @@
 #include <GUI/FlowContainer.hpp>
 
+#include <cmath>
+
 namespace ui {
 
     FlowContainer::FlowContainer()
