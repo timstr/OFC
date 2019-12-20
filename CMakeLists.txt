@@ -4,8 +4,13 @@ project(tims-gui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library 
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(SFML_STATIC_LIBRARIES TRUE)
-find_package(SFML 2.4 COMPONENTS system window graphics audio main REQUIRED)
+if (UNIX)
+    find_package(SFML 2.4 COMPONENTS system window graphics audio REQUIRED)
+else()
+    set(SFML_STATIC_LIBRARIES TRUE)
+    find_package(SFML 2.4 COMPONENTS system window graphics audio main REQUIRED)
+endif()
+
 
 if (NOT SFML_FOUND)
 	message(FATAL_ERROR "Could not find SFML. Please install SFML.")
@@ -71,13 +76,22 @@ set(tims-gui_srcs
 	
 add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})
 
-target_link_libraries(tims-gui
-	PUBLIC sfml-system
-	PUBLIC sfml-window
-	PUBLIC sfml-graphics
-	PUBLIC sfml-audio
-	PUBLIC sfml-main
-)
+if (UNIX)
+    target_link_libraries(tims-gui
+        PUBLIC sfml-system
+        PUBLIC sfml-window
+        PUBLIC sfml-graphics
+        PUBLIC sfml-audio
+    )
+else()
+    target_link_libraries(tims-gui
+        PUBLIC sfml-system
+        PUBLIC sfml-window
+        PUBLIC sfml-graphics
+        PUBLIC sfml-audio
+        PUBLIC sfml-main
+    )
+endif()
 
 target_include_directories(tims-gui PUBLIC "include")
 

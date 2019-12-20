@@ -293,11 +293,11 @@ namespace ui {
 
     Element* Container::findElementAt(vec2 p, const Element* exclude){
         if (this == exclude){
-            return false;
+            return nullptr;
         }
         const bool hitThis = hit(p);
         if (m_clipping && !hitThis){
-            return false;
+            return nullptr;
         }
         for (auto it = m_children.rbegin(), end = m_children.rend(); it != end; ++it){
             auto& c = it->child;
