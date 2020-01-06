@@ -306,8 +306,8 @@ namespace ui {
 
     void TextEntry::onChange(){
         const auto l = text().getSize();
-        m_cursorHead = std::clamp(m_cursorHead, 0ul, l);
-        m_cursorTail = std::clamp(m_cursorTail, 0ul, l);
+        m_cursorHead = std::clamp(m_cursorHead, size_t{0}, l);
+        m_cursorTail = std::clamp(m_cursorTail, size_t{0}, l);
         onType();
     }
 
