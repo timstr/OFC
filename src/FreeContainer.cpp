@@ -1,6 +1,7 @@
 #include <GUI/FreeContainer.hpp>
 
 #include <cassert>
+#include <cmath>
 
 namespace ui {
 

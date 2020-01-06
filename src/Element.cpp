@@ -222,7 +222,7 @@ namespace ui {
     
     Element* Element::findElementAt(vec2 p, const Element* exclude){
         if (!visible() || this == exclude){
-            return false;
+            return nullptr;
         }
         return hit(p) ? this : nullptr;
     }

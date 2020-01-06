@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cctype>
+#include <cmath>
 
 namespace ui {
 
@@ -305,8 +306,8 @@ namespace ui {
 
     void TextEntry::onChange(){
         const auto l = text().getSize();
-        m_cursorHead = std::clamp(m_cursorHead, 0ull, l);
-        m_cursorTail = std::clamp(m_cursorTail, 0ull, l);
+        m_cursorHead = std::clamp(m_cursorHead, 0ul, l);
+        m_cursorTail = std::clamp(m_cursorTail, 0ul, l);
         onType();
     }
 

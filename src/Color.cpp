@@ -1,6 +1,7 @@
 #include <GUI/Color.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 namespace ui {
 
