@@ -76,7 +76,7 @@ namespace ui {
         void releaseAllButtons();
         
         void handleMouseDown(sf::Mouse::Button btn, vec2 pos);
-        void handleMouseUp(sf::Mouse::Button btn, vec2 pos);
+        void handleMouseUp(sf::Mouse::Button btn);
 
         void handleKeyDown(sf::Keyboard::Key key);
         void handleKeyUp(sf::Keyboard::Key key);

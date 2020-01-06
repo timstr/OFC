@@ -24,6 +24,7 @@ namespace ui {
     }
 
     void VerticalList::insert(std::size_t index, std::unique_ptr<Element> e){
+        assert(e);
         assert(index <= m_cells.size());
         if (index > m_cells.size()){
             throw std::runtime_error("Invalid index");
@@ -43,6 +44,7 @@ namespace ui {
     }
 
     void VerticalList::push_front(std::unique_ptr<Element> e){
+        assert(e);
         m_cells.insert(m_cells.begin(), e.get());
         adopt(std::move(e));
     }
@@ -57,6 +59,7 @@ namespace ui {
     }
 
     void VerticalList::push_back(std::unique_ptr<Element> e){
+        assert(e);
         m_cells.push_back(e.get());
         adopt(std::move(e));
     }
@@ -85,6 +88,7 @@ namespace ui {
         auto y = 0.0f;
         auto w = 0.0f; 
         for (auto c : m_cells){
+            assert(hasAncestor(c));
             c->setPos({m_padding, y + m_padding});
             y += c->height() + 2.0f * m_padding;
             w = std::max(w, c->width());

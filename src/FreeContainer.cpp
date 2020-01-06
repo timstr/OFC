@@ -5,12 +5,14 @@
 namespace ui {
 
     void FreeContainer::adopt(std::unique_ptr<Element> e){
+        assert(e);
         const Element* eptr = e.get();
         Container::adopt(std::move(e));
         m_styles.try_emplace(eptr, ElementStyle{PositionStyle::None, PositionStyle::None});
     }
 
     void FreeContainer::adopt(PositionStyle xstyle, PositionStyle ystyle, std::unique_ptr<Element> e){
+        assert(e);
         const Element* eptr = e.get();
         Container::adopt(std::move(e));
         m_styles.try_emplace(eptr, ElementStyle{xstyle, ystyle});
@@ -38,7 +40,7 @@ namespace ui {
     }
 
     vec2 FreeContainer::update(){
-        const auto compute_position = [](PositionStyle style, float pos, float size, float epos, float esize){
+        const auto compute_position = [](PositionStyle style, float size, float epos, float esize){
             switch (style){
             case PositionStyle::OutsideBegin:
                 return -esize;
@@ -62,8 +64,8 @@ namespace ui {
                 auto it = m_styles.find(elem);
                 assert(it != m_styles.end());
                 const auto& style = it->second;
-                const auto x = compute_position(style.x, left(), width(), elem->left(), elem->width());
-                const auto y = compute_position(style.y, top(), height(), elem->top(), elem->height());
+                const auto x = compute_position(style.x, width(), elem->left(), elem->width());
+                const auto y = compute_position(style.y, height(), elem->top(), elem->height());
                 elem->setPos({std::floor(x), std::floor(y)});
                 //elem->update({0.0f, 0.0f});
 

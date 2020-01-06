@@ -23,8 +23,8 @@ namespace ui {
     }
     
     void Container::adopt(std::unique_ptr<Element> e){
+        assert(e);
         e->m_parent = this;
-        auto eptr = e.get();
         m_children.push_back({std::move(e), {}, {}, {}});
         requireDeepUpdate();
     }
@@ -119,6 +119,51 @@ namespace ui {
                 requireDeepUpdate();
             }
         }
+    }
+
+    bool Container::empty() const {
+        return m_children.size() == 0;
+    }
+
+    std::size_t Container::numChildren() const {
+        return m_children.size();
+    }
+
+    Element* Container::getChild(std::size_t i){
+        return const_cast<Element*>(const_cast<const Container*>(this)->getChild(i));
+    }
+
+    const Element* Container::getChild(std::size_t i) const {
+        assert(i < m_children.size());
+        if (i >= m_children.size()){
+            throw std::runtime_error("Index out of range");
+        }
+        return m_children[i].child.get();
+    }
+
+    bool Container::hasChild(const Element* e) const {
+        assert([&](){
+            auto c = std::count_if(
+                m_children.begin(),
+                m_children.end(),
+                [&](const ChildData& cd){
+                    return cd.child.get() == e;
+                }
+            );
+            return (c <= 1) && (c == 0 || e->m_parent == this);
+        }());
+        return e->m_parent == this;
+    }
+
+    bool Container::hasAncestor(const Element* e) const {
+        auto c = e->m_parent;
+        while (c){
+            if (c == this){
+                return true;
+            }
+            c = c->m_parent;
+        }
+        return false;
     }
 
     void Container::setAvailableSize(const Element* child, vec2 size){

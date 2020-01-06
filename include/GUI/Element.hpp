@@ -202,11 +202,13 @@ namespace ui {
     };
 
     template<typename T>
-    std::unique_ptr<T> makeOrphan(T& element){
+    std::unique_ptr<T> makeOrphan(T* element){
         static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
-        auto ptr = dynamic_cast<T*>(element.orphan().release());
-        assert(ptr);
-        return std::unique_ptr<T>{ptr};
+        auto up = element->orphan();
+        auto p = dynamic_cast<T*>(up.get());
+        assert(p);
+        up.release();
+        return std::unique_ptr<T>{p};
     }
 
 } // namespace ui

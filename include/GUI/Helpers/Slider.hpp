@@ -37,9 +37,9 @@ namespace ui {
 
         void onResize() override;
 
-        Number m_value;
         Number m_minimum;
         Number m_maximum;
+        Number m_value;
         std::optional<float> m_fineDragStartPos;
         std::function<void(Number)> m_onChange;
         Text& m_label;
@@ -100,9 +100,9 @@ namespace ui {
 
     template<typename Number>
     inline Slider<Number>::Slider(Number defaultValue, Number min, Number max, const sf::Font& font, std::function<void(Number)> onChange)
-        : m_value(defaultValue)
-        , m_minimum(min)
-        , m_maximum(max)
+        : m_minimum(std::min(min, max))
+        , m_maximum(std::max(min, max))
+        , m_value(std::clamp(defaultValue, m_minimum, m_maximum))
         , m_onChange(std::move(onChange))
         , m_label(add<Text>(FreeContainer::InsideLeft, FreeContainer::Center, "", font))
         , m_dragger(add<Dragger>(*this)) {
@@ -199,10 +199,15 @@ namespace ui {
     template<typename Number>
     inline void Slider<Number>::updateFromValue(){
         const auto v = static_cast<float>(m_value);
-        const auto t = (v - static_cast<float>(m_minimum)) / static_cast<float>(m_maximum - m_minimum);
-        assert(t >= 0.0 && t <= 1.0);
-        const auto max = width() - m_dragger.width();
-        m_dragger.setLeft(t * max);
+        const auto d = static_cast<float>(m_maximum - m_minimum);
+        if (std::abs(d) < 1e-3f){
+            m_dragger.setLeft(0.0);
+        } else {
+            const auto t = (v - static_cast<float>(m_minimum)) / d;
+            assert(t >= 0.0 && t <= 1.0);
+            const auto max = width() - m_dragger.width();
+            m_dragger.setLeft(t * max);
+        }
         m_label.setText(std::to_string(m_value));
     }
 
@@ -238,7 +243,7 @@ namespace ui {
             const auto baseStep = std::pow(10.0, std::round(mag)) * multiplier;
             
             Number step;
-            if (std::is_integral_v<Number> && baseStep < 1.0){
+            if constexpr (std::is_integral_v<Number> && baseStep < 1.0){
                 step = static_cast<Number>(sign);
             } else {
                 step = static_cast<Number>(baseStep * sign);

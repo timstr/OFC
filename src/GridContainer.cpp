@@ -127,7 +127,9 @@ namespace ui {
         }
         assert(!getCell(row, column));
         auto eptr = e.get();
-        adopt(std::move(e));
+        if (e){
+            adopt(std::move(e));
+        }
         m_cells[row][column].child = eptr;
     }
 

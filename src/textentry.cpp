@@ -45,7 +45,7 @@ namespace ui {
         return win->currentTextEntry() == this;
     }
 
-    bool TextEntry::onLeftClick(int clicks){
+    bool TextEntry::onLeftClick(int){
         const auto s = text();
 
         if (s.getSize() > 0){

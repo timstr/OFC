@@ -53,7 +53,7 @@ namespace ui {
         return m_label;
     }
 
-    bool CallbackButton::onLeftClick(int clicks){
+    bool CallbackButton::onLeftClick(int){
         m_state = State::Active;
         clearTransitions();
         setBackgroundColor(m_activeColor);

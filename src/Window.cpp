@@ -209,9 +209,7 @@ namespace ui {
                     break;
                 }
                 case sf::Event::MouseButtonReleased: {
-                    const auto x = static_cast<float>(event.mouseButton.x);
-                    const auto y = static_cast<float>(event.mouseButton.y);
-                    handleMouseUp(event.mouseButton.button, {x, y});
+                    handleMouseUp(event.mouseButton.button);
                     break;
                 }
             }
@@ -297,7 +295,7 @@ namespace ui {
         m_last_click_btn = btn;
     }
 
-    void Window::handleMouseUp(sf::Mouse::Button btn, vec2 pos){
+    void Window::handleMouseUp(sf::Mouse::Button btn){
         if (btn == sf::Mouse::Left) {
 			if (m_lclick_elem) {
 				m_lclick_elem->onLeftRelease();
@@ -695,9 +693,14 @@ namespace ui {
             return;
         }
         m_updateQueue.push_back(elem);
+        assert(std::count(m_updateQueue.begin(), m_updateQueue.end(), elem) == 1);
     }
+    
+    // TODO: remove after testing
+    std::size_t s_updateDepth;
 
     void Window::updateAllElements(){
+        s_updateDepth = 0;
         while (!m_updateQueue.empty()){
             updateOneElement(m_updateQueue.front());
         }
@@ -705,19 +708,24 @@ namespace ui {
 
     void Window::updateOneElement(Element* elem){
         // NOTE: the size is being accessed directly instead of through
-        // get/setSize() to avoid adding the element to the queue again
+        // get/setSize() to avoid marking the element dirty again
+
+        ++s_updateDepth;
 
         const auto maxUpdates = std::size_t{10};
         for (std::size_t i = 0; i < maxUpdates; ++i){
+
             assert(elem);
             assert(!elem->m_isUpdating);
             elem->m_isUpdating = true;
 
             // Remove the element from the queue
             {
-                auto it = std::find(m_updateQueue.begin(), m_updateQueue.end(), elem);
-                assert(it != m_updateQueue.end());
-                m_updateQueue.erase(it);
+                m_updateQueue.erase(std::remove(
+                    m_updateQueue.begin(),
+                    m_updateQueue.end(),
+                    elem
+                ), m_updateQueue.end());
             }
 
             // Get the element's original size
@@ -747,7 +755,7 @@ namespace ui {
 
             // Tell the element to update its contents and get the size it actually needs
             const auto actualRequiredSize = elem->update();
-
+            
             // Let the container know the required size (which may differ from the final size)
             if (auto p = elem->getParentContainer()){
                 p->setRequiredSize(
@@ -806,7 +814,7 @@ namespace ui {
             if (elem->m_parent && (sizeChanged || couldUseLessSpace)){
                 if (!elem->m_parent->m_isUpdating){
                     if (std::find(m_updateQueue.begin(), m_updateQueue.end(), elem->m_parent) == m_updateQueue.end()){
-                        m_updateQueue.push_back(elem->m_parent);
+                        enqueueForUpdate(elem->m_parent);
                         elem->m_parent->m_needs_update = true;
                     }
                 }
@@ -815,6 +823,7 @@ namespace ui {
             // If the element is still up-to-date after updating its parents,
             // stop right there
             if (!elem->m_needs_update){
+                --s_updateDepth;
                 return;
             }
         }

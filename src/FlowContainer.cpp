@@ -53,10 +53,12 @@ namespace ui {
     }
 
     void FlowContainer::adopt(std::unique_ptr<Element> e){
+        assert(e);
         adopt(LayoutStyle::Inline, std::move(e));
     }
 
     void FlowContainer::adopt(LayoutStyle ls, std::unique_ptr<Element> e){
+        assert(e);
         m_layout.push_back(ElementLayout{e.get(), ls});
         Container::adopt(std::move(e));
     }
