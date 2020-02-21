@@ -9,7 +9,39 @@
 
 namespace ui {
 
+    // TODO: if an element is moved to a different container in the same window, not
+    // simply removed altogether, its various listeners should remain active.
+    // How to do it:
+    // - When an element is removed from the window, that element enters the "egress"
+    //   state wherein it is still associated with that window, but is not part
+    //   of that window unless it is added back. The window keeps information about
+    //   pressed keys, held mouse buttons, focus, etc, and the element, though
+    //   no longer part of the UI tree, now stores a pointer to the Window.
+    // - Egress ends when either the window next undergoes a tick, the element
+    //   is added to a different window, or if the element is destroyed.
+    // - If either the window ticks again or the element is added to a different
+    //   window while the element is in egress, that element loses its association
+    //   to the original window completely, and that window removes any lingering
+    //   event listeners to that element. In the case of being added to a new window,
+    //   the element is simply added as if it were a newly created element.
+    // - If the element is added back to the same window during egress, the
+    //   process is reversed. The element leaves egress, all of its previous
+    //   event listeners are unchanged [TODO: what about focus?], and the element's
+    //   special pointer to the window is overwritten.
+    // Implementation details:
+    // - Every element gains a pointer to a window, maybe called egressWindow or similar
+    // - Every window has a queue of elements that are in egress, which it empties
+    //   during each tick.
+
     // TODO: change cursors when mouse is over control, text entry, draggable, etc
+
+    // TODO: add option to prevent elements from being considered for receiving input
+    // For example, some child element which serves only to decorate a Control
+
+    // TODO: SFML keypress events include information about modifiers keys that were
+    // pressed at the time of the last keypress, such as alt, shift, and control.
+    // It's probably more reliable to use these in onKeyDown than checking for
+    // whether these keys are held (redundantly, thanks to left/right duplicate keys)
 
     class Window {
     public:
@@ -17,7 +49,7 @@ namespace ui {
         Window(Window&&) = delete;
         Window& operator=(const Window&) = delete;
         Window& operator=(Window&&) = delete;
-        ~Window() = default;
+        ~Window();
         
         static Window& create(unsigned width, unsigned height, const String& title);
 
@@ -97,8 +129,32 @@ namespace ui {
 
         bool dropDraggable(Draggable* d, vec2 pos);
 
+        // Ensures that event listeners remain attached to
+        // the element if it is temporarily removed and
+        // then returned to the window.
+        // After calling this function, there remains an
+        // association between the window and the element
+        // which maintains these event listeners. This
+        // association is lost if the element is destroyed
+        // or added to a different window.
+        void softRemove(Element*);
+
+        // If the element has previously been softly removed,
+        // returns event listeners as if the element had
+        // never been removed. Otherwise, if the element has
+        // not previously been softly removed, does nothing.
+        void undoSoftRemove(Element*);
+
+        bool isSoftlyRemoved(const Element*) const;
+
         // clean up all listeners for a window
-        void onRemoveElement(Element*);
+        void hardRemove(Element*);
+
+        // Hard removes any softly removed elements which are no
+        // longer part of the window.
+        // Undoes the soft removal of any softly removed elements
+        // which were returned to the window.
+        void purgeRemovalQueue();
 
         // focus to a control, effectively calling onLoseFocus
         // on all controls from the currently one up to the common
@@ -173,6 +229,8 @@ namespace ui {
         std::vector<Transition> m_transitions;
 
         std::vector<Element*> m_updateQueue;
+
+        std::vector<Element*> m_removalQueue;
 
         // registered keyboard commands
         // TODO: move this to context?

@@ -27,14 +27,16 @@ namespace ui {
         , m_visible(true)
         , m_needs_update(false)
         , m_isUpdating(false)
-        , m_parent(nullptr) {
+        , m_parent(nullptr)
+        , m_previousWindow(nullptr) {
         
     }
     
     Element::~Element(){
-        if (auto win = getParentWindow()){
-            win->onRemoveElement(this);
+        if (m_previousWindow){
+            m_previousWindow->hardRemove(this);
         }
+        assert(!m_previousWindow);
     }
     
     float Element::left(){

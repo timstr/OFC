@@ -66,6 +66,10 @@ namespace ui {
         m_sfwindow.setVerticalSyncEnabled(true);
     }
 
+    Window::~Window(){
+        purgeRemovalQueue();
+    }
+
     Window& Window::create(unsigned width, unsigned height, const String& title){
         auto pw = std::unique_ptr<Window>(new Window(width, height, title));
         auto& wr = *pw;
@@ -217,6 +221,7 @@ namespace ui {
     }
 
     void Window::tick(){
+        purgeRemovalQueue();
         handleDrag();
         handleHover(getMousePosition());
         applyTransitions();
@@ -235,19 +240,27 @@ namespace ui {
 
     void Window::releaseAllButtons(){
         if (m_lclick_elem && !m_lClickReleased){
-            m_lclick_elem->onLeftRelease();
+            if (!isSoftlyRemoved(m_lclick_elem)){
+                m_lclick_elem->onLeftRelease();
+            }
             m_lclick_elem = nullptr;
         }
         if (m_mclick_elem && !m_mClickReleased){
-            m_mclick_elem->onMiddleRelease();
+            if (!isSoftlyRemoved(m_mclick_elem)){
+                m_mclick_elem->onMiddleRelease();
+            }
             m_mclick_elem = nullptr;
         }
         if (m_rclick_elem && !m_rClickReleased){
-            m_rclick_elem->onRightRelease();
+            if (!isSoftlyRemoved(m_rclick_elem)){
+                m_rclick_elem->onRightRelease();
+            }
             m_rclick_elem = nullptr;
         }
         for (auto& [key, ctrl] : m_keypressed_elems){
-            ctrl->onKeyUp(key);
+            if (!isSoftlyRemoved(ctrl)){
+                ctrl->onKeyUp(key);
+            }
         }
         m_keypressed_elems.clear();
     }
@@ -298,17 +311,23 @@ namespace ui {
     void Window::handleMouseUp(sf::Mouse::Button btn){
         if (btn == sf::Mouse::Left) {
 			if (m_lclick_elem) {
-				m_lclick_elem->onLeftRelease();
+                if (!isSoftlyRemoved(m_lclick_elem)){
+    				m_lclick_elem->onLeftRelease();
+                }
                 m_lClickReleased = true;
 			}
 		} else if (btn == sf::Mouse::Middle) {
 			if (m_mclick_elem) {
-				m_mclick_elem->onRightRelease();
+                if (!isSoftlyRemoved(m_mclick_elem)){
+    				m_mclick_elem->onMiddleRelease();
+                }
                 m_mClickReleased = true;
 			}
 		} else if (btn == sf::Mouse::Right) {
 			if (m_rclick_elem) {
-				m_rclick_elem->onRightRelease();
+                if (!isSoftlyRemoved(m_rclick_elem)){
+    				m_rclick_elem->onRightRelease();
+                }
                 m_rClickReleased = true;
 			}
 		}
@@ -324,6 +343,7 @@ namespace ui {
         }
 
 		// if no command was found, send key stroke to the current element
+        assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
 		auto elem = propagate(this, m_focus_elem, &Control::onKeyDown, key);
 
 		// and send key up to last element receiving same keystroke
@@ -331,7 +351,9 @@ namespace ui {
 		auto key_it = m_keypressed_elems.find(key);
 		if (key_it != m_keypressed_elems.end()) {
 			if (key_it->second && key_it->second != elem) {
-				key_it->second->onKeyUp(key);
+                if (!isSoftlyRemoved(key_it->second)){
+    				key_it->second->onKeyUp(key);
+                }
 				key_it->second = elem;
 			}
 		} else if (elem) {
@@ -344,14 +366,17 @@ namespace ui {
     void Window::handleKeyUp(sf::Keyboard::Key key){
         auto it = m_keypressed_elems.find(key);
 		if (it != m_keypressed_elems.end()) {
-			assert(it->second);
-		    it->second->onKeyUp(key);
+            auto e = it->second;
+			assert(e);
+            if (!isSoftlyRemoved(e)){
+    		    e->onKeyUp(key);
+            }
 			m_keypressed_elems.erase(it);
 		}
     }
 
     void Window::handleType(sf::Int32 unicode){
-        if (m_text_entry){
+        if (m_text_entry && !isSoftlyRemoved(m_text_entry)){
             m_text_entry->type(unicode);
         }
     }
@@ -362,7 +387,7 @@ namespace ui {
     }
 
     void Window::handleDrag(){
-        if (m_drag_elem){
+        if (m_drag_elem && !isSoftlyRemoved(m_drag_elem)){
             const auto mousePos = getMousePosition();
             auto rootPos = vec2{};
             if (const auto c = m_drag_elem->getParentContainer()){
@@ -377,6 +402,7 @@ namespace ui {
         auto newElem = findControlAt(pos, m_drag_elem);
 
         std::vector<Control*> pathUp, pathDown;
+        assert(!m_hover_elem || !isSoftlyRemoved(m_hover_elem));
         auto curr = m_hover_elem;
         while (curr){
             pathUp.push_back(curr);
@@ -404,7 +430,7 @@ namespace ui {
 
         m_hover_elem = newElem;
 
-        if (m_drag_elem){
+        if (m_drag_elem && !isSoftlyRemoved(m_drag_elem)){
             propagate(this, newElem, &Control::onHover, m_drag_elem);
         }
     }
@@ -435,7 +461,7 @@ namespace ui {
     }
 
     bool Window::handleTextEntryKeyDown(Key key){
-        if (!m_text_entry){
+        if (!m_text_entry || isSoftlyRemoved(m_text_entry)){
             return false;
         }
 
@@ -505,6 +531,8 @@ namespace ui {
     }
 
     void Window::transferResponseTo(Control* c){
+        assert(c);
+        assert(c->getParentWindow() == this);
         m_currentEventResponder = c;
     }
 
@@ -520,7 +548,71 @@ namespace ui {
         return false;
     }
 
-    void Window::onRemoveElement(Element* e){
+    void Window::softRemove(Element* e){
+        assert(e->getParentWindow() == this);
+        assert(e->m_previousWindow == nullptr);
+        assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
+        e->m_previousWindow = this;
+        m_removalQueue.push_back(e);
+        cancelUpdate(e);
+        
+        // TODO: the following feels like a hack.
+
+        /*auto parentControl = e->getParentControl();
+
+        const auto cleanup = [&](const Element* elem){
+            if (elem == m_focus_elem){
+                m_focus_elem = parentControl;
+            }
+            if (elem == m_hover_elem){
+                m_hover_elem = parentControl;
+            }
+            if (elem == m_text_entry){
+                stopTyping();
+            }
+            cancelUpdate(elem);
+        };
+
+        std::function<void(const Element*)> cleanupAll = [&](const Element* elem){
+            if (auto cont = elem->toContainer()){
+                for (auto child : cont->children()){
+                    cleanupAll(child);
+                }
+            }
+            cleanup(elem);
+        };
+
+        cleanupAll(e);*/
+    }
+
+    void Window::undoSoftRemove(Element* e){
+        assert(e->getParentWindow() == nullptr);
+        assert(e->m_previousWindow == this || e->m_previousWindow == nullptr);
+        if (e->m_previousWindow == this){
+            assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 1);
+            e->m_previousWindow = nullptr;
+            m_removalQueue.erase(find(
+                begin(m_removalQueue),
+                end(m_removalQueue),
+                e
+            ), end(m_removalQueue));
+        }
+    }
+
+    bool Window::isSoftlyRemoved(const Element* e) const {
+        assert(e);
+        assert([&]{
+            auto c = count(begin(m_removalQueue), end(m_removalQueue), e);
+            if (e->m_previousWindow == this){
+                return c == 1;
+            } else {
+                return c == 0 && e->m_previousWindow == nullptr;
+            }
+        }());
+        return e->m_previousWindow == this;
+    }
+
+    void Window::hardRemove(Element* e){
         // NOTE: this function will be called during the
         // destructor of Element. Do not call any virtual functions.
         assert(e);
@@ -574,12 +666,43 @@ namespace ui {
             cleanup(elem);
         };
 
+        assert(e->getParentWindow() == this || e->getParentWindow() == nullptr);
         cleanupAll(e);
+        
+        assert(e->m_previousWindow == nullptr || e->m_previousWindow == this);
+        if (e->m_previousWindow == this){
+            assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 1);
+            e->m_previousWindow = nullptr;
+            m_removalQueue.erase(find(
+                begin(m_removalQueue),
+                end(m_removalQueue),
+                e
+            ), end(m_removalQueue));
+        }
+        e->m_previousWindow = nullptr;
+    }
+
+    void Window::purgeRemovalQueue(){
+        while (!m_removalQueue.empty()){
+            auto e = m_removalQueue.back();
+            assert(e);
+            // If the element is still here: undo soft removal
+            // If the element is not part of this window: hard removal
+            // If the element was destroyed: Already hard removed, it won't be in the queue.
+            if (e->getParentWindow() == this){
+                undoSoftRemove(e);
+            } else {
+                hardRemove(e);
+            }
+            assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
+        }
     }
 
     void Window::focusTo(Control* control){
         assert(!control || control->getParentWindow() == this);
+        assert(!isSoftlyRemoved(control));
 
+        assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
         auto prev = m_focus_elem;
 
         std::vector<Control*> pathUp, pathDown;
@@ -621,10 +744,14 @@ namespace ui {
     }
 
     Control* Window::currentControl() const {
+        assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
         return m_focus_elem;
     }
 
     void Window::startDrag(Draggable* d, vec2 o){
+        assert(d);
+        assert(d->getParentWindow() == this);
+        assert(!isSoftlyRemoved(d));
         m_drag_elem = d;
         m_drag_offset = o;
     }
@@ -634,6 +761,7 @@ namespace ui {
     }
 
     Draggable* Window::currentDraggable(){
+        assert(!m_drag_elem || !isSoftlyRemoved(m_drag_elem));
         return m_drag_elem;
     }
 
@@ -695,12 +823,8 @@ namespace ui {
         m_updateQueue.push_back(elem);
         assert(std::count(m_updateQueue.begin(), m_updateQueue.end(), elem) == 1);
     }
-    
-    // TODO: remove after testing
-    std::size_t s_updateDepth;
 
     void Window::updateAllElements(){
-        s_updateDepth = 0;
         while (!m_updateQueue.empty()){
             updateOneElement(m_updateQueue.front());
         }
@@ -709,8 +833,6 @@ namespace ui {
     void Window::updateOneElement(Element* elem){
         // NOTE: the size is being accessed directly instead of through
         // get/setSize() to avoid marking the element dirty again
-
-        ++s_updateDepth;
 
         const auto maxUpdates = std::size_t{10};
         for (std::size_t i = 0; i < maxUpdates; ++i){
@@ -823,7 +945,6 @@ namespace ui {
             // If the element is still up-to-date after updating its parents,
             // stop right there
             if (!elem->m_needs_update){
-                --s_updateDepth;
                 return;
             }
         }

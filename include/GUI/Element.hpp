@@ -183,6 +183,8 @@ namespace ui {
 
         Container* m_parent;
 
+        Window* m_previousWindow;
+
         virtual Container* toContainer();
         const Container* toContainer() const;
         virtual Control* toControl();
