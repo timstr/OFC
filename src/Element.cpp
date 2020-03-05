@@ -57,6 +57,18 @@ namespace ui {
         }
         return m_position;
     }
+
+    float Element::left() const {
+        return m_position.x;
+    }
+
+    float Element::top() const {
+        return m_position.y;
+    }
+
+    vec2 Element::pos() const {
+        return m_position;
+    }
     
     void Element::setLeft(float v){
         if (different(v, m_position.x)){
@@ -112,6 +124,18 @@ namespace ui {
     
     vec2 Element::size(){
         forceUpdate();
+        return m_size;
+    }
+
+    float Element::width() const {
+        return m_size.x;
+    }
+
+    float Element::height() const {
+        return m_size.y;
+    }
+
+    vec2 Element::size() const {
         return m_size;
     }
     

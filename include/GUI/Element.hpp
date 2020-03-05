@@ -30,9 +30,17 @@ namespace ui {
         Element& operator=(Element&&) = delete;
 
         // the element's position relative to its container
+        // NOTE: these may cause an update
         float left();
         float top();
         vec2 pos();
+
+        // The element's position relative to its container
+        // These will not trigger an update
+        float left() const;
+        float top() const;
+        vec2 pos() const;
+
         void setLeft(float);
         void setTop(float);
         void setPos(vec2);
@@ -48,9 +56,16 @@ namespace ui {
         virtual void onMove();
 
         // get the element's size
+        // NOTE: these may cause an update
         float width();
         float height();
         vec2 size();
+
+        // get the element's size
+        // NOTE: these will not trigger an update
+        float width() const;
+        float height() const;
+        vec2 size() const;
 
         // set the element's size
         void setWidth(float, bool force = false);
