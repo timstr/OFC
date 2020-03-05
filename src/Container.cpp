@@ -18,12 +18,27 @@ namespace ui {
 
     Container::~Container(){
         if (auto win = getParentWindow()){
-            win->onRemoveElement(this);
+            win->hardRemove(this);
+        }
+        if (m_previousWindow){
+            // NOTE: this may seem redundent with the destructor
+            // of Element, but the behavior of this depends on
+            // this actually being a container (via the toContainer()
+            // function, which will return null after ~Container)
+            m_previousWindow->hardRemove(this);
         }
     }
     
     void Container::adopt(std::unique_ptr<Element> e){
         assert(e);
+        if (auto prevWin = e->m_previousWindow){
+            if (auto currWin = getParentWindow(); currWin && currWin == prevWin){
+                currWin->undoSoftRemove(e.get());
+            } else {
+                prevWin->hardRemove(e.get());
+            }
+        }
+        assert(e->m_previousWindow == nullptr);
         e->m_parent = this;
         m_children.push_back({std::move(e), {}, {}, {}});
         requireDeepUpdate();
@@ -40,9 +55,6 @@ namespace ui {
         if (it == m_children.end()){
             throw std::runtime_error("Attempted to remove a nonexistent child window");
         }
-        if (auto win = getParentWindow()){
-            win->onRemoveElement(it->child.get());
-        }
 
         std::function<void(Element*)> callOnRemove = [&](Element* elem){
             elem->onRemove();
@@ -56,6 +68,10 @@ namespace ui {
 
 
         onRemoveChild(it->child.get());
+        if (auto win = getParentWindow()){
+            win->softRemove(it->child.get());
+        }
+
         std::unique_ptr<Element> ret = std::move(it->child);
         assert(ret->m_parent == this);
         ret->m_parent = nullptr;
