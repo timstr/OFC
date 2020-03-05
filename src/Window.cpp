@@ -556,6 +556,8 @@ namespace ui {
         m_removalQueue.push_back(e);
         cancelUpdate(e);
         
+        removeTransitions(e);
+
         // TODO: the following feels like a hack.
 
         /*auto parentControl = e->getParentControl();
@@ -654,7 +656,6 @@ namespace ui {
                 }
             }
             cancelUpdate(elem);
-            removeTransitions(elem);
         };
 
         std::function<void(const Element*)> cleanupAll = [&](const Element* elem){
@@ -680,6 +681,22 @@ namespace ui {
             ), end(m_removalQueue));
         }
         e->m_previousWindow = nullptr;
+
+        removeTransitions(e);
+
+        assert(all_of(
+            begin(m_transitions),
+            end(m_transitions),
+            [&](const Transition& t) {
+                if (t.element == e) {
+                    return false;
+                }
+                if (auto c = e->toContainer(); c && c->hasDescendent(t.element)) {
+                    return false;
+                }
+                return true;
+            }
+        ));
     }
 
     void Window::purgeRemovalQueue(){
@@ -794,7 +811,13 @@ namespace ui {
             m_transitions.begin(),
             m_transitions.end(),
             [&](const Transition& t){
-                return t.element == e;
+                if (t.element == e) {
+                    return true;
+                }
+                if (auto c = e->toContainer(); c->hasDescendent(t.element)) {
+                    return true;
+                }
+                return false;
             }
         ), m_transitions.end());
     }

@@ -171,7 +171,7 @@ namespace ui {
         return e->m_parent == this;
     }
 
-    bool Container::hasAncestor(const Element* e) const {
+    bool Container::hasDescendent(const Element* e) const {
         auto c = e->m_parent;
         while (c){
             if (c == this){

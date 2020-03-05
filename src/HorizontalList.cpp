@@ -88,7 +88,8 @@ namespace ui {
         auto x = 0.0f;
         auto h = 0.0f; 
         for (auto c : m_cells){
-            assert(hasAncestor(c));
+            assert(c);
+            assert(hasChild(c));
             c->setPos({x + m_padding, m_padding});
             x += c->width() + 2.0f * m_padding;
             h = std::max(h, c->height());

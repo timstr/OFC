@@ -32,7 +32,7 @@ namespace ui {
         const Element* getChild(std::size_t) const;
 
         bool hasChild(const Element*) const;
-        bool hasAncestor(const Element*) const;
+        bool hasDescendent(const Element*) const;
 
         std::vector<const Element*> children() const;
 
