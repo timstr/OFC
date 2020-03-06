@@ -17,7 +17,7 @@ namespace ui {
 
         void removeWindow(const Window* w);
 
-        void run();
+        void run(float desiredFPS = 30.0f);
 
         sf::Time getProgramTime() const;
 

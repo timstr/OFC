@@ -134,15 +134,19 @@ namespace ui {
         return tex.copyToImage();
     }
 
-    void Window::addKeyboardCommand(Key trigger, std::function<void()> callback){
-        addKeyboardCommand(trigger, {}, std::move(callback));
+    KeyboardCommand Window::addKeyboardCommand(Key trigger, std::function<void()> callback){
+        return addKeyboardCommand(trigger, {}, std::move(callback));
     }
 
-    void Window::addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback){
-        m_commands.insert_or_assign(
-            std::make_pair(trigger, std::move(requiredKeys)),
-            std::move(callback)
-        );
+    KeyboardCommand Window::addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback){
+        auto cmd = std::make_unique<KeyboardCommandSignal>();
+        cmd->trigger = trigger;
+        cmd->requiredKeys = std::move(requiredKeys);
+        cmd->callback = std::move(callback);
+        auto conn = KeyboardCommand(this, cmd.get());
+        cmd->connection = &conn;
+        m_commands.push_back(std::move(cmd));
+        return conn;
     }
 
     void Window::close(){
@@ -438,23 +442,23 @@ namespace ui {
     bool Window::handleCommand(Key key){
         // search for longest matching set of keys in registered commands
 		size_t max = 0;
-		auto current_cmd = m_commands.end();
-		for (auto cmd_it = m_commands.begin(), end = m_commands.end(); cmd_it != end; ++cmd_it) {
-			if (cmd_it->first.first == key) {
-				bool match = true;
-				for (int i = 0; i < cmd_it->first.second.size() && match; i++) {
-					match = sf::Keyboard::isKeyPressed(cmd_it->first.second[i]);
-				}
-				if (match && cmd_it->first.second.size() >= max) {
-					max = cmd_it->first.second.size();
-					current_cmd = cmd_it;
-				}
-			}
-		}
+        KeyboardCommandSignal* best_cmd = nullptr;
+        for (const auto& cmd : m_commands) {
+            if (cmd->trigger == key) {
+                bool match = true;
+                for (int i = 0; i < cmd->requiredKeys.size() && match; i++) {
+                    match = sf::Keyboard::isKeyPressed(cmd->requiredKeys[i]);
+                }
+                if (match && cmd->requiredKeys.size() >= max) {
+                    max = cmd->requiredKeys.size();
+                    best_cmd = cmd.get();
+                }
+            }
+        }
 
-		if (current_cmd != m_commands.end()) {
+		if (best_cmd) {
 			// if one was found, invoke that command
-			current_cmd->second();
+            best_cmd->callback();
 			return true;
 		}
         return false;
@@ -998,6 +1002,74 @@ namespace ui {
             m_updateQueue.end(),
             isDecendent
         ), m_updateQueue.end());
+    }
+
+    KeyboardCommand::KeyboardCommand() noexcept
+        : m_window(nullptr)
+        , m_signal(nullptr) {
+
+    }
+
+    KeyboardCommand::KeyboardCommand(Window* w, Window::KeyboardCommandSignal* s) noexcept
+        : m_window(w)
+        , m_signal(s) {
+
+    }
+
+    KeyboardCommand::KeyboardCommand(KeyboardCommand&& c) noexcept
+        : m_window(std::exchange(c.m_window, nullptr))
+        , m_signal(std::exchange(c.m_signal, nullptr)) {
+        if (m_signal) {
+            m_signal->connection = this;
+        }
+    }
+
+    KeyboardCommand& KeyboardCommand::operator=(KeyboardCommand&& c) noexcept {
+        reset();
+        m_window = std::exchange(c.m_window, nullptr);
+        m_signal = std::exchange(c.m_signal, nullptr);
+        if (m_signal) {
+            m_signal->connection = this;
+        }
+        return *this;
+    }
+
+    KeyboardCommand::~KeyboardCommand(){
+        reset();
+    }
+
+    void KeyboardCommand::reset(){
+        assert(!!m_window == !!m_signal);
+        if (m_window) {
+            assert(m_signal->connection == this);
+            m_signal->connection = nullptr;
+            auto& cmds = m_window->m_commands;
+            const auto match = [&](const std::unique_ptr<Window::KeyboardCommandSignal>& kcs) {
+                return kcs.get() == m_signal;
+            };
+            assert(count_if(begin(cmds), end(cmds), match) == 1);
+            cmds.erase(remove_if(begin(cmds), end(cmds), match ), end(cmds));
+        }
+        m_window = nullptr;
+        m_signal = nullptr;
+    }
+
+    Window::KeyboardCommandSignal::KeyboardCommandSignal()
+        : trigger(Key::Unknown)
+        , requiredKeys{}
+        , callback{}
+        , connection(nullptr) {
+
+    }
+
+    Window::KeyboardCommandSignal::~KeyboardCommandSignal(){
+        if (connection) {
+            assert(connection->m_window);
+            assert(connection->m_signal == this);
+            connection->m_window = nullptr;
+            connection->m_signal = nullptr;
+            connection = nullptr;
+        }
     }
 
 } // namespace ui

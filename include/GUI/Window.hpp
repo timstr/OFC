@@ -9,30 +9,6 @@
 
 namespace ui {
 
-    // TODO: if an element is moved to a different container in the same window, not
-    // simply removed altogether, its various listeners should remain active.
-    // How to do it:
-    // - When an element is removed from the window, that element enters the "egress"
-    //   state wherein it is still associated with that window, but is not part
-    //   of that window unless it is added back. The window keeps information about
-    //   pressed keys, held mouse buttons, focus, etc, and the element, though
-    //   no longer part of the UI tree, now stores a pointer to the Window.
-    // - Egress ends when either the window next undergoes a tick, the element
-    //   is added to a different window, or if the element is destroyed.
-    // - If either the window ticks again or the element is added to a different
-    //   window while the element is in egress, that element loses its association
-    //   to the original window completely, and that window removes any lingering
-    //   event listeners to that element. In the case of being added to a new window,
-    //   the element is simply added as if it were a newly created element.
-    // - If the element is added back to the same window during egress, the
-    //   process is reversed. The element leaves egress, all of its previous
-    //   event listeners are unchanged [TODO: what about focus?], and the element's
-    //   special pointer to the window is overwritten.
-    // Implementation details:
-    // - Every element gains a pointer to a window, maybe called egressWindow or similar
-    // - Every window has a queue of elements that are in egress, which it empties
-    //   during each tick.
-
     // TODO: change cursors when mouse is over control, text entry, draggable, etc
 
     // TODO: add option to prevent elements from being considered for receiving input
@@ -42,6 +18,9 @@ namespace ui {
     // pressed at the time of the last keypress, such as alt, shift, and control.
     // It's probably more reliable to use these in onKeyDown than checking for
     // whether these keys are held (redundantly, thanks to left/right duplicate keys)
+
+    
+    class KeyboardCommand;
 
     class Window {
     public:
@@ -73,8 +52,10 @@ namespace ui {
         // take a screenshot
         sf::Image screenshot() const;
 
-        void addKeyboardCommand(Key trigger, std::function<void()> callback);
-        void addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback);
+        // Command stays active until the returned object is destroyed.
+        // Note: KeyboardCommand is an RAII type, moving it will keep the command active
+        KeyboardCommand addKeyboardCommand(Key trigger, std::function<void()> callback);
+        KeyboardCommand addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback);
 
         // close the window, destroying it in the process
         // DO NOT use the object after calling close()
@@ -233,8 +214,25 @@ namespace ui {
         std::vector<Element*> m_removalQueue;
 
         // registered keyboard commands
-        // TODO: move this to context?
-        std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> m_commands;
+        
+        struct KeyboardCommandSignal {
+            KeyboardCommandSignal();
+            ~KeyboardCommandSignal();
+
+            KeyboardCommandSignal(KeyboardCommandSignal&&) = delete;
+            KeyboardCommandSignal(const KeyboardCommandSignal&) = delete;
+            KeyboardCommandSignal& operator=(KeyboardCommandSignal&&) = delete;
+            KeyboardCommandSignal& operator=(const KeyboardCommandSignal&) = delete;
+
+            Key trigger;
+            std::vector<Key> requiredKeys;
+            std::function<void()> callback;
+            KeyboardCommand* connection;
+        };
+
+        std::vector<std::unique_ptr<KeyboardCommandSignal>> m_commands;
+
+        friend class KeyboardCommand;
 
         std::unique_ptr<Container> m_root;
         sf::RenderWindow m_sfwindow;
@@ -249,6 +247,29 @@ namespace ui {
         template<typename... ArgsT>
         friend Control* propagate(Window*, Control*, bool (Control::*)(ArgsT...), ArgsT...);
     };
+
+    class KeyboardCommand {
+    public:
+        KeyboardCommand() noexcept;
+        KeyboardCommand(KeyboardCommand&&) noexcept;
+        KeyboardCommand& operator=(KeyboardCommand&&) noexcept;
+        ~KeyboardCommand();
+
+        KeyboardCommand(const KeyboardCommand&) = delete;
+        KeyboardCommand& operator=(const KeyboardCommand&) = delete;
+
+        void reset();
+
+    private:
+        KeyboardCommand(Window*, Window::KeyboardCommandSignal*) noexcept;
+
+        Window* m_window;
+        Window::KeyboardCommandSignal* m_signal;
+
+        friend class Window;
+    };
+
+    // TODO: move this to a .tpp file
 
     // template definitions
 
