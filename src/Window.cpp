@@ -823,18 +823,22 @@ namespace ui {
     }
 
     void Window::applyTransitions(){
+        std::vector<Transition> toComplete;
         const auto now = Context::get().getProgramTime();
         for (auto it = m_transitions.begin(); it != m_transitions.end();){
             const auto t = (now - it->timeStamp).asSeconds() / it->duration;
             if (t > 1.0){
-                it->fn(1.0);
-                if (it->onComplete){
-                    it->onComplete();
-                }
+                toComplete.emplace_back(std::move(*it));
                 it = m_transitions.erase(it);
             } else {
                 it->fn(t);
                 ++it;
+            }
+        }
+        for (auto& t : toComplete) {
+            t.fn(1.0);
+            if (t.onComplete){
+                t.onComplete();
             }
         }
     }
