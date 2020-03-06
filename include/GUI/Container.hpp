@@ -36,6 +36,8 @@ namespace ui {
 
         std::vector<const Element*> children() const;
 
+        void clear();
+
     protected:
 
         template<typename T, typename... Args>
@@ -44,8 +46,6 @@ namespace ui {
         void adopt(std::unique_ptr<Element>);
 
         std::unique_ptr<Element> release(const Element*);
-
-        void clear();
 
         virtual void onRemoveChild(const Element*);
 
