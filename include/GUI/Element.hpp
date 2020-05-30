@@ -199,6 +199,8 @@ namespace ui {
         friend class Container;
         friend class Control;
         friend class Window;
+
+        friend class ComponentRoot;
     };
 
     template<typename T>

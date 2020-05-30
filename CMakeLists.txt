@@ -14,6 +14,8 @@ endif()
 set(tims-gui_headers
     include/GUI/BoxElement.hpp
     include/GUI/Color.hpp
+    include/GUI/Component.hpp
+    include/GUI/Component.tpp
 	include/GUI/Container.hpp
 	include/GUI/Context.hpp
 	include/GUI/Control.hpp
@@ -44,6 +46,7 @@ set(tims-gui_headers
 set(tims-gui_srcs
 	src/BoxElement.cpp
     src/Color.cpp
+    src/Component.cpp
 	src/Container.cpp
 	src/Context.cpp
 	src/Control.cpp

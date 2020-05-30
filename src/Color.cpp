@@ -1,5 +1,6 @@
 #include <GUI/Color.hpp>
 
+#include <cmath>
 #include <algorithm>
 
 namespace ui {
@@ -38,10 +39,10 @@ namespace ui {
 
     Color::operator sf::Color() const {
         return sf::Color(
-            static_cast<uint8_t>(floor(255.0f * r)),
-            static_cast<uint8_t>(floor(255.0f * g)),
-            static_cast<uint8_t>(floor(255.0f * b)),
-            static_cast<uint8_t>(floor(255.0f * a))
+            static_cast<uint8_t>(std::floor(255.0f * r)),
+            static_cast<uint8_t>(std::floor(255.0f * g)),
+            static_cast<uint8_t>(std::floor(255.0f * b)),
+            static_cast<uint8_t>(std::floor(255.0f * a))
         );
     }
 
@@ -97,7 +98,7 @@ namespace ui {
     }
 
     void Color::setHue(float v){
-        h = v - floor(v);
+        h = v - std::floor(v);
         updateRGBFromHSL();
     }
 
@@ -117,17 +118,17 @@ namespace ui {
 
     uint32_t Color::toInt() const {
         return
-            (static_cast<uint8_t>(floor(255.0f * r)) << 24) &
-            (static_cast<uint8_t>(floor(255.0f * g)) << 16) &
-            (static_cast<uint8_t>(floor(255.0f * b)) << 8) &
-            static_cast<uint8_t>(floor(255.0f * a));
+            (static_cast<uint8_t>(std::floor(255.0f * r)) << 24) &
+            (static_cast<uint8_t>(std::floor(255.0f * g)) << 16) &
+            (static_cast<uint8_t>(std::floor(255.0f * b)) << 8) &
+            static_cast<uint8_t>(std::floor(255.0f * a));
     }
 
     void Color::updateRGBFromHSL(){
         const float h1 = h * 6.0f;
         const float c = (1.0f - abs(2.0f * l - 1.0f)) * s;
-        const float x = c * (1.0f - abs(1.0f - (6.0f * h1 - 2.0f * floor(3.0f * h1))));
-        switch (static_cast<int>(floor(h1))){
+        const float x = c * (1.0f - abs(1.0f - (6.0f * h1 - 2.0f * std::floor(3.0f * h1))));
+        switch (static_cast<int>(std::floor(h1))){
         case 0:
             r = c;
             g = x;
@@ -178,7 +179,7 @@ namespace ui {
 			h = 0.0f;
 		} else if (r >= std::max(g, b)){
             float x = (g - b) / s / 6.0f;
-			h = x - floor(x);
+			h = x - std::floor(x);
 		} else if (g >= std::max(r, b)){
 			h = ((b - r) / s + 2.0f) / 6.0f;
 		} else if (b >= std::max(r, g)){
