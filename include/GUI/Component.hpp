@@ -294,17 +294,6 @@ namespace ui {
 		virtual void onRemoveChildElement(Element* whichElement, const Component* whichDescendent) = 0;
 	};
 
-	class ComponentRoot : public ComponentParent {
-	public:
-		// TODO
-		// AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-
-	private:
-		void onInsertChildElement(std::unique_ptr<Element> element, const Component* whichDescendent, const Element* beforeElement) override final;
-
-		void onRemoveChildElement(Element* whichElement, const Component* whichDescendent) override final;
-	};
-
 	// Component producing any number of children?
 	// Possibly representing a dom::Container??????
 	class InternalComponent : public Component, public ComponentParent {
@@ -426,6 +415,20 @@ namespace ui {
 			eraseElement(m_container);
 			m_container = nullptr;
 		}
+	};
+
+	template<typename ContainerType>
+	class ComponentRoot : public ComponentParent {
+	public:
+		// TODO
+		// AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+	private:
+		std::unique_ptr<ContainerComponent<ContainerType>> m_container;
+
+		void onInsertChildElement(std::unique_ptr<Element> element, const Component* whichDescendent, const Element* beforeElement) override final;
+
+		void onRemoveChildElement(Element* whichElement, const Component* whichDescendent) override final;
 	};
 
 	//////////////////////////////////////
