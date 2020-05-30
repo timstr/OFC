@@ -22,19 +22,22 @@ const sf::Font& getFont() {
 }
 
 int main(){
-    
-    ui::Window& win = ui::Window::create(1000, 800, "Tim's GUI Test");
+
+    // auto caption = ui::Property<ui::String>("Click me!");
 
 	auto condition = ui::Property<bool>{true};
-	auto caption = ui::Property<ui::String>("Click me!");
 
 	ui::AnyComponent comp = ui::If(condition)
 		.then(ui::Button(getFont())
-			.caption(caption)
-			.onClick([](){ std::cout << "Clicked!\n"; })
+			.caption("Click Me!")
+			.onClick([&](){ std::cout << "Clicked!\n"; condition.set(false); })
 		).otherwise(
 			ui::StaticText(getFont(), "Darn")
 		);
+
+    auto root = ui::ComponentRoot::create<ui::FreeContainer>(std::move(comp));
+
+    ui::Window& win = ui::Window::create(std::move(root), 600, 400, "Tim's GUI Test");
 
 	ui::run();
 

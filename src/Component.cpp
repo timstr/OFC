@@ -2,6 +2,68 @@
 
 namespace ui {
 
+    ObserverBase::ObserverBase(Component* owner)
+        : m_owner(owner) {
+        assert(m_owner);
+        addSelfTo(m_owner);
+    }
+
+    ObserverBase::ObserverBase(ObserverBase&& o) noexcept
+        : m_owner(std::exchange(o.m_owner, nullptr)) {
+        
+        if (m_owner){
+            o.removeSelfFrom(m_owner);
+            addSelfTo(m_owner);
+        }
+    }
+
+    ObserverBase& ObserverBase::operator=(ObserverBase&& o) {
+        if (&o == this) {
+            return *this;
+        }
+        if (m_owner) {
+            removeSelfFrom(m_owner);
+        }
+        if (o.m_owner) {
+            o.removeSelfFrom(o.m_owner);
+        }
+        m_owner = std::exchange(o.m_owner, nullptr);
+        if (m_owner) {
+            addSelfTo(m_owner);
+        }
+        return *this;
+    }
+
+    Component* ObserverBase::owner() noexcept {
+        return m_owner;
+    }
+
+    const Component* ObserverBase::owner() const noexcept {
+        return m_owner;
+    }
+
+    void ObserverBase::addSelfTo(Component* c) {
+        auto& v = c->m_observers;
+        assert(std::count(v.begin(), v.end(), this) == 0);
+        v.push_back(this);
+    }
+
+    void ObserverBase::removeSelfFrom(Component* c) {
+        auto& v = c->m_observers;
+        assert(std::count(v.begin(), v.end(), this) == 1);
+        auto it = std::find(v.begin(), v.end(), this);
+        assert(it != v.end());
+        v.erase(it);
+    }
+
+    ObserverBase::~ObserverBase() {
+        if (m_owner){
+            removeSelfFrom(m_owner);
+        }
+    }
+
+
+
 	Component::Component() noexcept
 		: m_isMounted(false)
 		, m_parent(nullptr) {
@@ -10,14 +72,26 @@ namespace ui {
 
 	Component::Component(Component&& c) noexcept 
 		: m_isMounted(false)
-		, m_parent(nullptr) {
+		, m_parent(nullptr)
+        , m_observers(std::move(c.m_observers)) {
 		assert(!c.m_isMounted);
 		assert(!c.m_parent);
+        for (auto o : m_observers) {
+            assert(o->m_owner == &c);
+            o->m_owner = this;
+        }
 	}
 
 	Component::~Component() noexcept {
-		// NOTE: unmounting here is not safe, since it would call a virtual function
+		// NOTE: unmounting here is not safe, since it would call a virtual function.
+        // It may be assumed that all components will be unmounted before being destroyed.
+        // Conversely, all components MUST unmount all their child components while
+        // being unmounted.
 		assert(!m_isMounted);
+
+        // NOTE: it is expected that all own observers are somehow stored as members in
+        // derived classes, and that they remove themselves from this vector when destroyed.
+        assert(m_observers.empty());
 	}
 
 	ComponentParent* Component::parent() noexcept {
@@ -60,17 +134,30 @@ namespace ui {
 
 
 
+    std::unique_ptr<Container> ComponentRoot::mount() {
+        assert(m_component);
+        assert(!m_tempContainer);
+        m_component->mount(this);
+        assert(m_tempContainer);
+        return std::move(m_tempContainer);
+    }
+
+    void ComponentRoot::unmount() {
+        assert(m_component);
+        m_component->unmount();
+    }
+
 	void ComponentRoot::onInsertChildElement(std::unique_ptr<Element> element, const Component* whichDescendent, const Element* beforeElement) {
+        assert(!m_tempContainer);
 		auto c = element->toContainer();
 		assert(c);
-
+        element.release();
+        m_tempContainer = std::unique_ptr<Container>(c);
 	}
 
 	void ComponentRoot::onRemoveChildElement(Element* whichElement, const Component* whichDescendent) {
-		a a a a a
+		// Nothing to do
 	}
-
-
 
 	void ForwardingComponent::onInsertChildElement(std::unique_ptr<Element> element, const Component* whichDescendent, const Element* beforeElement) {
 		assert(parent());
@@ -84,10 +171,20 @@ namespace ui {
 
 
 
-	AnyComponent::AnyComponent() noexcept
-		: m_component(nullptr) {
-
+	AnyComponent::AnyComponent(AnyComponent&& ac) noexcept
+		: m_component(std::exchange(ac.m_component, nullptr)) {
+        assert(!m_component->isMounted());
 	}
+
+    AnyComponent& AnyComponent::operator=(AnyComponent&& ac) noexcept {
+        if (&ac == this) {
+            return *this;
+        }
+        assert(!m_component || !m_component->isMounted());
+        assert(!ac.m_component || !ac.m_component->isMounted());
+        m_component = std::exchange(ac.m_component, nullptr);
+        return *this;
+    }
 
 	AnyComponent::operator bool() const noexcept {
 		return static_cast<bool>(m_component);
@@ -152,7 +249,7 @@ namespace ui {
 
 	}
 
-	Button& Button::caption(Property<String>& s) {
+	Button& Button::caption(PropertyOrValue<String> s) {
 		m_caption.assign(s);
 		return *this;
 	}
@@ -212,5 +309,6 @@ namespace ui {
 			m_elseComponent.tryMount(this);
 		}
 	}
+
 
 } // namespace ui

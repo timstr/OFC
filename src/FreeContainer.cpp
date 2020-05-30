@@ -16,14 +16,6 @@ namespace ui {
         m_styles.try_emplace(eptr, ElementStyle{xstyle, ystyle});
     }
 
-    std::unique_ptr<Element> FreeContainer::release(const Element* e){
-        auto it = m_styles.find(e);
-        if (it != m_styles.end()){
-            m_styles.erase(it);
-        }
-        return Container::release(e);
-    }
-
     void FreeContainer::setElementStyle(const Element* e, PositionStyle xstyle, PositionStyle ystyle){
         auto it = m_styles.find(e);
         if (it != m_styles.end()){

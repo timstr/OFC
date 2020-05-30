@@ -1,6 +1,7 @@
 #include <GUI/Window.hpp>
 
 #include <GUI/Context.hpp>
+#include <GUI/Component.hpp>
 
 #include <cassert>
 
@@ -41,7 +42,7 @@ namespace ui {
         return nullptr;
     }
 
-    Window::Window(unsigned width, unsigned height, const String& title) :
+    Window::Window(unsigned width, unsigned height, const String& title, ComponentRoot root) :
         m_sfwindow(),
         m_focus_elem(nullptr),
         m_drag_elem(nullptr),
@@ -58,16 +59,25 @@ namespace ui {
         m_last_click_time(),
         m_last_click_btn(),
         m_keypressed_elems(),
-        m_root(std::make_unique<Container>()) {
+        m_component(std::move(root)),
+        m_domRoot(nullptr) {
 
         sf::ContextSettings settings;
         settings.antialiasingLevel = 8;
         m_sfwindow.create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
         m_sfwindow.setVerticalSyncEnabled(true);
+
+        m_domRoot = m_component.mount();
+        m_domRoot->m_parentWindow = this;
     }
 
-    Window& Window::create(unsigned width, unsigned height, const String& title){
-        auto pw = std::unique_ptr<Window>(new Window(width, height, title));
+    Window::~Window() {
+        m_component.unmount();
+    }
+
+    Window& Window::create(ComponentRoot root, unsigned width, unsigned height, const String& title){
+        // HACK because std::make_unique can't access private constructors
+        auto pw = std::unique_ptr<Window>(new Window(width, height, title, std::move(root)));
         auto& wr = *pw;
         Context::get().addWindow(std::move(pw));
         return wr;
@@ -79,10 +89,10 @@ namespace ui {
         const auto screensize = getSize();
         v.reset({{0.0, 0.0}, screensize});
         m_sfwindow.setView(v);
-        m_root->setPos({0.0f, 0.0f});
-        m_root->setSize(getSize());
+        m_domRoot->setPos({0.0f, 0.0f});
+        m_domRoot->setSize(getSize());
         updateAllElements();
-        m_root->render(m_sfwindow);
+        m_domRoot->render(m_sfwindow);
         m_sfwindow.display();
     }
 
@@ -153,12 +163,6 @@ namespace ui {
         m_sfwindow.requestFocus();
     }
 
-    void Window::setRoot(std::unique_ptr<Container> c){
-        m_root = std::move(c);
-        m_root->m_parentWindow = this;
-        m_root->requireDeepUpdate();
-    }
-
     void Window::processEvents(){
         sf::Event event;
         while (m_sfwindow.pollEvent(event)){
@@ -225,7 +229,7 @@ namespace ui {
     }
 
     Control* Window::findControlAt(vec2 p, const Element* exclude){
-        const auto hitElem = m_root->findElementAt(p, exclude);
+        const auto hitElem = m_domRoot->findElementAt(p, exclude);
         if (!hitElem){
             return nullptr;
         }
@@ -732,7 +736,7 @@ namespace ui {
                 } else if (auto p = elem->getParentContainer()){
                     return p->getAvailableSize(elem);
                 } else {
-                    assert(elem == m_root.get());
+                    assert(elem == m_domRoot.get());
                     return std::optional{getSize()};
                 }
             }();

@@ -1,15 +1,21 @@
+#pragma once
+
 #include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
 
 #include <GUI/Element.hpp>
+#include <GUI/Container.hpp>
+#include <GUI/FreeContainer.hpp>
 #include <GUI/Text.hpp>
 #include <GUI/Helpers/CallbackButton.hpp>
 
 namespace ui {
 
 	// TODO: put template definitions into .tpp file
+
+    class Component;
 
 	template<typename T>
 	class Property;
@@ -58,23 +64,38 @@ namespace ui {
 
 		void notifyObservers() {
 			for (auto& o : m_observers) {
-				assert(o->m_onUpdate);
-				o->m_onUpdate(static_cast<const T&>(m_value));
+				o->update(static_cast<const T&>(m_value));
 			}
 		}
+
+        friend Observer<T>;
 	};
 
 	template<typename T>
 	class PropertyOrValue {
 	public:
+        // PropertyOrValue is implictly constructible from an l-value reference
+        // to a matching property, in which case it will point to that property
+        // and contain no fixed value.
 		PropertyOrValue(Property<T>& target) noexcept
 			: m_target(&target)
 			, m_fixedValue(std::nullopt) {
 
 		}
 
-		PropertyOrValue(T fixedValue)
-			: m_target(nullptr) {
+        // PropertyOrValue is implicitly constructible from anything that can be
+        // used to construct a value of type T, in which case it will not point
+        // to any property and will instead contain a fixed value.
+        template<
+            typename... Args,
+            std::enable_if_t<
+                !std::is_same_v<Property<T>&, Args...> &&
+                std::is_constructible_v<T, Args...>
+            >* = nullptr
+        >
+		PropertyOrValue(Args&&... args)
+			: m_target(nullptr)
+            , m_fixedValue(std::in_place, std::forward<Args>(args)...) {
 
 		}
 
@@ -85,6 +106,29 @@ namespace ui {
 		friend Observer<T>;
 	};
 
+    class ObserverBase {
+    public:
+        ObserverBase(Component* owner);
+        ObserverBase(ObserverBase&&) noexcept;
+        ObserverBase& operator=(ObserverBase&&);
+        virtual ~ObserverBase();
+
+        ObserverBase(const ObserverBase&) = delete;
+        ObserverBase& operator=(const ObserverBase&&) = delete;
+
+    protected:
+        Component* owner() noexcept;
+        const Component* owner() const noexcept;
+
+    private:
+        Component* m_owner;
+
+        void addSelfTo(Component*);
+        void removeSelfFrom(Component*);
+
+        friend Component;
+    };
+
 	// TODO: allow observer to be given a single fixed value,
 	// to avoid having to create additional dummy properties
 	// for fixed inputs.
@@ -93,41 +137,60 @@ namespace ui {
 	// and adding a method like getOnce() that either gets the
 	// stored value or refers to the targeted property
 	template<typename T>
-	class Observer {
+	class Observer : public ObserverBase {
 	public:
 		template<typename ComponentType>
 		Observer(ComponentType* self, void (ComponentType::* onUpdate)(const T&), Property<T>& target)
-			: m_target(&target)
+			: ObserverBase(self)
+            , m_target(&target)
 			, m_fixedValue(std::nullopt)
 			, m_onUpdate(makeUpdateFunction(self, onUpdate)) {
-
+            m_target->m_observers.push_back(this);
 		}
 		template<typename ComponentType>
 		Observer(ComponentType* self, void (ComponentType::* onUpdate)(const T&), T fixedValue)
-			: m_target(nullptr)
+			: ObserverBase(self)
+            , m_target(nullptr)
 			, m_fixedValue(std::move(fixedValue))
 			, m_onUpdate(makeUpdateFunction(self, onUpdate)) {
 
 		}
 		template<typename ComponentType>
 		Observer(ComponentType* self, void (ComponentType::* onUpdate)(const T&))
-			: m_target(nullptr)
+			: ObserverBase(self)
+            , m_target(nullptr)
 			, m_fixedValue(std::nullopt)
 			, m_onUpdate(makeUpdateFunction(self, onUpdate)) {
 
 		}
 
 		Observer(Observer&& o) noexcept 
-			: m_target(std::exchange(o.m_target, nullptr))
+			: ObserverBase(std::move(o))
+            , m_target(std::exchange(o.m_target, nullptr))
 			, m_fixedValue(std::exchange(o.m_fixedValue, std::nullopt))
 			, m_onUpdate(std::exchange(o.m_onUpdate, nullptr)) {
-
+            if (m_target) {
+                auto& v = m_target->m_observers;
+                assert(std::count(v.begin(), v.end(), &o) == 1);
+                assert(std::count(v.begin(), v.end(), this) == 0);
+                *std::find(v.begin(), v.end(), &o) = this;
+            }
 		}
 		Observer& operator=(Observer&& o) {
+            if (&o == this) {
+                return *this;
+            }
 			reset();
 			m_target = std::exchange(o.m_target, nullptr);
 			m_fixedValue = std::exchange(o.m_fixedValue, std::nullopt);
 			m_onUpdate = std::exchange(o.m_onUpdate, nullptr);
+            if (m_target) {
+                auto& v = m_target->m_observers;
+                assert(std::count(v.begin(), v.end(), &o) == 1);
+                assert(std::count(v.begin(), v.end(), this) == 0);
+                *std::find(v.begin(), v.end(), &o) = this;
+            }
+            return *this;
 		}
 		~Observer() {
 			reset();
@@ -139,21 +202,20 @@ namespace ui {
 		void assign(Property<T>& target) {
 			m_target = &target;
 			m_fixedValue = std::nullopt;
-			assert(m_onUpdate);
-			m_onUpdate(m_target->getOnce());
+			update(m_target->getOnce());
+            m_target->m_observers.push_back(this);
 		}
 
 		void assign(T fixedValue) {
-			m_target = std::nullopt;
+			m_target = nullptr;
 			m_fixedValue = std::move(fixedValue);
-			assert(m_onUpdate);
-			m_onUpdate(m_fixedValue);
+			update(*m_fixedValue);
 		}
 
 		void assign(PropertyOrValue<T> pv) {
 			assert(pv.m_fixedValue.has_value() || pv.m_target);
 			if (pv.m_target) {
-				assign(pv.m_target);
+				assign(*pv.m_target);
 			} else {
 				assign(std::move(*pv.m_fixedValue));
 			}
@@ -188,21 +250,40 @@ namespace ui {
 		}
 
 		void reset() {
+            if (m_target) {
+                auto& v = m_target->m_observers;
+                assert(std::count(v.begin(), v.end(), this) == 1);
+                auto it = std::find(v.begin(), v.end(), this);
+                assert(it != v.end());
+                v.erase(it);
+            }
 			m_target = nullptr;
+            m_fixedValue.reset();
 		}
+
+        void update(const T& t) {
+            assert(m_onUpdate);
+            assert(owner());
+            m_onUpdate(owner(), t);
+        }
 
 	private:
 		Property<T>* m_target;
 		std::optional<T> m_fixedValue;
-		std::function<void(const T&)> m_onUpdate;
+		std::function<void(Component*, const T&)> m_onUpdate;
 
 		template<typename ComponentType>
-		static std::function<void(const T&)> makeUpdateFunction(ComponentType* self, void (ComponentType::* onUpdate)(const T&)) {
+		static std::function<void(Component*, const T&)> makeUpdateFunction(ComponentType* self, void (ComponentType::* onUpdate)(const T&)) {
 			static_assert(std::is_base_of_v<Component, ComponentType>, "ComponentType must derive from Component");
+            // NOTE: self could be captured here, but is not, because it will become a
+            // dangling pointer if the component is moved, which it will be anytime
+            // it's passed to an AnyComponent
 			// TODO: batching updates (i.e. preventing multiple DOM edits before the same render call) could be done in here
-			return [self, onUpdate](const T& t){
-				if (self->isMounted()) {
-					(self->*onUpdate)(t);
+			return [onUpdate](Component* self, const T& t){
+                assert(dynamic_cast<ComponentType*>(self));
+                auto sd = static_cast<ComponentType*>(self);
+				if (sd->isMounted()) {
+					(sd->*onUpdate)(t);
 				}
 			};
 		}
@@ -224,8 +305,11 @@ namespace ui {
 
 	// Actual important forward declarations
 	class Component;
+
 	class ComponentParent;
+
 	class ComponentRoot;
+
 	class InternalComponent;
 
 	class Component {
@@ -262,6 +346,9 @@ namespace ui {
 	private:
 		bool m_isMounted;
 		ComponentParent* m_parent;
+        std::vector<ObserverBase*> m_observers;
+
+        friend ObserverBase;
 	};
 
 	// ComponentParent is the basic parent type to all components.
@@ -354,7 +441,13 @@ namespace ui {
 	// To be used in public API methods where client can pass any component
 	class AnyComponent final {
 	public:
-		AnyComponent() noexcept;
+		AnyComponent() noexcept = default;
+        AnyComponent(AnyComponent&&) noexcept;
+        AnyComponent& operator=(AnyComponent&&) noexcept;
+        ~AnyComponent() noexcept = default;
+
+        AnyComponent(const AnyComponent&) = delete;
+        AnyComponent& operator=(const AnyComponent&) = delete;
 
 		// Boxes any component type
 		template<
@@ -382,54 +475,145 @@ namespace ui {
 		friend class InternalComponent;
 	};
 
-	template<typename ContainerType>
-	class ContainerComponent : public InternalComponent {
-	public:
-		ContainerComponent() : m_container(nullptr) {
-			static_assert(std::is_base_of_v<Container, ContainerType>, "ContainerType must derive from Container");
-		}
+    // NOTE: the primary template is deliberately undefined.
+    // Full specializations should be created for each container type
+    template<typename ContainerType>
+    class ContainerComponent;
 
-	protected:
-		ContainerType* element() noexcept {
-			return m_container;
-		}
-		const ContainerType* element() const noexcept {
-			return m_container;
-		}
-
-		virtual std::unique_ptr<ContainerType> createContainer() = 0;
-
-	private:
-		Container* m_container;
-
-		void onMount() override final {
-			assert(m_container == nullptr);
-			auto cp = createContainer();
-			assert(cp);
-			m_container = cp.get();
-			insertElement(std::move(cp));
-		}
-
-		void onUnmount() override final {
-			assert(m_container);
-			eraseElement(m_container);
-			m_container = nullptr;
-		}
-	};
-
-	template<typename ContainerType>
 	class ComponentRoot : public ComponentParent {
 	public:
-		// TODO
-		// AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        template<typename ContainerType, typename... ContainerComponentArgs>
+        static ComponentRoot create(ContainerComponentArgs&&... args) {
+            static_assert(
+                std::is_base_of_v<Container, ContainerType>,
+                "ContainerType must derive from Container"
+            );
+            static_assert(
+                std::is_constructible_v<ContainerComponent<ContainerType>, ContainerComponentArgs...>,
+                "ContainerComponent<ContainerType> must be constructible from the provided arguments"
+            );
+            // NOTE: tag type is used only to select correct container type,
+            // since it's not possible to explicitly specify constructor
+            // template arguments (ugh...)
+            // See https://stackoverflow.com/questions/2786946/c-invoke-explicit-template-constructor
+            using tag_t = ContainerType*;
+            auto tag = tag_t{nullptr};
+            return ComponentRoot(tag, std::forward<ContainerComponentArgs>(args)...);
+        }
+
+        /*
+         * Creates a container element and populates it with all child components.
+         * This container is intended to be placed at the root of the DOM tree.
+         * It is important to call unmount() before this container is destroyed,
+         * since various event listeners in various child components will assume
+         * that their corresponding DOM elements remain alive for as long as they
+         * are mounted.
+         */
+        std::unique_ptr<Container> mount();
+
+        /**
+         * Removes all child components and their elements from the mounted container
+         */
+        void unmount();
 
 	private:
-		std::unique_ptr<ContainerComponent<ContainerType>> m_container;
+		std::unique_ptr<InternalComponent> m_component;
+        std::unique_ptr<Container> m_tempContainer;
+
+        template<typename ContainerType, typename... ContainerComponentArgs>
+        ComponentRoot(ContainerType* /* dummy tag */, ContainerComponentArgs&&... args)
+            : m_component(std::make_unique<ContainerComponent<ContainerType>>(
+                std::forward<ContainerComponentArgs>(args)...
+            )) {
+
+        }
 
 		void onInsertChildElement(std::unique_ptr<Element> element, const Component* whichDescendent, const Element* beforeElement) override final;
 
 		void onRemoveChildElement(Element* whichElement, const Component* whichDescendent) override final;
 	};
+
+	//////////////////////////////////////
+
+    template<typename ContainerType>
+    class ContainerComponentBase : public InternalComponent {
+    public:
+        ContainerComponentBase() : m_container(nullptr) {
+            static_assert(std::is_base_of_v<Container, ContainerType>, "ContainerType must derive from Container");
+        }
+
+    protected:
+        ContainerType* container() noexcept {
+            return m_container;
+        }
+        const ContainerType* container() const noexcept {
+            return m_container;
+        }
+
+        virtual std::unique_ptr<ContainerType> createContainer() = 0;
+
+    private:
+        ContainerType* m_container;
+
+        virtual void onMountContainer() = 0;
+        virtual void onUnmountContainer() = 0;
+
+        void onMount() override final {
+            assert(m_container == nullptr);
+            auto cp = createContainer();
+            assert(cp);
+            m_container = cp.get();
+            insertElement(std::move(cp));
+            onMountContainer();
+        }
+
+        void onUnmount() override final {
+            assert(m_container);
+            onUnmountContainer();
+            eraseElement(m_container);
+            m_container = nullptr;
+        }
+    };
+
+    template<>
+    class ContainerComponent<FreeContainer> : public ContainerComponentBase<FreeContainer> {
+    public:
+        // TODO: allow any number of arguments
+        ContainerComponent(AnyComponent c)
+            : m_childComponent(std::move(c)) {
+
+        }
+
+    private:
+        AnyComponent m_childComponent;
+
+        std::unique_ptr<FreeContainer> createContainer() override {
+            return std::make_unique<FreeContainer>();
+        }
+
+        void onMountContainer() override final {
+            m_childComponent.tryMount(this);
+        }
+
+        void onUnmountContainer() override final {
+            m_childComponent.tryUnmount();
+        }
+
+        // TODO: add some clean way to specify x/y position or alignment
+        void onInsertChildElement(std::unique_ptr<Element> element, const Component* /* whichDescendent */, const Element* /* beforeElement */) override final {
+            auto c = container();
+            assert(c);
+            c->adopt(std::move(element));
+        }
+
+        void onRemoveChildElement(Element* whichElement, const Component* /* whichDescendent */) override final {
+            auto c = container();
+            assert(c);
+            c->release(whichElement);
+        }
+    };
+
+    // TODO: specialize other containers
 
 	//////////////////////////////////////
 
@@ -464,7 +648,7 @@ namespace ui {
 	public:
 		Button(const ui::Font& f);
 
-		Button& caption(Property<String>& s);
+		Button& caption(PropertyOrValue<String> s);
 
 		Button& onClick(std::function<void()> f);
 

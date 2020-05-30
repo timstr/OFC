@@ -60,7 +60,7 @@ namespace ui {
         void adopt(std::unique_ptr<Element>);
         void adopt(PositionStyle xstyle, PositionStyle ystyle, std::unique_ptr<Element>);
 
-        std::unique_ptr<Element> release(const Element*);
+        using Container::release;
         
         void setElementStyle(const Element*, PositionStyle xstyle, PositionStyle ystyle);
 

@@ -4,6 +4,8 @@
 #include <GUI/Control.hpp>
 #include <GUI/TextEntry.hpp>
 
+#include <GUI/Component.hpp>
+
 #include <SFML/Window.hpp>
 #include <string>
 
@@ -17,9 +19,9 @@ namespace ui {
         Window(Window&&) = delete;
         Window& operator=(const Window&) = delete;
         Window& operator=(Window&&) = delete;
-        ~Window() = default;
+        ~Window();
         
-        static Window& create(unsigned width, unsigned height, const String& title);
+        static Window& create(ComponentRoot root, unsigned width = 600, unsigned height = 400, const String& title = "Tim's GUI App");
 
         // the window's inner size
         vec2 getSize() const;
@@ -52,13 +54,8 @@ namespace ui {
         bool inFocus() const;
         void requestFocus();
 
-        void setRoot(std::unique_ptr<Container>);
-
-        template<typename T, typename... Args>
-        T& setRoot(Args&&... args);
-
     private:
-        Window(unsigned width, unsigned height, const String& title);
+        Window(unsigned width, unsigned height, const String& title, ComponentRoot root);
 
         // process the window's event queue
         void processEvents();
@@ -178,7 +175,8 @@ namespace ui {
         // TODO: move this to context?
         std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> m_commands;
 
-        std::unique_ptr<Container> m_root;
+        ComponentRoot m_component;
+        std::unique_ptr<Container> m_domRoot;
         sf::RenderWindow m_sfwindow;
 
         friend class Element;
@@ -191,18 +189,5 @@ namespace ui {
         template<typename... ArgsT>
         friend Control* propagate(Window*, Control*, bool (Control::*)(ArgsT...), ArgsT...);
     };
-
-    // template definitions
-
-    template<typename T, typename... Args>
-    inline T& Window::setRoot(Args&&... args){
-        static_assert(std::is_base_of_v<Container, T>, "T must derive from ui::Container");
-        auto uptr = std::make_unique<T>(std::forward<Args>(args)...);
-        T& ret = *uptr;
-        m_root = std::move(uptr);
-        m_root->m_parentWindow = this;
-        m_root->requireDeepUpdate();
-        return ret;
-    }
 
 } // namespace ui
