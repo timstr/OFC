@@ -23,17 +23,17 @@ const sf::Font& getFont() {
 
 int main(){
 
-    // auto caption = ui::Property<ui::String>("Click me!");
+    auto str= ui::Property<ui::String>("Dagnabbit darn drat!");
 
 	auto condition = ui::Property<bool>{true};
 
-	ui::AnyComponent comp = ui::If(condition)
-		.then(ui::Button(getFont())
-			.caption("Click Me!")
-			.onClick([&](){ std::cout << "Clicked!\n"; condition.set(false); })
-		).otherwise(
-			ui::StaticText(getFont(), "Darn")
-		);
+	ui::AnyComponent comp = ui::UseFont(&getFont()).with(
+        ui::If(condition).then(
+            ui::Button().caption("Click Me!").onClick([&](){ condition.set(false); })
+        ).otherwise(
+            "Dagnabbit darn drat.."
+        )
+    );
 
     auto root = ui::ComponentRoot::create<ui::FreeContainer>(std::move(comp));
 

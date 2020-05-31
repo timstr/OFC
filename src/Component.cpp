@@ -110,16 +110,16 @@ namespace ui {
 		assert(!m_isMounted);
 		assert(!m_parent);
 		m_parent = parent;
+        onMount();
 		m_isMounted = true;
-		onMount();
 	}
 
 	void Component::unmount() {
 		assert(m_isMounted);
 		assert(m_parent);
+        m_isMounted = false;
 		onUnmount();
 		m_parent = nullptr;
-		m_isMounted = false;
 	}
 
 	void Component::insertElement(std::unique_ptr<Element> element, const Element* beforeElement) {
@@ -186,7 +186,20 @@ namespace ui {
         return *this;
     }
 
-	AnyComponent::operator bool() const noexcept {
+    AnyComponent::AnyComponent(Property<String>& p)
+        : m_component(std::make_unique<TextComponent>(p)) {
+    }
+
+    AnyComponent::AnyComponent(String s)
+        : m_component(std::make_unique<TextComponent>(std::move(s))) {
+    }
+
+    AnyComponent::AnyComponent(const char* s)
+        : AnyComponent(String(s)) {
+
+    }
+
+    AnyComponent::operator bool() const noexcept {
 		return static_cast<bool>(m_component);
 	}
 
@@ -213,38 +226,33 @@ namespace ui {
 
 
 
-	StaticText::StaticText(const sf::Font& f, sf::String s)
-		: m_font(&f)
-		, m_string(std::move(s)) {
+    TextComponent::TextComponent(PropertyOrValue<String> s)
+		: FontConsumer(&TextComponent::updateFont)
+		, m_stringObserver(this, &TextComponent::updateString, std::move(s)) {
 
 	}
 
-	std::unique_ptr<Text> StaticText::createElement() {
-		return std::make_unique<Text>(m_string, *m_font, sf::Color::Black);
-	}
-
-	DynamicText::DynamicText(const sf::Font& f, Property<String>& s)
-		: m_font(&f)
-		, m_stringObserver(this, &DynamicText::updateString, s) {
-
-	}
-
-	std::unique_ptr<Text> DynamicText::createElement() {
+	std::unique_ptr<Text> TextComponent::createElement() {
 		return std::make_unique<Text>(
 			m_stringObserver.getValueOnce(),
-			*m_font,
+			*getFont().getValueOnce(),
 			sf::Color::Black
 		);
 	}
 
-	void DynamicText::updateString(const String& s) {
+	void TextComponent::updateString(const String& s) {
 		element()->setText(s);
 	}
 
+    void TextComponent::updateFont(const sf::Font* const & f) {
+        assert(f);
+        element()->setFont(*f);
+    }
 
 
-	Button::Button(const ui::Font& f)
-		: m_font(&f)
+
+	Button::Button()
+		: FontConsumer(&Button::updateFont)
 		, m_caption(this, &Button::updateCaption) {
 
 	}
@@ -262,7 +270,7 @@ namespace ui {
 	std::unique_ptr<CallbackButton> Button::createElement() {
 		return std::make_unique<CallbackButton>(
 			m_caption.getValueOnce(),
-			*m_font,
+			*getFont().getValueOnce(),
 			m_onClick
 		);
 	}
@@ -270,6 +278,11 @@ namespace ui {
 	void Button::updateCaption(const String& s) {
 		element()->getCaption().setText(s);
 	}
+
+    void Button::updateFont(const sf::Font* const & f) {
+        assert(f);
+        element()->getCaption().setFont(*f);
+    }
 
 
 
@@ -310,5 +323,20 @@ namespace ui {
 		}
 	}
 
+
+    void* ComponentParent::findContextProvider(const std::type_info&) noexcept {
+        return nullptr;
+    }
+
+    void* InternalComponent::findContextProvider(const std::type_info& ti) noexcept {
+        if (parent()) {
+            return parent()->findContextProvider(ti);
+        }
+        return nullptr;
+    }
+
+    UseFont::UseFont(PropertyOrValue<const sf::Font*> pvf)
+        : ContextProvider(std::move(pvf)) {
+    }
 
 } // namespace ui

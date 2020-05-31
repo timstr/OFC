@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <typeinfo>
 #include <vector>
 
 #include <GUI/Element.hpp>
@@ -17,11 +18,22 @@ namespace ui {
 
     class Component;
 
+    class ComponentParent;
+
+    class ComponentRoot;
+
+    class InternalComponent;
+
+    class AnyComponent;
+
 	template<typename T>
 	class Property;
 
 	template<typename T>
 	class Observer;
+
+
+
 
 	template<typename T>
 	class Property {
@@ -129,13 +141,9 @@ namespace ui {
         friend Component;
     };
 
-	// TODO: allow observer to be given a single fixed value,
-	// to avoid having to create additional dummy properties
-	// for fixed inputs.
-	// This should be done by adding a member std::optional<T>,
-	// relevant constructor(s), relevent assign(...) method(s),
-	// and adding a method like getOnce() that either gets the
-	// stored value or refers to the targeted property
+	// TODO: allow passing a member function that takes its argument by value for
+    // fundamental types and for pointers (e.g. to allow `const T*` instead of `const T* const&`
+    // which is currently required).
 	template<typename T>
 	class Observer : public ObserverBase {
 	public:
@@ -147,14 +155,22 @@ namespace ui {
 			, m_onUpdate(makeUpdateFunction(self, onUpdate)) {
             m_target->m_observers.push_back(this);
 		}
-		template<typename ComponentType>
-		Observer(ComponentType* self, void (ComponentType::* onUpdate)(const T&), T fixedValue)
-			: ObserverBase(self)
+        template<typename ComponentType>
+        Observer(ComponentType* self, void (ComponentType::* onUpdate)(const T&), T fixedValue)
+            : ObserverBase(self)
             , m_target(nullptr)
-			, m_fixedValue(std::move(fixedValue))
-			, m_onUpdate(makeUpdateFunction(self, onUpdate)) {
+            , m_fixedValue(std::move(fixedValue))
+            , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
 
-		}
+        }
+        template<typename ComponentType>
+        Observer(ComponentType* self, void (ComponentType::* onUpdate)(const T&), PropertyOrValue<T> pv)
+            : ObserverBase(self)
+            , m_target(nullptr)
+            , m_fixedValue(std::nullopt)
+            , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
+            assign(pv);
+        }
 		template<typename ComponentType>
 		Observer(ComponentType* self, void (ComponentType::* onUpdate)(const T&))
 			: ObserverBase(self)
@@ -212,12 +228,12 @@ namespace ui {
 			update(*m_fixedValue);
 		}
 
-		void assign(PropertyOrValue<T> pv) {
+		void assign(const PropertyOrValue<T>& pv) {
 			assert(pv.m_fixedValue.has_value() || pv.m_target);
 			if (pv.m_target) {
 				assign(*pv.m_target);
 			} else {
-				assign(std::move(*pv.m_fixedValue));
+				assign(static_cast<const T&>(*pv.m_fixedValue));
 			}
 		}
 
@@ -303,14 +319,7 @@ namespace ui {
 		DerivedProperty(Property<U>&, std::function<T(const U&)>);
 	};
 
-	// Actual important forward declarations
-	class Component;
 
-	class ComponentParent;
-
-	class ComponentRoot;
-
-	class InternalComponent;
 
 	class Component {
 	public:
@@ -330,6 +339,18 @@ namespace ui {
 
 		void mount(ComponentParent* parent);
 		void unmount();
+
+        template<typename ContextProviderType>
+        PropertyOrValue<typename ContextProviderType::ValueType>* findContext() noexcept {
+            const auto p = parent();
+            if (!p) {
+                return nullptr;
+            }
+            if (auto pc = parent()->findContextProvider(typeid(ContextProviderType))) {
+                return static_cast<PropertyOrValue<ContextProviderType::ValueType>*>(pc);
+            }
+            return nullptr;
+        }
 
 	protected:
 		void insertElement(std::unique_ptr<Element> element, const Element* beforeElement = nullptr);
@@ -379,6 +400,16 @@ namespace ui {
 		 * 
 		 */
 		virtual void onRemoveChildElement(Element* whichElement, const Component* whichDescendent) = 0;
+
+    private:
+        virtual void* findContextProvider(const std::type_info&) noexcept;
+
+        friend Component;
+
+        friend InternalComponent;
+
+        template<typename T, typename D>
+        friend class ContextProvider;
 	};
 
 	// Component producing any number of children?
@@ -387,6 +418,8 @@ namespace ui {
 	public:
 		// TODO: ?
 
+    private:
+        void* findContextProvider(const std::type_info&) noexcept override;
 	};
 
 	// Component representing a single Element type that unconditionally
@@ -438,6 +471,44 @@ namespace ui {
 		void onRemoveChildElement(Element* whichElement, const Component* whichDescendent) override final;
 	};
 
+    template<typename T, typename DerivedContextProvider>
+    class ContextProvider : public ForwardingComponent {
+    public:
+        ContextProvider(PropertyOrValue<T> pv)
+            : m_propOrVal(std::move(pv)) {
+
+        }
+
+        DerivedContextProvider& with(AnyComponent c) {
+            m_component = std::move(c);
+            return *static_cast<DerivedContextProvider*>(this);
+        }
+
+        using ValueType = T;
+
+    private:
+        PropertyOrValue<T> m_propOrVal;
+        AnyComponent m_component;
+
+        void* findContextProvider(const std::type_info& ti) noexcept override final {
+            if (ti == typeid(DerivedContextProvider)) {
+                return static_cast<void*>(&m_propOrVal);
+            }
+            if (auto p = parent()) {
+                return p->findContextProvider(ti);
+            }
+            return nullptr;
+        }
+
+        void onMount() override final {
+            m_component.tryMount(this);
+        }
+
+        void onUnmount() override final {
+            m_component.tryUnmount();
+        }
+    };
+
 	// To be used in public API methods where client can pass any component
 	class AnyComponent final {
 	public:
@@ -458,6 +529,11 @@ namespace ui {
 			: m_component(std::make_unique<std::decay_t<ComponentType>>(std::move(c))) {
 
 		}
+
+        // Creates a TextComponent
+        AnyComponent(Property<String>&);
+        AnyComponent(String);
+        AnyComponent(const char*); // TODO: support for other string literals
 
 		// Returns whether the object is holding a component or not
 		operator bool() const noexcept;
@@ -617,49 +693,77 @@ namespace ui {
 
 	//////////////////////////////////////
 
+    class UseFont : public ContextProvider<const sf::Font*, UseFont> {
+    public:
+        UseFont(PropertyOrValue<const sf::Font*>);
+    };
 
-	class StaticText : public SimpleComponent<Text> {
+    // TODO: make a generic ContextConsumer class modeled after this
+    // required template parameters: Derived (for CRTP), ContextProviderType
+    // Value type can be retrieved via typename ContextProviderType::ValueType
+    template<typename Derived>
+    class FontConsumer {
+    public:
+        FontConsumer(void (Derived::* onUpdate)(const sf::Font* const &))
+            : m_observer(static_cast<Derived*>(this), onUpdate)
+            , m_init(false) {
+
+        }
+
+        Derived& font(PropertyOrValue<const sf::Font*> pv) {
+            m_observer.assign(std::move(pv));
+            m_init = true;
+        }
+
+    protected:
+        Observer<const sf::Font*>& getFont() {
+            if (!m_init) {
+                if (auto pv = static_cast<Derived*>(this)->findContext<UseFont>()){
+                    m_observer.assign(*pv);
+                    m_init = true;
+                } else {
+                    throw std::runtime_error("Attempted to use context which could not be found in component tree");
+                }
+            }
+            return m_observer;
+        }
+
+    private:
+        Observer<const sf::Font*> m_observer;
+        bool m_init;
+    };
+
+	class TextComponent : public SimpleComponent<Text>, public FontConsumer<TextComponent> {
 	public:
-		StaticText(const sf::Font& f, sf::String s = "");
-
-		// TODO color property
+		TextComponent(PropertyOrValue<String> s);
 
 	private:
-		const sf::Font* const m_font;
-		String m_string;
-
-		std::unique_ptr<Text> createElement() override final;
-	};
-
-	class DynamicText : public SimpleComponent<Text> {
-	public:
-		DynamicText(const sf::Font& f, Property<String>& s);
-
-	private:
-		const sf::Font* const m_font;
 		Observer<String> m_stringObserver;
 
 		std::unique_ptr<Text> createElement() override final;
 
 		void updateString(const String& s);
+
+        void updateFont(const sf::Font* const&);
 	};
 
-	class Button : public SimpleComponent<CallbackButton> {
+	class Button : public SimpleComponent<CallbackButton>, public FontConsumer<Button> {
 	public:
-		Button(const ui::Font& f);
+		Button();
 
 		Button& caption(PropertyOrValue<String> s);
 
 		Button& onClick(std::function<void()> f);
 
 	private:
-		sf::Font const* const m_font;
 		Observer<String> m_caption;
 		std::function<void()> m_onClick;
 
 		std::unique_ptr<CallbackButton> createElement() override final;
 
 		void updateCaption(const String& s);
+
+        void updateFont(const sf::Font* const &);
 	};
 
 	class If : public ForwardingComponent {
