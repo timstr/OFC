@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cctype>
+#include <cmath>
 
 namespace ui {
 
@@ -45,7 +46,7 @@ namespace ui {
         return win->currentTextEntry() == this;
     }
 
-    bool TextEntry::onLeftClick(int clicks){
+    bool TextEntry::onLeftClick(int){
         const auto s = text();
 
         if (s.getSize() > 0){
@@ -305,8 +306,8 @@ namespace ui {
 
     void TextEntry::onChange(){
         const auto l = text().getSize();
-        m_cursorHead = std::clamp(m_cursorHead, 0ull, l);
-        m_cursorTail = std::clamp(m_cursorTail, 0ull, l);
+        m_cursorHead = std::clamp(m_cursorHead, size_t{0}, l);
+        m_cursorTail = std::clamp(m_cursorTail, size_t{0}, l);
         onType();
     }
 

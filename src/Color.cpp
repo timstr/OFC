@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <cmath>
 
 namespace ui {
 
@@ -51,7 +52,13 @@ namespace ui {
     }
 
     Color Color::HSL(float h, float s, float l, float a){
-        return Color();
+        Color c;
+        c.h = h;
+        c.s = s;
+        c.l = l;
+        c.a = a;
+        c.updateRGBFromHSL();
+        return c;
     }
 
     float Color::red() const {

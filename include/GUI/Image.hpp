@@ -4,6 +4,7 @@
 #include <GUI/Color.hpp>
 
 #include <SFML/Graphics.hpp>
+#include <memory>
 
 namespace ui {
 

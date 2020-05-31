@@ -13,6 +13,17 @@ namespace ui {
 
     // TODO: change cursors when mouse is over control, text entry, draggable, etc
 
+    // TODO: add option to prevent elements from being considered for receiving input
+    // For example, some child element which serves only to decorate a Control
+
+    // TODO: SFML keypress events include information about modifiers keys that were
+    // pressed at the time of the last keypress, such as alt, shift, and control.
+    // It's probably more reliable to use these in onKeyDown than checking for
+    // whether these keys are held (redundantly, thanks to left/right duplicate keys)
+
+    
+    class KeyboardCommand;
+
     class Window {
     public:
         Window(const Window&) = delete;
@@ -43,8 +54,10 @@ namespace ui {
         // take a screenshot
         sf::Image screenshot() const;
 
-        void addKeyboardCommand(Key trigger, std::function<void()> callback);
-        void addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback);
+        // Command stays active until the returned object is destroyed.
+        // Note: KeyboardCommand is an RAII type, moving it will keep the command active
+        KeyboardCommand addKeyboardCommand(Key trigger, std::function<void()> callback);
+        KeyboardCommand addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback);
 
         // close the window, destroying it in the process
         // DO NOT use the object after calling close()
@@ -73,7 +86,7 @@ namespace ui {
         void releaseAllButtons();
         
         void handleMouseDown(sf::Mouse::Button btn, vec2 pos);
-        void handleMouseUp(sf::Mouse::Button btn, vec2 pos);
+        void handleMouseUp(sf::Mouse::Button btn);
 
         void handleKeyDown(sf::Keyboard::Key key);
         void handleKeyUp(sf::Keyboard::Key key);
@@ -94,8 +107,32 @@ namespace ui {
 
         bool dropDraggable(Draggable* d, vec2 pos);
 
+        // Ensures that event listeners remain attached to
+        // the element if it is temporarily removed and
+        // then returned to the window.
+        // After calling this function, there remains an
+        // association between the window and the element
+        // which maintains these event listeners. This
+        // association is lost if the element is destroyed
+        // or added to a different window.
+        void softRemove(Element*);
+
+        // If the element has previously been softly removed,
+        // returns event listeners as if the element had
+        // never been removed. Otherwise, if the element has
+        // not previously been softly removed, does nothing.
+        void undoSoftRemove(Element*);
+
+        bool isSoftlyRemoved(const Element*) const;
+
         // clean up all listeners for a window
-        void onRemoveElement(Element*);
+        void hardRemove(Element*);
+
+        // Hard removes any softly removed elements which are no
+        // longer part of the window.
+        // Undoes the soft removal of any softly removed elements
+        // which were returned to the window.
+        void purgeRemovalQueue();
 
         // focus to a control, effectively calling onLoseFocus
         // on all controls from the currently one up to the common
@@ -171,9 +208,28 @@ namespace ui {
 
         std::vector<Element*> m_updateQueue;
 
+        std::vector<Element*> m_removalQueue;
+
         // registered keyboard commands
-        // TODO: move this to context?
-        std::map<std::pair<Key, std::vector<Key>>, std::function<void()>> m_commands;
+        
+        struct KeyboardCommandSignal {
+            KeyboardCommandSignal();
+            ~KeyboardCommandSignal();
+
+            KeyboardCommandSignal(KeyboardCommandSignal&&) = delete;
+            KeyboardCommandSignal(const KeyboardCommandSignal&) = delete;
+            KeyboardCommandSignal& operator=(KeyboardCommandSignal&&) = delete;
+            KeyboardCommandSignal& operator=(const KeyboardCommandSignal&) = delete;
+
+            Key trigger;
+            std::vector<Key> requiredKeys;
+            std::function<void()> callback;
+            KeyboardCommand* connection;
+        };
+
+        std::vector<std::unique_ptr<KeyboardCommandSignal>> m_commands;
+
+        friend class KeyboardCommand;
 
         ComponentRoot m_component;
         std::unique_ptr<Container> m_domRoot;
@@ -188,6 +244,27 @@ namespace ui {
 
         template<typename... ArgsT>
         friend Control* propagate(Window*, Control*, bool (Control::*)(ArgsT...), ArgsT...);
+    };
+
+    class KeyboardCommand {
+    public:
+        KeyboardCommand() noexcept;
+        KeyboardCommand(KeyboardCommand&&) noexcept;
+        KeyboardCommand& operator=(KeyboardCommand&&) noexcept;
+        ~KeyboardCommand();
+
+        KeyboardCommand(const KeyboardCommand&) = delete;
+        KeyboardCommand& operator=(const KeyboardCommand&) = delete;
+
+        void reset();
+
+    private:
+        KeyboardCommand(Window*, Window::KeyboardCommandSignal*) noexcept;
+
+        Window* m_window;
+        Window::KeyboardCommandSignal* m_signal;
+
+        friend class Window;
     };
 
 } // namespace ui

@@ -3,7 +3,7 @@
 namespace ui {
 
     ToggleButton::ToggleButton(bool value, const sf::Font& font, std::function<void(bool)> onChange, std::pair<String, String> labels)
-        : CallbackButton(labels.first, font, [this](){
+        : CallbackButton(value ? labels.second : labels.first, font, [this](){
             m_value = !m_value;
             getCaption().setText(m_value ? m_labels.second : m_labels.first);
             if (m_onChange){

@@ -30,9 +30,17 @@ namespace ui {
         Element& operator=(Element&&) = delete;
 
         // the element's position relative to its container
+        // NOTE: these may cause an update
         float left();
         float top();
         vec2 pos();
+
+        // The element's position relative to its container
+        // These will not trigger an update
+        float left() const;
+        float top() const;
+        vec2 pos() const;
+
         void setLeft(float);
         void setTop(float);
         void setPos(vec2);
@@ -48,9 +56,16 @@ namespace ui {
         virtual void onMove();
 
         // get the element's size
+        // NOTE: these may cause an update
         float width();
         float height();
         vec2 size();
+
+        // get the element's size
+        // NOTE: these will not trigger an update
+        float width() const;
+        float height() const;
+        vec2 size() const;
 
         // set the element's size
         void setWidth(float, bool force = false);
@@ -183,6 +198,8 @@ namespace ui {
 
         Container* m_parent;
 
+        Window* m_previousWindow;
+
         virtual Container* toContainer();
         const Container* toContainer() const;
         virtual Control* toControl();
@@ -204,11 +221,13 @@ namespace ui {
     };
 
     template<typename T>
-    std::unique_ptr<T> makeOrphan(T& element){
+    std::unique_ptr<T> makeOrphan(T* element){
         static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
-        auto ptr = dynamic_cast<T*>(element.orphan().release());
-        assert(ptr);
-        return std::unique_ptr<T>{ptr};
+        auto up = element->orphan();
+        auto p = dynamic_cast<T*>(up.get());
+        assert(p);
+        up.release();
+        return std::unique_ptr<T>{p};
     }
 
 } // namespace ui

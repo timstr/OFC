@@ -27,14 +27,16 @@ namespace ui {
         , m_visible(true)
         , m_needs_update(false)
         , m_isUpdating(false)
-        , m_parent(nullptr) {
+        , m_parent(nullptr)
+        , m_previousWindow(nullptr) {
         
     }
     
     Element::~Element(){
-        if (auto win = getParentWindow()){
-            win->onRemoveElement(this);
+        if (m_previousWindow){
+            m_previousWindow->hardRemove(this);
         }
+        assert(!m_previousWindow);
     }
     
     float Element::left(){
@@ -55,6 +57,18 @@ namespace ui {
         if (m_parent){
             m_parent->forceUpdate();
         }
+        return m_position;
+    }
+
+    float Element::left() const {
+        return m_position.x;
+    }
+
+    float Element::top() const {
+        return m_position.y;
+    }
+
+    vec2 Element::pos() const {
         return m_position;
     }
     
@@ -112,6 +126,18 @@ namespace ui {
     
     vec2 Element::size(){
         forceUpdate();
+        return m_size;
+    }
+
+    float Element::width() const {
+        return m_size.x;
+    }
+
+    float Element::height() const {
+        return m_size.y;
+    }
+
+    vec2 Element::size() const {
         return m_size;
     }
     
@@ -222,7 +248,7 @@ namespace ui {
     
     Element* Element::findElementAt(vec2 p, const Element* exclude){
         if (!visible() || this == exclude){
-            return false;
+            return nullptr;
         }
         return hit(p) ? this : nullptr;
     }

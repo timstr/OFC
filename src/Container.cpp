@@ -18,13 +18,28 @@ namespace ui {
 
     Container::~Container(){
         if (auto win = getParentWindow()){
-            win->onRemoveElement(this);
+            win->hardRemove(this);
+        }
+        if (m_previousWindow){
+            // NOTE: this may seem redundent with the destructor
+            // of Element, but the behavior of this depends on
+            // this actually being a container (via the toContainer()
+            // function, which will return null after ~Container)
+            m_previousWindow->hardRemove(this);
         }
     }
     
     void Container::adopt(std::unique_ptr<Element> e){
+        assert(e);
+        if (auto prevWin = e->m_previousWindow){
+            if (auto currWin = getParentWindow(); currWin && currWin == prevWin){
+                currWin->undoSoftRemove(e.get());
+            } else {
+                prevWin->hardRemove(e.get());
+            }
+        }
+        assert(e->m_previousWindow == nullptr);
         e->m_parent = this;
-        auto eptr = e.get();
         m_children.push_back({std::move(e), {}, {}, {}});
         requireDeepUpdate();
     }
@@ -40,9 +55,6 @@ namespace ui {
         if (it == m_children.end()){
             throw std::runtime_error("Attempted to remove a nonexistent child window");
         }
-        if (auto win = getParentWindow()){
-            win->onRemoveElement(it->child.get());
-        }
 
         std::function<void(Element*)> callOnRemove = [&](Element* elem){
             elem->onRemove();
@@ -56,6 +68,10 @@ namespace ui {
 
 
         onRemoveChild(it->child.get());
+        if (auto win = getParentWindow()){
+            win->softRemove(it->child.get());
+        }
+
         std::unique_ptr<Element> ret = std::move(it->child);
         assert(ret->m_parent == this);
         ret->m_parent = nullptr;
@@ -119,6 +135,51 @@ namespace ui {
                 requireDeepUpdate();
             }
         }
+    }
+
+    bool Container::empty() const {
+        return m_children.size() == 0;
+    }
+
+    std::size_t Container::numChildren() const {
+        return m_children.size();
+    }
+
+    Element* Container::getChild(std::size_t i){
+        return const_cast<Element*>(const_cast<const Container*>(this)->getChild(i));
+    }
+
+    const Element* Container::getChild(std::size_t i) const {
+        assert(i < m_children.size());
+        if (i >= m_children.size()){
+            throw std::runtime_error("Index out of range");
+        }
+        return m_children[i].child.get();
+    }
+
+    bool Container::hasChild(const Element* e) const {
+        assert([&](){
+            auto c = std::count_if(
+                m_children.begin(),
+                m_children.end(),
+                [&](const ChildData& cd){
+                    return cd.child.get() == e;
+                }
+            );
+            return (c <= 1) && (c == 0 || e->m_parent == this);
+        }());
+        return e->m_parent == this;
+    }
+
+    bool Container::hasDescendent(const Element* e) const {
+        auto c = e->m_parent;
+        while (c){
+            if (c == this){
+                return true;
+            }
+            c = c->m_parent;
+        }
+        return false;
     }
 
     void Container::setAvailableSize(const Element* child, vec2 size){
@@ -293,11 +354,11 @@ namespace ui {
 
     Element* Container::findElementAt(vec2 p, const Element* exclude){
         if (this == exclude){
-            return false;
+            return nullptr;
         }
         const bool hitThis = hit(p);
         if (m_clipping && !hitThis){
-            return false;
+            return nullptr;
         }
         for (auto it = m_children.rbegin(), end = m_children.rend(); it != end; ++it){
             auto& c = it->child;

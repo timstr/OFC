@@ -24,6 +24,7 @@ namespace ui {
     }
 
     void HorizontalList::insert(std::size_t index, std::unique_ptr<Element> e){
+        assert(e);
         assert(index <= m_cells.size());
         if (index > m_cells.size()){
             throw std::runtime_error("Invalid index");
@@ -43,6 +44,7 @@ namespace ui {
     }
 
     void HorizontalList::push_front(std::unique_ptr<Element> e){
+        assert(e);
         m_cells.insert(m_cells.begin(), e.get());
         adopt(std::move(e));
     }
@@ -57,6 +59,7 @@ namespace ui {
     }
 
     void HorizontalList::push_back(std::unique_ptr<Element> e){
+        assert(e);
         m_cells.push_back(e.get());
         adopt(std::move(e));
     }
@@ -85,6 +88,8 @@ namespace ui {
         auto x = 0.0f;
         auto h = 0.0f; 
         for (auto c : m_cells){
+            assert(c);
+            assert(hasChild(c));
             c->setPos({x + m_padding, m_padding});
             x += c->width() + 2.0f * m_padding;
             h = std::max(h, c->height());

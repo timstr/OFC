@@ -3,6 +3,7 @@
 #include <GUI/Window.hpp>
 
 #include <algorithm>
+#include <cassert>
 
 namespace ui {
 
@@ -23,12 +24,18 @@ namespace ui {
         ), m_windows.end());
     }
 
-    void Context::run(){
+    void Context::run(float desiredFPS){
+        assert(desiredFPS > 0.0f);
+        const auto delayPerTick = sf::milliseconds(static_cast<int>(std::ceil(1.0f / desiredFPS)));
+        const auto eventInterval = sf::milliseconds(10);
         while (m_windows.size() > 0){
-            m_cachedTime = m_clock.getElapsedTime();
-            for (auto& win : m_windows){
-                win->processEvents();
-            }
+            const auto doneTime = m_cachedTime + delayPerTick;
+            do {
+                m_cachedTime = m_clock.getElapsedTime();
+                for (auto& win : m_windows) {
+                    win->processEvents();
+                }
+            } while (m_cachedTime < doneTime);
             for (auto& win : m_windows){
                 win->tick();
                 win->redraw();

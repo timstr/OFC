@@ -198,7 +198,7 @@ namespace ui {
         inline void PullDownMenuBase<T>::collapse(){
             assert(isExpanded());
             assert(m_listItems.getParentContainer() == this);
-            m_listItemsUP = makeOrphan(m_listItems);
+            m_listItemsUP = makeOrphan(&m_listItems);
             assert(m_listItems.getParentContainer() == nullptr);
         }
 

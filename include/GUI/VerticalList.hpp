@@ -10,6 +10,8 @@ namespace ui {
     public:
         VerticalList();
         
+        using Container::children;
+
         std::size_t length() const noexcept;
 
         Element* getCell(std::size_t i);

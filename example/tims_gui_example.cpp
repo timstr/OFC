@@ -23,7 +23,7 @@ const sf::Font& getFont() {
 
 int main(){
 
-    auto str= ui::Property<ui::String>("Dagnabbit darn drat!");
+    // auto str = ui::Property<ui::String>("Dagnabbit darn drat!");
 
 	auto condition = ui::Property<bool>{true};
 

@@ -24,6 +24,20 @@ namespace ui {
         bool shrink() const;
         void setShrink(bool enable);
 
+        bool empty() const;
+
+        std::size_t numChildren() const;
+
+        Element* getChild(std::size_t);
+        const Element* getChild(std::size_t) const;
+
+        bool hasChild(const Element*) const;
+        bool hasDescendent(const Element*) const;
+
+        std::vector<const Element*> children() const;
+
+        void clear();
+
     protected:
 
         template<typename T, typename... Args>
@@ -33,12 +47,9 @@ namespace ui {
 
         std::unique_ptr<Element> release(const Element*);
 
-        void clear();
-
         virtual void onRemoveChild(const Element*);
 
         std::vector<Element*> children();
-        std::vector<const Element*> children() const;
 
         // TODO: scale?
 

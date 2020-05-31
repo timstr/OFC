@@ -72,6 +72,7 @@ namespace ui {
     }
 
     Window::~Window() {
+        purgeRemovalQueue();
         m_component.unmount();
     }
 
@@ -140,15 +141,19 @@ namespace ui {
         return tex.copyToImage();
     }
 
-    void Window::addKeyboardCommand(Key trigger, std::function<void()> callback){
-        addKeyboardCommand(trigger, {}, std::move(callback));
+    KeyboardCommand Window::addKeyboardCommand(Key trigger, std::function<void()> callback){
+        return addKeyboardCommand(trigger, {}, std::move(callback));
     }
 
-    void Window::addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback){
-        m_commands.insert_or_assign(
-            std::make_pair(trigger, std::move(requiredKeys)),
-            std::move(callback)
-        );
+    KeyboardCommand Window::addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback){
+        auto cmd = std::make_unique<KeyboardCommandSignal>();
+        cmd->trigger = trigger;
+        cmd->requiredKeys = std::move(requiredKeys);
+        cmd->callback = std::move(callback);
+        auto conn = KeyboardCommand(this, cmd.get());
+        cmd->connection = &conn;
+        m_commands.push_back(std::move(cmd));
+        return conn;
     }
 
     void Window::close(){
@@ -213,9 +218,7 @@ namespace ui {
                     break;
                 }
                 case sf::Event::MouseButtonReleased: {
-                    const auto x = static_cast<float>(event.mouseButton.x);
-                    const auto y = static_cast<float>(event.mouseButton.y);
-                    handleMouseUp(event.mouseButton.button, {x, y});
+                    handleMouseUp(event.mouseButton.button);
                     break;
                 }
             }
@@ -223,6 +226,7 @@ namespace ui {
     }
 
     void Window::tick(){
+        purgeRemovalQueue();
         handleDrag();
         handleHover(getMousePosition());
         applyTransitions();
@@ -241,19 +245,27 @@ namespace ui {
 
     void Window::releaseAllButtons(){
         if (m_lclick_elem && !m_lClickReleased){
-            m_lclick_elem->onLeftRelease();
+            if (!isSoftlyRemoved(m_lclick_elem)){
+                m_lclick_elem->onLeftRelease();
+            }
             m_lclick_elem = nullptr;
         }
         if (m_mclick_elem && !m_mClickReleased){
-            m_mclick_elem->onMiddleRelease();
+            if (!isSoftlyRemoved(m_mclick_elem)){
+                m_mclick_elem->onMiddleRelease();
+            }
             m_mclick_elem = nullptr;
         }
         if (m_rclick_elem && !m_rClickReleased){
-            m_rclick_elem->onRightRelease();
+            if (!isSoftlyRemoved(m_rclick_elem)){
+                m_rclick_elem->onRightRelease();
+            }
             m_rclick_elem = nullptr;
         }
         for (auto& [key, ctrl] : m_keypressed_elems){
-            ctrl->onKeyUp(key);
+            if (!isSoftlyRemoved(ctrl)){
+                ctrl->onKeyUp(key);
+            }
         }
         m_keypressed_elems.clear();
     }
@@ -301,20 +313,26 @@ namespace ui {
         m_last_click_btn = btn;
     }
 
-    void Window::handleMouseUp(sf::Mouse::Button btn, vec2 pos){
+    void Window::handleMouseUp(sf::Mouse::Button btn){
         if (btn == sf::Mouse::Left) {
 			if (m_lclick_elem) {
-				m_lclick_elem->onLeftRelease();
+                if (!isSoftlyRemoved(m_lclick_elem)){
+    				m_lclick_elem->onLeftRelease();
+                }
                 m_lClickReleased = true;
 			}
 		} else if (btn == sf::Mouse::Middle) {
 			if (m_mclick_elem) {
-				m_mclick_elem->onRightRelease();
+                if (!isSoftlyRemoved(m_mclick_elem)){
+    				m_mclick_elem->onMiddleRelease();
+                }
                 m_mClickReleased = true;
 			}
 		} else if (btn == sf::Mouse::Right) {
 			if (m_rclick_elem) {
-				m_rclick_elem->onRightRelease();
+                if (!isSoftlyRemoved(m_rclick_elem)){
+    				m_rclick_elem->onRightRelease();
+                }
                 m_rClickReleased = true;
 			}
 		}
@@ -330,6 +348,7 @@ namespace ui {
         }
 
 		// if no command was found, send key stroke to the current element
+        assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
 		auto elem = propagate(this, m_focus_elem, &Control::onKeyDown, key);
 
 		// and send key up to last element receiving same keystroke
@@ -337,7 +356,9 @@ namespace ui {
 		auto key_it = m_keypressed_elems.find(key);
 		if (key_it != m_keypressed_elems.end()) {
 			if (key_it->second && key_it->second != elem) {
-				key_it->second->onKeyUp(key);
+                if (!isSoftlyRemoved(key_it->second)){
+    				key_it->second->onKeyUp(key);
+                }
 				key_it->second = elem;
 			}
 		} else if (elem) {
@@ -350,14 +371,17 @@ namespace ui {
     void Window::handleKeyUp(sf::Keyboard::Key key){
         auto it = m_keypressed_elems.find(key);
 		if (it != m_keypressed_elems.end()) {
-			assert(it->second);
-		    it->second->onKeyUp(key);
+            auto e = it->second;
+			assert(e);
+            if (!isSoftlyRemoved(e)){
+    		    e->onKeyUp(key);
+            }
 			m_keypressed_elems.erase(it);
 		}
     }
 
     void Window::handleType(sf::Int32 unicode){
-        if (m_text_entry){
+        if (m_text_entry && !isSoftlyRemoved(m_text_entry)){
             m_text_entry->type(unicode);
         }
     }
@@ -368,7 +392,7 @@ namespace ui {
     }
 
     void Window::handleDrag(){
-        if (m_drag_elem){
+        if (m_drag_elem && !isSoftlyRemoved(m_drag_elem)){
             const auto mousePos = getMousePosition();
             auto rootPos = vec2{};
             if (const auto c = m_drag_elem->getParentContainer()){
@@ -383,6 +407,7 @@ namespace ui {
         auto newElem = findControlAt(pos, m_drag_elem);
 
         std::vector<Control*> pathUp, pathDown;
+        assert(!m_hover_elem || !isSoftlyRemoved(m_hover_elem));
         auto curr = m_hover_elem;
         while (curr){
             pathUp.push_back(curr);
@@ -410,7 +435,7 @@ namespace ui {
 
         m_hover_elem = newElem;
 
-        if (m_drag_elem){
+        if (m_drag_elem && !isSoftlyRemoved(m_drag_elem)){
             propagate(this, newElem, &Control::onHover, m_drag_elem);
         }
     }
@@ -418,30 +443,30 @@ namespace ui {
     bool Window::handleCommand(Key key){
         // search for longest matching set of keys in registered commands
 		size_t max = 0;
-		auto current_cmd = m_commands.end();
-		for (auto cmd_it = m_commands.begin(), end = m_commands.end(); cmd_it != end; ++cmd_it) {
-			if (cmd_it->first.first == key) {
-				bool match = true;
-				for (int i = 0; i < cmd_it->first.second.size() && match; i++) {
-					match = sf::Keyboard::isKeyPressed(cmd_it->first.second[i]);
-				}
-				if (match && cmd_it->first.second.size() >= max) {
-					max = cmd_it->first.second.size();
-					current_cmd = cmd_it;
-				}
-			}
-		}
+        KeyboardCommandSignal* best_cmd = nullptr;
+        for (const auto& cmd : m_commands) {
+            if (cmd->trigger == key) {
+                bool match = true;
+                for (int i = 0; i < cmd->requiredKeys.size() && match; i++) {
+                    match = sf::Keyboard::isKeyPressed(cmd->requiredKeys[i]);
+                }
+                if (match && cmd->requiredKeys.size() >= max) {
+                    max = cmd->requiredKeys.size();
+                    best_cmd = cmd.get();
+                }
+            }
+        }
 
-		if (current_cmd != m_commands.end()) {
+		if (best_cmd) {
 			// if one was found, invoke that command
-			current_cmd->second();
+            best_cmd->callback();
 			return true;
 		}
         return false;
     }
 
     bool Window::handleTextEntryKeyDown(Key key){
-        if (!m_text_entry){
+        if (!m_text_entry || isSoftlyRemoved(m_text_entry)){
             return false;
         }
 
@@ -511,6 +536,8 @@ namespace ui {
     }
 
     void Window::transferResponseTo(Control* c){
+        assert(c);
+        assert(c->getParentWindow() == this);
         m_currentEventResponder = c;
     }
 
@@ -526,7 +553,73 @@ namespace ui {
         return false;
     }
 
-    void Window::onRemoveElement(Element* e){
+    void Window::softRemove(Element* e){
+        assert(e->getParentWindow() == this);
+        assert(e->m_previousWindow == nullptr);
+        assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
+        e->m_previousWindow = this;
+        m_removalQueue.push_back(e);
+        cancelUpdate(e);
+        
+        removeTransitions(e);
+
+        // TODO: the following feels like a hack.
+
+        /*auto parentControl = e->getParentControl();
+
+        const auto cleanup = [&](const Element* elem){
+            if (elem == m_focus_elem){
+                m_focus_elem = parentControl;
+            }
+            if (elem == m_hover_elem){
+                m_hover_elem = parentControl;
+            }
+            if (elem == m_text_entry){
+                stopTyping();
+            }
+            cancelUpdate(elem);
+        };
+
+        std::function<void(const Element*)> cleanupAll = [&](const Element* elem){
+            if (auto cont = elem->toContainer()){
+                for (auto child : cont->children()){
+                    cleanupAll(child);
+                }
+            }
+            cleanup(elem);
+        };
+
+        cleanupAll(e);*/
+    }
+
+    void Window::undoSoftRemove(Element* e){
+        assert(e->getParentWindow() == nullptr);
+        assert(e->m_previousWindow == this || e->m_previousWindow == nullptr);
+        if (e->m_previousWindow == this){
+            assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 1);
+            e->m_previousWindow = nullptr;
+            m_removalQueue.erase(find(
+                begin(m_removalQueue),
+                end(m_removalQueue),
+                e
+            ), end(m_removalQueue));
+        }
+    }
+
+    bool Window::isSoftlyRemoved(const Element* e) const {
+        assert(e);
+        assert([&]{
+            auto c = count(begin(m_removalQueue), end(m_removalQueue), e);
+            if (e->m_previousWindow == this){
+                return c == 1;
+            } else {
+                return c == 0 && e->m_previousWindow == nullptr;
+            }
+        }());
+        return e->m_previousWindow == this;
+    }
+
+    void Window::hardRemove(Element* e){
         // NOTE: this function will be called during the
         // destructor of Element. Do not call any virtual functions.
         assert(e);
@@ -568,7 +661,6 @@ namespace ui {
                 }
             }
             cancelUpdate(elem);
-            removeTransitions(elem);
         };
 
         std::function<void(const Element*)> cleanupAll = [&](const Element* elem){
@@ -580,12 +672,59 @@ namespace ui {
             cleanup(elem);
         };
 
+        assert(e->getParentWindow() == this || e->getParentWindow() == nullptr);
         cleanupAll(e);
+        
+        assert(e->m_previousWindow == nullptr || e->m_previousWindow == this);
+        if (e->m_previousWindow == this){
+            assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 1);
+            e->m_previousWindow = nullptr;
+            m_removalQueue.erase(find(
+                begin(m_removalQueue),
+                end(m_removalQueue),
+                e
+            ), end(m_removalQueue));
+        }
+        e->m_previousWindow = nullptr;
+
+        removeTransitions(e);
+
+        assert(all_of(
+            begin(m_transitions),
+            end(m_transitions),
+            [&](const Transition& t) {
+                if (t.element == e) {
+                    return false;
+                }
+                if (auto c = e->toContainer(); c && c->hasDescendent(t.element)) {
+                    return false;
+                }
+                return true;
+            }
+        ));
+    }
+
+    void Window::purgeRemovalQueue(){
+        while (!m_removalQueue.empty()){
+            auto e = m_removalQueue.back();
+            assert(e);
+            // If the element is still here: undo soft removal
+            // If the element is not part of this window: hard removal
+            // If the element was destroyed: Already hard removed, it won't be in the queue.
+            if (e->getParentWindow() == this){
+                undoSoftRemove(e);
+            } else {
+                hardRemove(e);
+            }
+            assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
+        }
     }
 
     void Window::focusTo(Control* control){
         assert(!control || control->getParentWindow() == this);
+        assert(!isSoftlyRemoved(control));
 
+        assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
         auto prev = m_focus_elem;
 
         std::vector<Control*> pathUp, pathDown;
@@ -627,10 +766,14 @@ namespace ui {
     }
 
     Control* Window::currentControl() const {
+        assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
         return m_focus_elem;
     }
 
     void Window::startDrag(Draggable* d, vec2 o){
+        assert(d);
+        assert(d->getParentWindow() == this);
+        assert(!isSoftlyRemoved(d));
         m_drag_elem = d;
         m_drag_offset = o;
     }
@@ -640,6 +783,7 @@ namespace ui {
     }
 
     Draggable* Window::currentDraggable(){
+        assert(!m_drag_elem || !isSoftlyRemoved(m_drag_elem));
         return m_drag_elem;
     }
 
@@ -672,24 +816,34 @@ namespace ui {
             m_transitions.begin(),
             m_transitions.end(),
             [&](const Transition& t){
-                return t.element == e;
+                if (t.element == e) {
+                    return true;
+                }
+                if (auto c = e->toContainer(); c->hasDescendent(t.element)) {
+                    return true;
+                }
+                return false;
             }
         ), m_transitions.end());
     }
 
     void Window::applyTransitions(){
+        std::vector<Transition> toComplete;
         const auto now = Context::get().getProgramTime();
         for (auto it = m_transitions.begin(); it != m_transitions.end();){
             const auto t = (now - it->timeStamp).asSeconds() / it->duration;
             if (t > 1.0){
-                it->fn(1.0);
-                if (it->onComplete){
-                    it->onComplete();
-                }
+                toComplete.emplace_back(std::move(*it));
                 it = m_transitions.erase(it);
             } else {
                 it->fn(t);
                 ++it;
+            }
+        }
+        for (auto& t : toComplete) {
+            t.fn(1.0);
+            if (t.onComplete){
+                t.onComplete();
             }
         }
     }
@@ -699,6 +853,7 @@ namespace ui {
             return;
         }
         m_updateQueue.push_back(elem);
+        assert(std::count(m_updateQueue.begin(), m_updateQueue.end(), elem) == 1);
     }
 
     void Window::updateAllElements(){
@@ -709,19 +864,22 @@ namespace ui {
 
     void Window::updateOneElement(Element* elem){
         // NOTE: the size is being accessed directly instead of through
-        // get/setSize() to avoid adding the element to the queue again
+        // get/setSize() to avoid marking the element dirty again
 
         const auto maxUpdates = std::size_t{10};
         for (std::size_t i = 0; i < maxUpdates; ++i){
+
             assert(elem);
             assert(!elem->m_isUpdating);
             elem->m_isUpdating = true;
 
             // Remove the element from the queue
             {
-                auto it = std::find(m_updateQueue.begin(), m_updateQueue.end(), elem);
-                assert(it != m_updateQueue.end());
-                m_updateQueue.erase(it);
+                m_updateQueue.erase(std::remove(
+                    m_updateQueue.begin(),
+                    m_updateQueue.end(),
+                    elem
+                ), m_updateQueue.end());
             }
 
             // Get the element's original size
@@ -751,7 +909,7 @@ namespace ui {
 
             // Tell the element to update its contents and get the size it actually needs
             const auto actualRequiredSize = elem->update();
-
+            
             // Let the container know the required size (which may differ from the final size)
             if (auto p = elem->getParentContainer()){
                 p->setRequiredSize(
@@ -810,7 +968,7 @@ namespace ui {
             if (elem->m_parent && (sizeChanged || couldUseLessSpace)){
                 if (!elem->m_parent->m_isUpdating){
                     if (std::find(m_updateQueue.begin(), m_updateQueue.end(), elem->m_parent) == m_updateQueue.end()){
-                        m_updateQueue.push_back(elem->m_parent);
+                        enqueueForUpdate(elem->m_parent);
                         elem->m_parent->m_needs_update = true;
                     }
                 }
@@ -845,6 +1003,74 @@ namespace ui {
             m_updateQueue.end(),
             isDecendent
         ), m_updateQueue.end());
+    }
+
+    KeyboardCommand::KeyboardCommand() noexcept
+        : m_window(nullptr)
+        , m_signal(nullptr) {
+
+    }
+
+    KeyboardCommand::KeyboardCommand(Window* w, Window::KeyboardCommandSignal* s) noexcept
+        : m_window(w)
+        , m_signal(s) {
+
+    }
+
+    KeyboardCommand::KeyboardCommand(KeyboardCommand&& c) noexcept
+        : m_window(std::exchange(c.m_window, nullptr))
+        , m_signal(std::exchange(c.m_signal, nullptr)) {
+        if (m_signal) {
+            m_signal->connection = this;
+        }
+    }
+
+    KeyboardCommand& KeyboardCommand::operator=(KeyboardCommand&& c) noexcept {
+        reset();
+        m_window = std::exchange(c.m_window, nullptr);
+        m_signal = std::exchange(c.m_signal, nullptr);
+        if (m_signal) {
+            m_signal->connection = this;
+        }
+        return *this;
+    }
+
+    KeyboardCommand::~KeyboardCommand(){
+        reset();
+    }
+
+    void KeyboardCommand::reset(){
+        assert(!!m_window == !!m_signal);
+        if (m_window) {
+            assert(m_signal->connection == this);
+            m_signal->connection = nullptr;
+            auto& cmds = m_window->m_commands;
+            const auto match = [&](const std::unique_ptr<Window::KeyboardCommandSignal>& kcs) {
+                return kcs.get() == m_signal;
+            };
+            assert(count_if(begin(cmds), end(cmds), match) == 1);
+            cmds.erase(remove_if(begin(cmds), end(cmds), match ), end(cmds));
+        }
+        m_window = nullptr;
+        m_signal = nullptr;
+    }
+
+    Window::KeyboardCommandSignal::KeyboardCommandSignal()
+        : trigger(Key::Unknown)
+        , requiredKeys{}
+        , callback{}
+        , connection(nullptr) {
+
+    }
+
+    Window::KeyboardCommandSignal::~KeyboardCommandSignal(){
+        if (connection) {
+            assert(connection->m_window);
+            assert(connection->m_signal == this);
+            connection->m_window = nullptr;
+            connection->m_signal = nullptr;
+            connection = nullptr;
+        }
     }
 
 } // namespace ui
