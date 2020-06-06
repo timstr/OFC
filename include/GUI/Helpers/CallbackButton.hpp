@@ -7,7 +7,7 @@
 
 namespace ui {
 
-    class CallbackButton : public Control, public FlowContainer, public BoxElement {
+    class CallbackButton : public Control, public Boxed<FlowContainer> {
 	private:
 		enum class State {
 			Normal,
@@ -37,8 +37,6 @@ namespace ui {
 
 		void onMouseOver() override;
 		void onMouseOut() override;
-
-        void render(sf::RenderWindow&) override;
 
 	private:
 

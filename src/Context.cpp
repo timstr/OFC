@@ -1,6 +1,7 @@
 #include <GUI/Context.hpp>
 
 #include <GUI/Window.hpp>
+#include <GUI/Component.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -36,6 +37,7 @@ namespace ui {
                     win->processEvents();
                 }
             } while (m_cachedTime < doneTime);
+            detail::updateAllProperties();
             for (auto& win : m_windows){
                 win->tick();
                 win->redraw();

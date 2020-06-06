@@ -101,11 +101,6 @@ namespace ui {
         }
     }
 
-    void CallbackButton::render(sf::RenderWindow& rw){
-        BoxElement::render(rw);
-        FlowContainer::render(rw);
-    }
-
     void CallbackButton::fadeColor(Color from, Color to){
         startTransition(
             0.1,

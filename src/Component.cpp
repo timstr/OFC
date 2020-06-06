@@ -2,6 +2,28 @@
 
 namespace ui {
 
+
+	namespace detail {
+
+		std::vector<std::function<void()>>& propertyUpdateQueue() noexcept {
+			static std::vector<std::function<void()>> theQueue;
+			return theQueue;
+		}
+
+		void unqueuePropertyUpdater(std::function<void()> f) {
+			auto& q = propertyUpdateQueue();
+			q.push_back(std::move(f));
+		}
+
+		void updateAllProperties() {
+			auto& q = propertyUpdateQueue();
+			for (auto& f : q) {
+				f();
+			}
+			q.clear();
+		}
+	}
+
     ObserverBase::ObserverBase(Component* owner)
         : m_owner(owner) {
         assert(m_owner);
@@ -106,11 +128,11 @@ namespace ui {
 		return m_isMounted;
 	}
 
-	void Component::mount(ComponentParent* parent) {
+	void Component::mount(ComponentParent* parent, const Element* beforeSibling) {
 		assert(!m_isMounted);
 		assert(!m_parent);
 		m_parent = parent;
-        onMount();
+        onMount(beforeSibling);
 		m_isMounted = true;
 	}
 
@@ -120,6 +142,35 @@ namespace ui {
         m_isMounted = false;
 		onUnmount();
 		m_parent = nullptr;
+	}
+
+	Element* Component::getFirstElement() const noexcept {
+		if (auto e = getElement()) {
+			return e;
+		}
+		if (auto p = toComponentParent()){
+			auto c = p->getChildren();
+			for (const auto& cc : c) {
+				if (auto e = cc->getFirstElement()) {
+					return e;
+				}
+			}
+		}
+		return nullptr;
+	}
+
+	const Component* Component::getNextComponent() const noexcept {
+		assert(m_parent);
+		auto siblings = m_parent->getChildren();
+		assert(std::count(siblings.begin(), siblings.end(), this) == 1);
+		auto it = std::find(siblings.begin(), siblings.end(), this);
+		assert(it != siblings.end());
+		++it;
+		return (it == siblings.end()) ? nullptr : *it;
+	}
+
+	Element* Component::getElement() const noexcept {
+		return nullptr;
 	}
 
 	void Component::insertElement(std::unique_ptr<Element> element, const Element* beforeElement) {
@@ -132,12 +183,20 @@ namespace ui {
 		m_parent->onRemoveChildElement(element, this);
 	}
 
+	ComponentParent* Component::toComponentParent() noexcept {
+		return const_cast<ComponentParent*>(const_cast<const Component*>(this)->toComponentParent());
+	}
+
+	const ComponentParent* Component::toComponentParent() const noexcept {
+		return nullptr;
+	}
+
 
 
     std::unique_ptr<Container> ComponentRoot::mount() {
         assert(m_component);
         assert(!m_tempContainer);
-        m_component->mount(this);
+        m_component->mount(this, nullptr);
         assert(m_tempContainer);
         return std::move(m_tempContainer);
     }
@@ -159,6 +218,10 @@ namespace ui {
 		// Nothing to do
 	}
 
+	std::vector<const Component*> ComponentRoot::getChildren() const noexcept {
+		return {m_component.get()};
+	}
+
 	void ForwardingComponent::onInsertChildElement(std::unique_ptr<Element> element, const Component* whichDescendent, const Element* beforeElement) {
 		assert(parent());
 		parent()->onInsertChildElement(std::move(element), whichDescendent, beforeElement);
@@ -173,7 +236,7 @@ namespace ui {
 
 	AnyComponent::AnyComponent(AnyComponent&& ac) noexcept
 		: m_component(std::exchange(ac.m_component, nullptr)) {
-        assert(!m_component->isMounted());
+        
 	}
 
     AnyComponent& AnyComponent::operator=(AnyComponent&& ac) noexcept {
@@ -181,7 +244,6 @@ namespace ui {
             return *this;
         }
         assert(!m_component || !m_component->isMounted());
-        assert(!ac.m_component || !ac.m_component->isMounted());
         m_component = std::exchange(ac.m_component, nullptr);
         return *this;
     }
@@ -199,6 +261,13 @@ namespace ui {
 
     }
 
+	Component* AnyComponent::get() noexcept {
+		return m_component.get();
+	}
+	const Component* AnyComponent::get() const noexcept {
+		return m_component.get();
+	}
+
     AnyComponent::operator bool() const noexcept {
 		return static_cast<bool>(m_component);
 	}
@@ -212,9 +281,9 @@ namespace ui {
 		return m_component.get();
 	}
 
-	void AnyComponent::tryMount(InternalComponent* self) {
+	void AnyComponent::tryMount(InternalComponent* self, const Element* beforeElement) {
 		if (m_component && !m_component->isMounted()){
-			m_component->mount(self);
+			m_component->mount(self, beforeElement);
 		}
 	}
 
@@ -222,6 +291,10 @@ namespace ui {
 		if (m_component && m_component->isMounted()){
 			m_component->unmount();
 		}
+	}
+
+	bool AnyComponent::isMounted() const noexcept {
+		return m_component ? m_component->isMounted() : false;
 	}
 
 
@@ -244,7 +317,7 @@ namespace ui {
 		element()->setText(s);
 	}
 
-    void TextComponent::updateFont(const sf::Font* const & f) {
+    void TextComponent::updateFont(const sf::Font* f) {
         assert(f);
         element()->setFont(*f);
     }
@@ -279,7 +352,7 @@ namespace ui {
 		element()->getCaption().setText(s);
 	}
 
-    void Button::updateFont(const sf::Font* const & f) {
+    void Button::updateFont(const sf::Font* f) {
         assert(f);
         element()->getCaption().setFont(*f);
     }
@@ -300,11 +373,11 @@ namespace ui {
 		m_elseComponent = std::move(c);
 		return *this;
 	}
-	void If::onMount() {
+	void If::onMount(const Element* beforeElement) {
 		if (m_condition.getValueOnce()) {
-			m_thenComponent.tryMount(this);
+			m_thenComponent.tryMount(this, beforeElement);
 		} else {
-			m_elseComponent.tryMount(this);
+			m_elseComponent.tryMount(this, beforeElement);
 		}
 	}
 
@@ -313,13 +386,19 @@ namespace ui {
 		m_elseComponent.tryUnmount();
 	}
 
-	void If::updateCondition(const bool& b) {
+	std::vector<const Component*> If::getChildren() const noexcept {
+		return {m_condition.getValueOnce() ? m_thenComponent.get() : m_elseComponent.get()};
+	}
+
+	void If::updateCondition(bool b) {
 		m_thenComponent.tryUnmount();
 		m_elseComponent.tryUnmount();
+		auto nextComp = getNextComponent();
+		auto nextElement = nextComp ? nextComp->getFirstElement() : nullptr;
 		if (b) {
-			m_thenComponent.tryMount(this);
+			m_thenComponent.tryMount(this, nextElement);
 		} else {
-			m_elseComponent.tryMount(this);
+			m_elseComponent.tryMount(this, nextElement);
 		}
 	}
 
@@ -335,8 +414,33 @@ namespace ui {
         return nullptr;
     }
 
+	const ComponentParent* InternalComponent::toComponentParent() const noexcept {
+		return this;
+	}
+
     UseFont::UseFont(PropertyOrValue<const sf::Font*> pvf)
         : ContextProvider(std::move(pvf)) {
     }
+
+	void List::onMount(const Element* beforeSibling) {
+		for (auto& c : m_components) {
+			c.tryMount(this, beforeSibling);
+		}
+	}
+
+	void List::onUnmount() {
+		for (auto it = m_components.rbegin(), itEnd = m_components.rend(); it != itEnd; ++it) {
+			it->tryUnmount();
+		}
+	}
+
+	std::vector<const Component*> List::getChildren() const noexcept {
+		auto ret = std::vector<const Component*>();
+		ret.reserve(m_components.size());
+		for (const auto& c : m_components) {
+			ret.push_back(c.get());
+		}
+		return ret;
+	}
 
 } // namespace ui

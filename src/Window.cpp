@@ -68,7 +68,9 @@ namespace ui {
         m_sfwindow.setVerticalSyncEnabled(true);
 
         m_domRoot = m_component.mount();
+        assert(m_domRoot);
         m_domRoot->m_parentWindow = this;
+        m_domRoot->requireDeepUpdate();
     }
 
     Window::~Window() {
@@ -722,7 +724,7 @@ namespace ui {
 
     void Window::focusTo(Control* control){
         assert(!control || control->getParentWindow() == this);
-        assert(!isSoftlyRemoved(control));
+        assert(!control || !isSoftlyRemoved(control));
 
         assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
         auto prev = m_focus_elem;
@@ -1042,6 +1044,7 @@ namespace ui {
     void KeyboardCommand::reset(){
         assert(!!m_window == !!m_signal);
         if (m_window) {
+            assert(m_signal);
             assert(m_signal->connection == this);
             m_signal->connection = nullptr;
             auto& cmds = m_window->m_commands;

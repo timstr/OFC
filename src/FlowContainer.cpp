@@ -54,14 +54,19 @@ namespace ui {
         m_layout.push_back(WhiteSpace{WhiteSpace::Tab, width});
     }
 
-    void FlowContainer::adopt(std::unique_ptr<Element> e){
+    void FlowContainer::adopt(std::unique_ptr<Element> e, LayoutStyle style, const Element* beforeSibling){
         assert(e);
-        adopt(LayoutStyle::Inline, std::move(e));
-    }
-
-    void FlowContainer::adopt(LayoutStyle ls, std::unique_ptr<Element> e){
-        assert(e);
-        m_layout.push_back(ElementLayout{e.get(), ls});
+        assert(!beforeSibling || beforeSibling->getParentContainer() == this);
+        const auto sameElem = [&](const LayoutObject& lo){
+            if (auto pe = std::get_if<ElementLayout>(&lo)) {
+                return pe->element == beforeSibling;
+            }
+            return false;
+        };
+        auto it = beforeSibling ?
+            std::find_if(m_layout.begin(), m_layout.end(), sameElem) :
+            m_layout.end();
+        m_layout.insert(it, ElementLayout{e.get(), style});
         Container::adopt(std::move(e));
     }
 
@@ -75,24 +80,30 @@ namespace ui {
         float x = m_padding;
         float y = m_padding;
         float nextY = 0.0f;
-        for (auto c : children()){
-            c->setPos({x, y});
-            auto s = c->size();
-            x = std::ceil(x + s.x);
-            if (x >= avail.x && !firstOfLine){
-                c->setPos({0.0, nextY});
-                x = std::ceil(s.x);
-                y = nextY;
-                firstOfLine = true;
-            } else {
-                firstOfLine = false;
-                nextY = std::ceil(std::max(nextY, y + s.y));
-            }
+        for (auto lo : m_layout){
+            if (auto pws = std::get_if<WhiteSpace>(&lo)) {
+                // TODO: handle whitespace
+            } else if (auto pel = std::get_if<ElementLayout>(&lo)) {
+                auto e = pel->element;
+                assert(e);
+                e->setPos({x, y});
+                auto s = e->size();
+                x = std::ceil(x + s.x);
+                if (x >= avail.x && !firstOfLine){
+                    e->setPos({0.0, nextY});
+                    x = std::ceil(s.x);
+                    y = nextY;
+                    firstOfLine = true;
+                } else {
+                    firstOfLine = false;
+                    nextY = std::ceil(std::max(nextY, y + s.y));
+                }
 
-            //max.x = std::max(max.x, c->left() + s.x);
-            //max.y = std::max(max.y, c->top() + s.y);
-            max.x = std::max(max.x, s.x);
-            max.y = std::max(max.y, s.y);
+                //max.x = std::max(max.x, c->left() + s.x);
+                //max.y = std::max(max.y, c->top() + s.y);
+                max.x = std::max(max.x, s.x);
+                max.y = std::max(max.y, s.y);
+            }
         }
         return {max.x + 2.0f * m_padding, max.y + 2.0f * m_padding};
     }

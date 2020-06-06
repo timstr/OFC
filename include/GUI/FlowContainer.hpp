@@ -39,8 +39,9 @@ namespace ui {
         template<typename T, typename... Args>
         T& add(LayoutStyle, Args&&... args);
 
-        void adopt(std::unique_ptr<Element>);
-        void adopt(LayoutStyle, std::unique_ptr<Element>);
+        void adopt(std::unique_ptr<Element>, LayoutStyle style = LayoutStyle::Inline, const Element* beforeSibling = nullptr);
+
+        using Container::release;
 
     private:
         
