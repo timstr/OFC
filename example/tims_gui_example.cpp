@@ -23,26 +23,28 @@ const sf::Font& getFont() {
 
 int main(){
 
-    // auto str = ui::Property<ui::String>("Dagnabbit darn drat!");
+    using namespace ui;
 
-	auto vec = ui::Property{std::vector<int>{0, 1, 2, 3, 4}};
+    // auto str = Property<String>("Dagnabbit darn drat!");
 
-	ui::AnyComponent comp = ui::UseFont(&getFont()).with(
-		ui::List(
-			ui::Button().caption("Clear All").onClick([&vec] {
+	auto vec = Property{std::vector<int>{0, 1, 2, 3, 4}};
+
+	AnyComponent comp = UseFont(&getFont()).with(
+		List(
+			Button("Clear All").onClick([&vec] {
 				vec.getOnceMutable().clear();
 			}),
-			ui::ForEach(vec).Do([&](int i, const std::size_t& idx) -> ui::AnyComponent {
-				return ui::Button().caption(std::to_string(i)).onClick([&vec,&idx]{
+			ForEach(vec).Do([&](int i, const std::size_t& idx) -> AnyComponent {
+				return Button(std::to_string(i)).onClick([&vec,&idx]{
 					auto& v = vec.getOnceMutable();
 					v.erase(v.begin() + idx);
 				});
 			}),
-			ui::Button().caption("Add One More").onClick([&vec] {
+			Button("Add One More").onClick([&vec] {
 				auto& v = vec.getOnceMutable();
 				v.push_back(v.empty() ? 0 : (v.back() + 1));
 			}),
-			ui::Button().caption("What??").onClick([&vec] {
+			Button("What??").onClick([&vec] {
 				const auto& v = vec.getOnce();
 				for (const auto& x : v) {
 					std::cout << x << ' ';
@@ -52,26 +54,26 @@ int main(){
 		)
 	);
 
-	auto root = ui::ComponentRoot::create<ui::FlowContainer>(std::move(comp));
+	auto root = ComponentRoot::create<FlowContainer>(std::move(comp));
 
 	/*
-	auto condition = ui::Property<bool>{true};
+	auto condition = Property<bool>{true};
 
-	ui::AnyComponent comp = ui::UseFont(&getFont()).with(
-        ui::If(condition).then(
-            ui::Button().caption("Click Me!").onClick([&](){ condition.set(false); })
+	AnyComponent comp = UseFont(&getFont()).with(
+        If(condition).then(
+            Button().caption("Click Me!").onClick([&](){ condition.set(false); })
         ).otherwise(
             "Dagnabbit darn drat.."
         )
     );
-	auto root = ui::ComponentRoot::create<ui::FreeContainer>(std::move(comp));
+	auto root = ComponentRoot::create<FreeContainer>(std::move(comp));
 	*/
 
     
 
-    ui::Window& win = ui::Window::create(std::move(root), 600, 400, "Tim's GUI Test");
+    Window& win = Window::create(std::move(root), 600, 400, "Tim's GUI Test");
 
-	ui::run();
+	run();
 
 	return 0;
 }

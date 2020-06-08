@@ -40,17 +40,33 @@ namespace ui {
     public:
         ListOfEdits(const std::vector<T>& vecOld, const std::vector<T>& vecNew) {
             // Compute longest common subsequence using dynamic-programming table
-            const auto m = vecOld.size();
-            const auto n = vecNew.size();
+            auto oldBegin = std::size_t{0};
+            auto newBegin = std::size_t{0};
+            auto oldEnd = vecOld.size();
+            auto newEnd = vecNew.size();
+            while (oldBegin < oldEnd && newBegin < newEnd && vecOld[oldBegin] == vecNew[newBegin]) {
+                ++oldBegin;
+                ++newBegin;
+            }
+            while (oldEnd > oldBegin && newEnd > newBegin && vecOld[oldEnd - 1] == vecNew[newEnd - 1]) {
+                --oldEnd;
+                --newEnd;
+            }
+            assert(oldBegin <= oldEnd);
+            assert(newBegin <= newEnd);
+            const auto m = oldEnd - oldBegin;
+            const auto n = newEnd - newBegin;
             auto table = std::vector<std::size_t>((n + 1) * (m + 1), 0);
             auto getTable = [&](std::size_t i, std::size_t j) -> decltype(auto) {
-                return table[(j * n) + i];
+                assert(i <= m);
+                assert(j <= n);
+                return table[(j * m) + i];
             };
             {
                 for (std::size_t i = 1; i <= m; ++i) {
-                    const auto& vOld = vecOld[i - 1];
+                    const auto& vOld = vecOld[oldBegin + i - 1];
                     for (std::size_t j = 1; j <= n; ++j) {
-                        const auto& vNew = vecNew[j - 1];
+                        const auto& vNew = vecNew[newBegin + j - 1];
                         getTable(i, j) = (vOld == vNew) ?
                             getTable(i - 1, j - 1) + 1:
                             std::max(getTable(i - 1, j), getTable(i, j - 1));
@@ -61,12 +77,12 @@ namespace ui {
             std::vector<Edit> edits;
             {
                 for (std::size_t i = m, j = n;;){
-                    if (i > 0 && j > 0 && (vecOld[i - 1] == vecNew[j - 1])){
+                    if (i > 0 && j > 0 && (vecOld[oldBegin + i - 1] == vecNew[newBegin + j - 1])){
                         edits.push_back(Edit(EditType::Nothing));
                         --i;
                         --j;
                     } else if (j > 0 && (i == 0 || getTable(i, j - 1) >= getTable(i - 1, j))) {
-                        edits.push_back(Edit(EditType::Insertion, vecNew[j - 1]));
+                        edits.push_back(Edit(EditType::Insertion, vecNew[newBegin + j - 1]));
                         --j;
                     } else if (i > 0 && (j ==0 || getTable(i, j - 1) < getTable(i - 1, j))) {
                         edits.push_back(Edit(EditType::Deletion));
@@ -76,7 +92,15 @@ namespace ui {
                     }   
                 }
             }
-            m_edits = std::vector<Edit>{edits.rbegin(), edits.rend()};
+            for (std::size_t i = 0; i < newBegin; ++i) {
+                m_edits.push_back(Edit(EditType::Nothing));
+            }
+            for (auto it = edits.rbegin(), itEnd = edits.rend(); it != itEnd; ++it) {
+                m_edits.push_back(std::move(*it));
+            }
+            for (std::size_t i = newEnd; i < vecNew.size(); ++i) {
+                m_edits.push_back(Edit(EditType::Nothing));
+            }
         }
 
         class Edit;
@@ -1052,9 +1076,7 @@ namespace ui {
 
     class Button : public SimpleComponent<CallbackButton>, public FontConsumer<Button> {
     public:
-        Button();
-
-        Button& caption(PropertyOrValue<String> s);
+        Button(PropertyOrValue<String> s);
 
         Button& onClick(std::function<void()> f);
 

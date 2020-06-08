@@ -324,15 +324,10 @@ namespace ui {
 
 
 
-	Button::Button()
+	Button::Button(PropertyOrValue<String> s)
 		: FontConsumer(&Button::updateFont)
-		, m_caption(this, &Button::updateCaption) {
+		, m_caption(this, &Button::updateCaption, s) {
 
-	}
-
-	Button& Button::caption(PropertyOrValue<String> s) {
-		m_caption.assign(s);
-		return *this;
 	}
 
 	Button& Button::onClick(std::function<void()> f) {
