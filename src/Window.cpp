@@ -1,7 +1,9 @@
 #include <GUI/Window.hpp>
 
-#include <GUI/Context.hpp>
-#include <GUI/Component.hpp>
+#include <GUI/ProgramContext.hpp>
+#include <GUI/Component/Component.hpp>
+
+#include <GUI/DOM/Draggable.hpp>
 
 #include <cassert>
 
@@ -13,7 +15,7 @@ namespace ui {
     // the element is returned. Otherwise, the process is repeated on its
     // ancestor controls, until one handles the event, or null is returned.
     template<typename... ArgsT>
-    Control* propagate(Window* self, Control* elem, bool (Control::* handlerFn)(ArgsT...), ArgsT... args){
+    dom::Control* propagate(Window* self, dom::Control* elem, bool (dom::Control::* handlerFn)(ArgsT...), ArgsT... args){
         if (!elem){
             return nullptr;
         }
@@ -42,7 +44,7 @@ namespace ui {
         return nullptr;
     }
 
-    Window::Window(unsigned width, unsigned height, const String& title, ComponentRoot root) :
+    Window::Window(unsigned width, unsigned height, const String& title, Root root) :
         m_sfwindow(),
         m_focus_elem(nullptr),
         m_drag_elem(nullptr),
@@ -59,7 +61,7 @@ namespace ui {
         m_last_click_time(),
         m_last_click_btn(),
         m_keypressed_elems(),
-        m_component(std::move(root)),
+        m_root(std::move(root)),
         m_domRoot(nullptr) {
 
         sf::ContextSettings settings;
@@ -67,7 +69,7 @@ namespace ui {
         m_sfwindow.create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
         m_sfwindow.setVerticalSyncEnabled(true);
 
-        m_domRoot = m_component.mount();
+        m_domRoot = m_root.mount();
         assert(m_domRoot);
         m_domRoot->m_parentWindow = this;
         m_domRoot->requireDeepUpdate();
@@ -75,14 +77,14 @@ namespace ui {
 
     Window::~Window() {
         purgeRemovalQueue();
-        m_component.unmount();
+        m_root.unmount();
     }
 
-    Window& Window::create(ComponentRoot root, unsigned width, unsigned height, const String& title){
+    Window& Window::create(Root root, unsigned width, unsigned height, const String& title){
         // HACK because std::make_unique can't access private constructors
         auto pw = std::unique_ptr<Window>(new Window(width, height, title, std::move(root)));
         auto& wr = *pw;
-        Context::get().addWindow(std::move(pw));
+        ProgramContext::get().addWindow(std::move(pw));
         return wr;
     }
 
@@ -159,7 +161,7 @@ namespace ui {
     }
 
     void Window::close(){
-        Context::get().removeWindow(this);
+        ProgramContext::get().removeWindow(this);
     }
 
     bool Window::inFocus() const {
@@ -234,7 +236,7 @@ namespace ui {
         applyTransitions();
     }
 
-    Control* Window::findControlAt(vec2 p, const Element* exclude){
+    dom::Control* Window::findControlAt(vec2 p, const dom::Element* exclude){
         const auto hitElem = m_domRoot->findElementAt(p, exclude);
         if (!hitElem){
             return nullptr;
@@ -277,7 +279,7 @@ namespace ui {
 
         focusTo(hitCtrl);
 
-        bool recent = (Context::get().getProgramTime() - m_last_click_time) <= Context::get().getDoubleClickTime();
+        bool recent = (ProgramContext::get().getProgramTime() - m_last_click_time) <= ProgramContext::get().getDoubleClickTime();
 
         bool sameBtn = btn == m_last_click_btn;
 
@@ -296,19 +298,19 @@ namespace ui {
 
             // don't let it be double clicked again until after it gets single clicked again
 			// achieved by faking an old timestamp
-			m_last_click_time = Context::get().getProgramTime() - Context::get().getDoubleClickTime();
+			m_last_click_time = ProgramContext::get().getProgramTime() - ProgramContext::get().getDoubleClickTime();
         } else {
-            m_last_click_time = Context::get().getProgramTime();
+            m_last_click_time = ProgramContext::get().getProgramTime();
         }
 
         if (btn == sf::Mouse::Left) {
-			m_lclick_elem = propagate(this, hitCtrl, &Control::onLeftClick, numClicks);
+			m_lclick_elem = propagate(this, hitCtrl, &dom::Control::onLeftClick, numClicks);
             m_lClickReleased = false;
 		} else if (btn == sf::Mouse::Middle) {
-			m_mclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
+			m_mclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks);
             m_mClickReleased = false;
 		} else if (btn == sf::Mouse::Middle) {
-			m_rclick_elem = propagate(this, hitCtrl, &Control::onMiddleClick, numClicks);
+			m_rclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks);
             m_rClickReleased = false;
         }
         
@@ -351,7 +353,7 @@ namespace ui {
 
 		// if no command was found, send key stroke to the current element
         assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
-		auto elem = propagate(this, m_focus_elem, &Control::onKeyDown, key);
+		auto elem = propagate(this, m_focus_elem, &dom::Control::onKeyDown, key);
 
 		// and send key up to last element receiving same keystroke
 		// in case of switching focus while key is held
@@ -390,7 +392,7 @@ namespace ui {
 
     void Window::handleScroll(vec2 pos, vec2 scroll){
         auto elem = findControlAt(pos);
-        propagate(this, elem, &Control::onScroll, scroll);
+        propagate(this, elem, &dom::Control::onScroll, scroll);
     }
 
     void Window::handleDrag(){
@@ -408,7 +410,7 @@ namespace ui {
     void Window::handleHover(vec2 pos){
         auto newElem = findControlAt(pos, m_drag_elem);
 
-        std::vector<Control*> pathUp, pathDown;
+        std::vector<dom::Control*> pathUp, pathDown;
         assert(!m_hover_elem || !isSoftlyRemoved(m_hover_elem));
         auto curr = m_hover_elem;
         while (curr){
@@ -438,7 +440,7 @@ namespace ui {
         m_hover_elem = newElem;
 
         if (m_drag_elem && !isSoftlyRemoved(m_drag_elem)){
-            propagate(this, newElem, &Control::onHover, m_drag_elem);
+            propagate(this, newElem, &dom::Control::onHover, m_drag_elem);
         }
     }
 
@@ -537,13 +539,13 @@ namespace ui {
         return true;
     }
 
-    void Window::transferResponseTo(Control* c){
+    void Window::transferResponseTo(dom::Control* c){
         assert(c);
         assert(c->getParentWindow() == this);
         m_currentEventResponder = c;
     }
 
-    bool Window::dropDraggable(Draggable* d, vec2 pos){
+    bool Window::dropDraggable(dom::Draggable* d, vec2 pos){
         assert(d);
         auto c = findControlAt(pos, d);
         while (c){
@@ -555,7 +557,7 @@ namespace ui {
         return false;
     }
 
-    void Window::softRemove(Element* e){
+    void Window::softRemove(dom::Element* e){
         assert(e->getParentWindow() == this);
         assert(e->m_previousWindow == nullptr);
         assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
@@ -594,7 +596,7 @@ namespace ui {
         cleanupAll(e);*/
     }
 
-    void Window::undoSoftRemove(Element* e){
+    void Window::undoSoftRemove(dom::Element* e){
         assert(e->getParentWindow() == nullptr);
         assert(e->m_previousWindow == this || e->m_previousWindow == nullptr);
         if (e->m_previousWindow == this){
@@ -608,7 +610,7 @@ namespace ui {
         }
     }
 
-    bool Window::isSoftlyRemoved(const Element* e) const {
+    bool Window::isSoftlyRemoved(const dom::Element* e) const {
         assert(e);
         assert([&]{
             auto c = count(begin(m_removalQueue), end(m_removalQueue), e);
@@ -621,14 +623,14 @@ namespace ui {
         return e->m_previousWindow == this;
     }
 
-    void Window::hardRemove(Element* e){
+    void Window::hardRemove(dom::Element* e){
         // NOTE: this function will be called during the
         // destructor of Element. Do not call any virtual functions.
         assert(e);
 
         auto parentControl = e->getParentControl();
 
-        const auto cleanup = [&](const Element* elem){
+        const auto cleanup = [&](const dom::Element* elem){
             if (elem == m_focus_elem){
                 m_focus_elem = parentControl;
             }
@@ -665,7 +667,7 @@ namespace ui {
             cancelUpdate(elem);
         };
 
-        std::function<void(const Element*)> cleanupAll = [&](const Element* elem){
+        std::function<void(const dom::Element*)> cleanupAll = [&](const dom::Element* elem){
             if (auto cont = elem->toContainer()){
                 for (auto child : cont->children()){
                     cleanupAll(child);
@@ -722,14 +724,14 @@ namespace ui {
         }
     }
 
-    void Window::focusTo(Control* control){
+    void Window::focusTo(dom::Control* control){
         assert(!control || control->getParentWindow() == this);
         assert(!control || !isSoftlyRemoved(control));
 
         assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
         auto prev = m_focus_elem;
 
-        std::vector<Control*> pathUp, pathDown;
+        std::vector<dom::Control*> pathUp, pathDown;
 
         auto curr = m_focus_elem;
         if (curr && curr->getParentWindow() == this){
@@ -767,12 +769,12 @@ namespace ui {
         m_focus_elem = control;
     }
 
-    Control* Window::currentControl() const {
+    dom::Control* Window::currentControl() const {
         assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
         return m_focus_elem;
     }
 
-    void Window::startDrag(Draggable* d, vec2 o){
+    void Window::startDrag(dom::Draggable* d, vec2 o){
         assert(d);
         assert(d->getParentWindow() == this);
         assert(!isSoftlyRemoved(d));
@@ -784,12 +786,12 @@ namespace ui {
         m_drag_elem = nullptr;
     }
 
-    Draggable* Window::currentDraggable(){
+    dom::Draggable* Window::currentDraggable(){
         assert(!m_drag_elem || !isSoftlyRemoved(m_drag_elem));
         return m_drag_elem;
     }
 
-    void Window::startTyping(TextEntry* te){
+    void Window::startTyping(dom::TextEntry* te){
         assert(te);
         m_text_entry = te;
         focusTo(te);
@@ -799,21 +801,21 @@ namespace ui {
         m_text_entry = nullptr;
     }
 
-    TextEntry* Window::currentTextEntry(){
+    dom::TextEntry* Window::currentTextEntry(){
         return m_text_entry;
     }
 
-    void Window::addTransition(Element* e, double duration, std::function<void(double)> fn, std::function<void()> onComplete){
+    void Window::addTransition(dom::Element* e, double duration, std::function<void(double)> fn, std::function<void()> onComplete){
         m_transitions.push_back({
             e,
             duration,
             std::move(fn),
             std::move(onComplete),
-            Context::get().getProgramTime()
+            ProgramContext::get().getProgramTime()
         });
     }
 
-    void Window::removeTransitions(const Element* e){
+    void Window::removeTransitions(const dom::Element* e){
         m_transitions.erase(std::remove_if(
             m_transitions.begin(),
             m_transitions.end(),
@@ -831,7 +833,7 @@ namespace ui {
 
     void Window::applyTransitions(){
         std::vector<Transition> toComplete;
-        const auto now = Context::get().getProgramTime();
+        const auto now = ProgramContext::get().getProgramTime();
         for (auto it = m_transitions.begin(); it != m_transitions.end();){
             const auto t = (now - it->timeStamp).asSeconds() / it->duration;
             if (t > 1.0){
@@ -850,7 +852,7 @@ namespace ui {
         }
     }
 
-    void Window::enqueueForUpdate(Element* elem){
+    void Window::enqueueForUpdate(dom::Element* elem){
         if (std::find(m_updateQueue.begin(), m_updateQueue.end(), elem) != m_updateQueue.end()){
             return;
         }
@@ -864,7 +866,7 @@ namespace ui {
         }
     }
 
-    void Window::updateOneElement(Element* elem){
+    void Window::updateOneElement(dom::Element* elem){
         // NOTE: the size is being accessed directly instead of through
         // get/setSize() to avoid marking the element dirty again
 
@@ -985,11 +987,11 @@ namespace ui {
         throw std::runtime_error("Exceeded maximum updated count");
     }
 
-    void Window::cancelUpdate(const Element* elem){
+    void Window::cancelUpdate(const dom::Element* elem){
         assert(elem);
         assert(!elem->m_isUpdating);
-        const auto isDecendent = [&](const Element* e){
-            const std::function<bool(const Element*)> impl = [&](const Element* x){
+        const auto isDecendent = [&](const dom::Element* e){
+            const std::function<bool(const dom::Element*)> impl = [&](const dom::Element* x){
                 if (elem == x){
                     return true;
                 }

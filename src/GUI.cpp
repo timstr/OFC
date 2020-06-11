@@ -1,11 +1,11 @@
 #include <GUI/GUI.hpp>
 
-#include <GUI/Context.hpp>
+#include <GUI/ProgramContext.hpp>
 
 namespace ui {
 
     void run(){
-        Context::get().run();
+        ProgramContext::get().run();
     }
 
 } // namespace ui

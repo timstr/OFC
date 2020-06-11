@@ -1,10 +1,12 @@
 #pragma once
 
-#include <GUI/FreeContainer.hpp>
-#include <GUI/Control.hpp>
-#include <GUI/TextEntry.hpp>
+#include <GUI/DOM/FreeContainer.hpp>
+#include <GUI/DOM/Control.hpp>
+#include <GUI/DOM/TextEntry.hpp>
 
-#include <GUI/Component.hpp>
+#include <GUI/Util/Vec2.hpp>
+
+#include <GUI/Component/Root.hpp>
 
 #include <SFML/Window.hpp>
 #include <string>
@@ -32,7 +34,7 @@ namespace ui {
         Window& operator=(Window&&) = delete;
         ~Window();
         
-        static Window& create(ComponentRoot root, unsigned width = 600, unsigned height = 400, const String& title = "Tim's GUI App");
+        static Window& create(Root root, unsigned width = 600, unsigned height = 400, const String& title = "Tim's GUI App");
 
         // the window's inner size
         vec2 getSize() const;
@@ -68,7 +70,7 @@ namespace ui {
         void requestFocus();
 
     private:
-        Window(unsigned width, unsigned height, const String& title, ComponentRoot root);
+        Window(unsigned width, unsigned height, const String& title, Root root);
 
         // process the window's event queue
         void processEvents();
@@ -79,7 +81,7 @@ namespace ui {
         // redraw the UI
         void redraw();
 
-        Control* findControlAt(vec2 p, const Element* exclude = nullptr);
+        dom::Control* findControlAt(vec2 p, const dom::Element* exclude = nullptr);
 
         // emulates the releasing of all held
         // keys and mouse buttons
@@ -103,9 +105,9 @@ namespace ui {
 
         bool handleTextEntryKeyDown(Key);
 
-        void transferResponseTo(Control*);
+        void transferResponseTo(dom::Control*);
 
-        bool dropDraggable(Draggable* d, vec2 pos);
+        bool dropDraggable(dom::Draggable* d, vec2 pos);
 
         // Ensures that event listeners remain attached to
         // the element if it is temporarily removed and
@@ -115,18 +117,18 @@ namespace ui {
         // which maintains these event listeners. This
         // association is lost if the element is destroyed
         // or added to a different window.
-        void softRemove(Element*);
+        void softRemove(dom::Element*);
 
         // If the element has previously been softly removed,
         // returns event listeners as if the element had
         // never been removed. Otherwise, if the element has
         // not previously been softly removed, does nothing.
-        void undoSoftRemove(Element*);
+        void undoSoftRemove(dom::Element*);
 
-        bool isSoftlyRemoved(const Element*) const;
+        bool isSoftlyRemoved(const dom::Element*) const;
 
         // clean up all listeners for a window
-        void hardRemove(Element*);
+        void hardRemove(dom::Element*);
 
         // Hard removes any softly removed elements which are no
         // longer part of the window.
@@ -139,50 +141,50 @@ namespace ui {
         // ancestor, then calling onFocus on all controls down to
         // the new one.
         // passing null will remove the focus from all elements.
-        void focusTo(Control*);
+        void focusTo(dom::Control*);
 
-        Control* currentControl() const;
+        dom::Control* currentControl() const;
 
-        void startDrag(Draggable*, vec2);
+        void startDrag(dom::Draggable*, vec2);
         void stopDrag();
-        Draggable* currentDraggable();
+        dom::Draggable* currentDraggable();
 
-        void startTyping(TextEntry*);
+        void startTyping(dom::TextEntry*);
         void stopTyping();
-        TextEntry* currentTextEntry();
+        dom::TextEntry* currentTextEntry();
 
-        void addTransition(Element* e, double duration, std::function<void(double)> fn, std::function<void()> onComplete);
-        void removeTransitions(const Element* e);
+        void addTransition(dom::Element* e, double duration, std::function<void(double)> fn, std::function<void()> onComplete);
+        void removeTransitions(const dom::Element* e);
 
         void applyTransitions();
 
 
-        void enqueueForUpdate(Element*);
+        void enqueueForUpdate(dom::Element*);
         void updateAllElements();
-        void updateOneElement(Element*);
-        void cancelUpdate(const Element*);
+        void updateOneElement(dom::Element*);
+        void cancelUpdate(const dom::Element*);
 
     private:
 
         /********** UI state **********/
 
         // focus
-        Control* m_focus_elem;
+        dom::Control* m_focus_elem;
 
         // dragging
-        Draggable* m_drag_elem;
+        dom::Draggable* m_drag_elem;
         vec2 m_drag_offset;
 
         // mouse hovering
-        Control* m_hover_elem;
+        dom::Control* m_hover_elem;
 
         // text entry
-        TextEntry* m_text_entry;
+        dom::TextEntry* m_text_entry;
 
         // left-, middle-, and right-clicked elements
-        Control* m_lclick_elem;
-        Control* m_mclick_elem;
-        Control* m_rclick_elem;
+        dom::Control* m_lclick_elem;
+        dom::Control* m_mclick_elem;
+        dom::Control* m_rclick_elem;
         bool m_lClickReleased;
         bool m_mClickReleased;
         bool m_rClickReleased;
@@ -192,12 +194,12 @@ namespace ui {
         sf::Mouse::Button m_last_click_btn;
 
         // elements which handled a key press
-        std::map<Key, Control*> m_keypressed_elems;
+        std::map<Key, dom::Control*> m_keypressed_elems;
 
-        Control* m_currentEventResponder;
+        dom::Control* m_currentEventResponder;
 
         struct Transition {
-            Element* element;
+            dom::Element* element;
             double duration;
             std::function<void(double)> fn;
             std::function<void()> onComplete;
@@ -206,9 +208,9 @@ namespace ui {
 
         std::vector<Transition> m_transitions;
 
-        std::vector<Element*> m_updateQueue;
+        std::vector<dom::Element*> m_updateQueue;
 
-        std::vector<Element*> m_removalQueue;
+        std::vector<dom::Element*> m_removalQueue;
 
         // registered keyboard commands
         
@@ -231,19 +233,20 @@ namespace ui {
 
         friend class KeyboardCommand;
 
-        ComponentRoot m_component;
-        std::unique_ptr<Container> m_domRoot;
+        Root m_root;
+        std::unique_ptr<dom::Container> m_domRoot;
         sf::RenderWindow m_sfwindow;
 
-        friend class Element;
-        friend class Container;
-        friend class Context;
-        friend class Control;
-        friend class Draggable;
-        friend class TextEntry;
+        friend class dom::Element;
+        friend class dom::Container;
+        friend class dom::Control;
+        friend class dom::Draggable;
+        friend class dom::TextEntry;
+
+        friend class ProgramContext;
 
         template<typename... ArgsT>
-        friend Control* propagate(Window*, Control*, bool (Control::*)(ArgsT...), ArgsT...);
+        friend dom::Control* propagate(Window*, dom::Control*, bool (dom::Control::*)(ArgsT...), ArgsT...);
     };
 
     class KeyboardCommand {

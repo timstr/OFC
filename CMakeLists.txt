@@ -17,64 +17,93 @@ if (NOT SFML_FOUND)
 endif()
 
 set(tims-gui_headers
-    include/GUI/BoxElement.hpp
-    include/GUI/Color.hpp
-    include/GUI/Component.hpp
-    include/GUI/Component.tpp
-	include/GUI/Container.hpp
-	include/GUI/Context.hpp
-	include/GUI/Control.hpp
-    include/GUI/Draggable.hpp
-	include/GUI/Element.hpp
-	include/GUI/FlowContainer.hpp
-	include/GUI/FreeContainer.hpp
-	include/GUI/GridContainer.hpp
-	include/GUI/GUI.hpp
-	include/GUI/Helpers.hpp
-    include/GUI/HorizontalList.hpp
-	include/GUI/Image.hpp
-	include/GUI/RoundedRectangle.hpp
-	include/GUI/Text.hpp
-	include/GUI/TextEntry.hpp
-    include/GUI/VerticalList.hpp
-	include/GUI/Window.hpp
-	include/GUI/Helpers/CallbackButton.hpp
-    include/GUI/Helpers/CallbackTextEntry.hpp
-    include/GUI/Helpers/NumberTextEntry.hpp
-    include/GUI/Helpers/Pi.hpp
-    include/GUI/Helpers/PullDownMenu.hpp
-    include/GUI/Helpers/ScrollPanel.hpp
-    include/GUI/Helpers/Slider.hpp
-    include/GUI/Helpers/ToggleButton.hpp
+    include/GUI/GUI.hpp
+    include/GUI/ProgramContext.hpp
+    include/GUI/Window.hpp
+
+    include/GUI/Component/All.hpp
+    include/GUI/Component/Buttons.hpp
+    include/GUI/Component/Component.hpp
+    include/GUI/Component/Component.tpp
+    include/GUI/Component/Containers.hpp
+    include/GUI/Component/Context.hpp
+    include/GUI/Component/FontContext.hpp
+    include/GUI/Component/ForEach.hpp
+    include/GUI/Component/If.hpp
+    include/GUI/Component/List.hpp
+    include/GUI/Component/Property.hpp
+    include/GUI/Component/Property.tpp
+    include/GUI/Component/Root.hpp
+    include/GUI/Component/Text.hpp
+
+    include/GUI/DOM/BoxElement.hpp
+    include/GUI/DOM/Container.hpp
+    include/GUI/DOM/Control.hpp
+    include/GUI/DOM/Draggable.hpp
+    include/GUI/DOM/Element.hpp
+    include/GUI/DOM/FlowContainer.hpp
+    include/GUI/DOM/FreeContainer.hpp
+    include/GUI/DOM/GridContainer.hpp
+    include/GUI/DOM/HorizontalList.hpp
+    include/GUI/DOM/Image.hpp
+    include/GUI/DOM/Text.hpp
+    include/GUI/DOM/TextEntry.hpp
+    include/GUI/DOM/VerticalList.hpp
+
+    include/GUI/DOM/Helpers/CallbackButton.hpp
+    include/GUI/DOM/Helpers/CallbackTextEntry.hpp
+    include/GUI/DOM/Helpers/NumberTextEntry.hpp
+    include/GUI/DOM/Helpers/PullDownMenu.hpp
+    include/GUI/DOM/Helpers/ScrollPanel.hpp
+    include/GUI/DOM/Helpers/Slider.hpp
+    include/GUI/DOM/Helpers/ToggleButton.hpp
+
+    include/GUI/Util/Color.hpp
+    include/GUI/Util/Key.hpp
+    include/GUI/Util/Pi.hpp
+    include/GUI/Util/RoundedRectangle.hpp
+    include/GUI/Util/String.hpp
+    include/GUI/Util/Vec2.hpp
 )
 
 set(tims-gui_srcs
-	src/BoxElement.cpp
-    src/Color.cpp
-    src/Component.cpp
-	src/Container.cpp
-	src/Context.cpp
-	src/Control.cpp
-    src/Draggable.cpp
-	src/Element.cpp
-	src/FlowContainer.cpp
-	src/FreeContainer.cpp
-	src/GridContainer.cpp
-	src/GUI.cpp
-    src/HorizontalList.cpp
-	src/Image.cpp
-	src/RoundedRectangle.cpp
-	src/Text.cpp
-	src/TextEntry.cpp
-    src/VerticalList.cpp
-	src/Window.cpp
-	src/Helpers/CallbackButton.cpp
-    src/Helpers/CallbackTextEntry.cpp
-    src/Helpers/NumberTextEntry.cpp
-    src/Helpers/PullDownMenu.cpp
-    src/Helpers/ScrollPanel.cpp
-    src/Helpers/Slider.cpp
-    src/Helpers/ToggleButton.cpp
+    src/GUI.cpp
+    src/ProgramContext.cpp
+    src/Window.cpp
+
+    src/Component/Buttons.cpp
+    src/Component/Component.cpp
+    src/Component/FontContext.cpp
+    src/Component/If.cpp
+    src/Component/List.cpp
+    src/Component/Property.cpp
+    src/Component/Root.cpp
+    src/Component/Text.cpp
+
+    src/DOM/BoxElement.cpp
+    src/DOM/Container.cpp
+    src/DOM/Control.cpp
+    src/DOM/Draggable.cpp
+    src/DOM/Element.cpp
+    src/DOM/FlowContainer.cpp
+    src/DOM/FreeContainer.cpp
+    src/DOM/GridContainer.cpp
+    src/DOM/HorizontalList.cpp
+    src/DOM/Image.cpp
+    src/DOM/Text.cpp
+    src/DOM/TextEntry.cpp
+    src/DOM/VerticalList.cpp
+
+    src/DOM/Helpers/CallbackButton.cpp
+    src/DOM/Helpers/CallbackTextEntry.cpp
+    src/DOM/Helpers/NumberTextEntry.cpp
+    src/DOM/Helpers/PullDownMenu.cpp
+    src/DOM/Helpers/ScrollPanel.cpp
+    src/DOM/Helpers/Slider.cpp
+    src/DOM/Helpers/ToggleButton.cpp
+
+    src/Util/Color.cpp
+    src/Util/RoundedRectangle.cpp
 )
 	
 add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})

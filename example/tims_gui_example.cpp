@@ -1,6 +1,4 @@
 ﻿#include <GUI/GUI.hpp>
-#include <GUI/Helpers.hpp>
-#include <GUI/Component.hpp>
 
 #include <iostream>
 #include <random>
@@ -54,7 +52,7 @@ int main(){
 		)
 	);
 
-	auto root = ComponentRoot::create<FlowContainer>(std::move(comp));
+	auto root = Root::create<dom::FlowContainer>(std::move(comp));
 
 	/*
 	auto condition = Property<bool>{true};
