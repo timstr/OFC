@@ -6,7 +6,7 @@ namespace ui {
 
     class If : public ForwardingComponent {
     public:
-        If(Property<bool>& c);
+        If(const Property<bool>& c);
 
         If& then(AnyComponent c);
 

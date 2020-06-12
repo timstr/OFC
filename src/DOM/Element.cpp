@@ -283,8 +283,8 @@ namespace ui::dom {
     
     void Element::bringToFront(){
         if (m_parent) {
-			auto& c = m_parent->m_children;
-			auto it = std::find_if(
+            auto& c = m_parent->m_children;
+            auto it = std::find_if(
                 c.begin(),
                 c.end(),
                 [this](const Container::ChildData& cd){
@@ -295,7 +295,7 @@ namespace ui::dom {
             auto cd = std::move(*it);
             c.erase(it);
             c.push_back(std::move(cd));
-		}
+        }
     }
 
     void Element::onRemove(){

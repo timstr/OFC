@@ -21,7 +21,7 @@ namespace ui::dom {
         m_cols(columns) {
 
         // assert(rows > 0 && columns > 0);
-		
+        
         m_cells.resize(rows);
         for (auto& row : m_cells){
             row.resize(columns);
@@ -35,7 +35,7 @@ namespace ui::dom {
     }
 
     void GridContainer::setRows(size_t r){
-		while (m_rows > r){
+        while (m_rows > r){
             for (const auto& c : m_cells.back()){
                 if (c.child){
                     release(c.child);
@@ -55,7 +55,7 @@ namespace ui::dom {
     }
 
     void GridContainer::setColumns(size_t c){
-		while (m_cols > c){
+        while (m_cols > c){
             for (auto& row : m_cells){
                 if (auto child = row.back().child){
                     release(child);
@@ -77,50 +77,50 @@ namespace ui::dom {
     void GridContainer::setDimensions(size_t columns, size_t rows){
         assert(rows > 0 && columns > 0);
         setColumns(columns);
-		setRows(rows);
+        setRows(rows);
     }
 
     void GridContainer::appendRow(float weight){
-		setRows(m_rows + 1);
+        setRows(m_rows + 1);
         setRowWeight(m_rows - 1, weight);
     }
 
     void GridContainer::appendColumn(float weight){
-		setColumns(m_cols + 1);
-		setColumnWeight(m_cols - 1, weight);
+        setColumns(m_cols + 1);
+        setColumnWeight(m_cols - 1, weight);
     }
 
     size_t GridContainer::rows() const {
-		return m_rows;
+        return m_rows;
     }
 
     size_t GridContainer::columns() const {
-		return m_cols;
+        return m_cols;
     }
 
     void GridContainer::setRowWeight(size_t row, float height){
-		assert(row >= 0 && row < m_rows);
+        assert(row >= 0 && row < m_rows);
         m_heights[row] = height;
     }
 
     void GridContainer::setColumnWeight(size_t column, float width){
-		assert(column >= 0 && column < m_cols);
+        assert(column >= 0 && column < m_cols);
         m_widths[column] = width;
     }
 
     float GridContainer::rowWeight(size_t row) const {
-		assert(row >= 0 && row < m_rows);
+        assert(row >= 0 && row < m_rows);
         return m_widths[row];
     }
 
     float GridContainer::columnWeight(size_t column) const {
-		assert(column >= 0 && column < m_cols);
+        assert(column >= 0 && column < m_cols);
         return m_heights[column];
     }
 
     void GridContainer::putCell(size_t column, size_t row, std::unique_ptr<Element> e){
-		assert(row >= 0 && row < m_rows);
-		assert(column >= 0 && column < m_cols);
+        assert(row >= 0 && row < m_rows);
+        assert(column >= 0 && column < m_cols);
         auto prev = m_cells[row][column].child;
         if (prev){
             release(prev);
@@ -138,12 +138,12 @@ namespace ui::dom {
     }
 
     Element* GridContainer::getCell(size_t column, size_t row){
-		return const_cast<Element*>(const_cast<const GridContainer*>(this)->getCell(row, column));
+        return const_cast<Element*>(const_cast<const GridContainer*>(this)->getCell(row, column));
     }
 
     const Element* GridContainer::getCell(size_t column, size_t row) const {
-		assert(row >= 0 && row < m_rows);
-		assert(column >= 0 && column < m_cols);
+        assert(row >= 0 && row < m_rows);
+        assert(column >= 0 && column < m_cols);
         return m_cells[row][column].child;
     }
 

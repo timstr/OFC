@@ -138,6 +138,9 @@ namespace ui {
         }
     };
 
+    using FreeContainer = ContainerComponent<dom::FreeContainer>;
+    using FlowContainer = ContainerComponent<dom::FlowContainer>;
+
     // TODO: specialize other containers
 
 } // namespace ui

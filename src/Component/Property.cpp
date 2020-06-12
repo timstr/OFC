@@ -6,30 +6,35 @@
 
 namespace ui {
 
-	namespace detail {
+    namespace detail {
 
-		std::vector<std::function<void()>>& propertyUpdateQueue() noexcept {
-			static std::vector<std::function<void()>> theQueue;
-			return theQueue;
-		}
+        std::vector<std::function<void()>>& propertyUpdateQueue() noexcept {
+            static std::vector<std::function<void()>> theQueue;
+            return theQueue;
+        }
 
-		void unqueuePropertyUpdater(std::function<void()> f) {
-			auto& q = propertyUpdateQueue();
-			q.push_back(std::move(f));
-		}
+        void unqueuePropertyUpdater(std::function<void()> f) {
+            auto& q = propertyUpdateQueue();
+            q.push_back(std::move(f));
+        }
 
-		void updateAllProperties() {
-			auto& q = propertyUpdateQueue();
-			for (auto& f : q) {
-				f();
-			}
-			q.clear();
-		}
-	}
+        void updateAllProperties() {
+            while (true) {
+                const auto q = std::move(propertyUpdateQueue());
+                if (q.empty()) {
+                    return;
+                }
+                for (auto& f : q) {
+                    f();
+                }
+            }
+        }
+    }
 
 
-    ObserverBase::ObserverBase(Component* owner)
+    ObserverBase::ObserverBase(ObserverOwner* owner)
         : m_owner(owner) {
+
         assert(m_owner);
         addSelfTo(m_owner);
     }
@@ -60,22 +65,22 @@ namespace ui {
         return *this;
     }
 
-    Component* ObserverBase::owner() noexcept {
+    ObserverOwner* ObserverBase::owner() noexcept {
         return m_owner;
     }
 
-    const Component* ObserverBase::owner() const noexcept {
+    const ObserverOwner* ObserverBase::owner() const noexcept {
         return m_owner;
     }
 
-    void ObserverBase::addSelfTo(Component* c) {
-        auto& v = c->m_observers;
+    void ObserverBase::addSelfTo(ObserverOwner* oo) {
+        auto& v = oo->m_ownObservers;
         assert(std::count(v.begin(), v.end(), this) == 0);
         v.push_back(this);
     }
 
-    void ObserverBase::removeSelfFrom(Component* c) {
-        auto& v = c->m_observers;
+    void ObserverBase::removeSelfFrom(ObserverOwner* oo) {
+        auto& v = oo->m_ownObservers;
         assert(std::count(v.begin(), v.end(), this) == 1);
         auto it = std::find(v.begin(), v.end(), this);
         assert(it != v.end());
@@ -87,5 +92,20 @@ namespace ui {
             removeSelfFrom(m_owner);
         }
     }
-    
+
+    ObserverOwner::ObserverOwner(ObserverOwner&& oo) noexcept
+        : m_ownObservers(std::move(oo.m_ownObservers)) {
+
+        for (auto& o : m_ownObservers) {
+            assert(o->m_owner == &oo);
+            o->m_owner = this;
+        }
+    }
+
+    ObserverOwner::~ObserverOwner() noexcept {
+        // NOTE: it is expected that all own observers are somehow stored as members in
+        // derived classes, and that they remove themselves from this vector when destroyed.
+        assert(m_ownObservers.empty());
+    }
+
 } // namespace ui

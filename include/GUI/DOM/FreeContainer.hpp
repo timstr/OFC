@@ -10,46 +10,46 @@ namespace ui::dom {
     class FreeContainer : public Container {
     public:
         
-	    // How a free element is positioned relative to its parent
-	    enum PositionStyle {
-		    // the element's position is left untouched
-		    None,
+        // How a free element is positioned relative to its parent
+        enum PositionStyle {
+            // the element's position is left untouched
+            None,
 
-		    OutsideBegin,
+            OutsideBegin,
 
-		    // the element is positioned left of the left edge
-		    OutsideLeft = OutsideBegin,
+            // the element is positioned left of the left edge
+            OutsideLeft = OutsideBegin,
 
-		    // the element is positioned above the top edge
-		    OutsideTop = OutsideBegin,
+            // the element is positioned above the top edge
+            OutsideTop = OutsideBegin,
 
-		    InsideBegin,
+            InsideBegin,
 
-		    // the element is positioned inside the left edge
-		    InsideLeft = InsideBegin,
+            // the element is positioned inside the left edge
+            InsideLeft = InsideBegin,
 
-		    // the element is positioned inside the top edge
-		    InsideTop = InsideBegin,
+            // the element is positioned inside the top edge
+            InsideTop = InsideBegin,
 
-		    // the element is positioned in the middle of the parent
-		    Center,
+            // the element is positioned in the middle of the parent
+            Center,
 
-		    InsideEnd,
+            InsideEnd,
 
-		    // the element is positioned inside the right edge
-		    InsideRight = InsideEnd,
+            // the element is positioned inside the right edge
+            InsideRight = InsideEnd,
 
-		    // the element is positioned inside the bottom edge
-		    InsideBottom = InsideEnd,
+            // the element is positioned inside the bottom edge
+            InsideBottom = InsideEnd,
 
-		    OutsideEnd,
+            OutsideEnd,
 
-		    // the element is positioned right of the right edge
-		    OutsideRight = OutsideEnd,
+            // the element is positioned right of the right edge
+            OutsideRight = OutsideEnd,
 
-		    // the element is positioned below the bottom edge
-		    OutsideBottom = OutsideEnd,
-	    };
+            // the element is positioned below the bottom edge
+            OutsideBottom = OutsideEnd,
+        };
 
         template<typename T, typename... Args>
         T& add(Args&&... args);

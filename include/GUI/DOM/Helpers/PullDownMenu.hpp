@@ -18,12 +18,12 @@ namespace ui::dom {
             
             void setOnChange(std::function<void(const T&)>);
 
-		    void setNormalColor(Color);
-		    Color getNormalColor() const;
-		    void setHoverColor(Color);
-		    Color getHoverColor() const;
-		    void setActiveColor(Color);
-		    Color getActiveColor() const;
+            void setNormalColor(Color);
+            Color getNormalColor() const;
+            void setHoverColor(Color);
+            Color getHoverColor() const;
+            void setActiveColor(Color);
+            Color getActiveColor() const;
 
         private:
             void select(std::size_t i, bool invokeCallback = true);

@@ -8,7 +8,7 @@ namespace ui {
     class ForEach : public ForwardingComponent {
     public:
         ForEach(PropertyOrValue<std::vector<T>> pv)
-            : m_observer(this, &ForEach::updateContents, pv) {
+            : m_observer(this, &ForEach::updateContents, std::move(pv)) {
 
         }
 
@@ -99,7 +99,7 @@ namespace ui {
     };
 
     template<typename T>
-    ForEach(Property<std::vector<T>>&) -> ForEach<T>;
+    ForEach(const Property<std::vector<T>>&) -> ForEach<T>;
 
     template<typename T>
     ForEach(std::vector<T>&&) -> ForEach<T>;

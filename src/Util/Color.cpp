@@ -24,7 +24,7 @@ namespace ui {
         b(static_cast<float>((rgba & 0xFF00) >> 8) / 255.0f),
         a(static_cast<float>(rgba & 0xFF) / 255.0f) {
 
-		updateHSLFromRGB();
+        updateHSLFromRGB();
     }
 
     Color::Color(const sf::Color& c) :
@@ -181,15 +181,15 @@ namespace ui {
         l = (std::min(r, std::min(g, b)) + std::max(r, std::max(g, b))) / 2.0f;
 
         if (s == 0.0f){
-			h = 0.0f;
-		} else if (r >= std::max(g, b)){
+            h = 0.0f;
+        } else if (r >= std::max(g, b)){
             float x = (g - b) / s / 6.0f;
-			h = x - std::floor(x);
-		} else if (g >= std::max(r, b)){
-			h = ((b - r) / s + 2.0f) / 6.0f;
-		} else if (b >= std::max(r, g)){
-			h =  ((r - g) / s + 4.0f) / 6.0f;
-		}
+            h = x - std::floor(x);
+        } else if (g >= std::max(r, b)){
+            h = ((b - r) / s + 2.0f) / 6.0f;
+        } else if (b >= std::max(r, g)){
+            h =  ((r - g) / s + 4.0f) / 6.0f;
+        }
     }
 
     Color interpolate(const Color& c0, const Color& c1, float t) noexcept {

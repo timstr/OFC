@@ -14,7 +14,7 @@ namespace ui::dom {
         }
     }
 
-	Image::Image(std::shared_ptr<sf::Texture> texture, bool autoSize ){
+    Image::Image(std::shared_ptr<sf::Texture> texture, bool autoSize ){
         if (!setTexture(std::move(texture), autoSize)){
             throw std::runtime_error("Failed to assign texture");
         }
@@ -29,14 +29,14 @@ namespace ui::dom {
         return *m_texture;
     }
 
-	std::shared_ptr<sf::Texture> Image::getTexturePtr() {
+    std::shared_ptr<sf::Texture> Image::getTexturePtr() {
         return m_texture;
     }
-	std::shared_ptr<const sf::Texture> Image::getTexturePtr() const {
+    std::shared_ptr<const sf::Texture> Image::getTexturePtr() const {
         return m_texture;
     }
 
-	bool Image::loadFromFile(const std::string& path, bool autoSize){
+    bool Image::loadFromFile(const std::string& path, bool autoSize){
         if (!m_texture){
             m_texture = std::make_shared<sf::Texture>();
         }
@@ -54,7 +54,7 @@ namespace ui::dom {
         return true;
     }
 
-	bool Image::copyFromImage(const sf::Image& img, bool autoSize){
+    bool Image::copyFromImage(const sf::Image& img, bool autoSize){
         if (img.getSize().x == 0 || img.getSize().y == 0){
             return false;
         }
@@ -68,7 +68,7 @@ namespace ui::dom {
         return true;
     }
 
-	bool Image::setTexture(std::shared_ptr<sf::Texture> texture, bool autoSize){
+    bool Image::setTexture(std::shared_ptr<sf::Texture> texture, bool autoSize){
         if (!texture){
             return false;
         }
@@ -80,33 +80,33 @@ namespace ui::dom {
         return true;
     }
 
-	void Image::setAlpha(uint8_t alpha){
+    void Image::setAlpha(uint8_t alpha){
         auto c = m_sprite.getColor();
         c.a = alpha;
         m_sprite.setColor(c);
     }
 
-	uint8_t Image::alpha() const {
+    uint8_t Image::alpha() const {
         return m_sprite.getColor().a;
     }
 
-	void Image::setColorMod(Color color){
+    void Image::setColorMod(Color color){
         m_sprite.setColor(color);
     }
 
-	Color Image::colorMod() const {
+    Color Image::colorMod() const {
         return m_sprite.getColor();
     }
 
-	void Image::onResize(){
+    void Image::onResize(){
         const auto s = m_texture->getSize();
         m_sprite.setScale({
-		    width() / static_cast<float>(s.x),
-		    height() / static_cast<float>(s.y)
-	    });
+            width() / static_cast<float>(s.x),
+            height() / static_cast<float>(s.y)
+        });
     }
 
-	void Image::render(sf::RenderWindow& rw){
+    void Image::render(sf::RenderWindow& rw){
         assert(m_sprite.getTexture());
         assert(m_sprite.getTexture() == m_texture.get());
         rw.draw(m_sprite);

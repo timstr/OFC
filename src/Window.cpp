@@ -297,20 +297,20 @@ namespace ui {
             numClicks = 2;
 
             // don't let it be double clicked again until after it gets single clicked again
-			// achieved by faking an old timestamp
-			m_last_click_time = ProgramContext::get().getProgramTime() - ProgramContext::get().getDoubleClickTime();
+            // achieved by faking an old timestamp
+            m_last_click_time = ProgramContext::get().getProgramTime() - ProgramContext::get().getDoubleClickTime();
         } else {
             m_last_click_time = ProgramContext::get().getProgramTime();
         }
 
         if (btn == sf::Mouse::Left) {
-			m_lclick_elem = propagate(this, hitCtrl, &dom::Control::onLeftClick, numClicks);
+            m_lclick_elem = propagate(this, hitCtrl, &dom::Control::onLeftClick, numClicks);
             m_lClickReleased = false;
-		} else if (btn == sf::Mouse::Middle) {
-			m_mclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks);
+        } else if (btn == sf::Mouse::Middle) {
+            m_mclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks);
             m_mClickReleased = false;
-		} else if (btn == sf::Mouse::Middle) {
-			m_rclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks);
+        } else if (btn == sf::Mouse::Middle) {
+            m_rclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks);
             m_rClickReleased = false;
         }
         
@@ -319,27 +319,27 @@ namespace ui {
 
     void Window::handleMouseUp(sf::Mouse::Button btn){
         if (btn == sf::Mouse::Left) {
-			if (m_lclick_elem) {
+            if (m_lclick_elem) {
                 if (!isSoftlyRemoved(m_lclick_elem)){
-    				m_lclick_elem->onLeftRelease();
+                    m_lclick_elem->onLeftRelease();
                 }
                 m_lClickReleased = true;
-			}
-		} else if (btn == sf::Mouse::Middle) {
-			if (m_mclick_elem) {
+            }
+        } else if (btn == sf::Mouse::Middle) {
+            if (m_mclick_elem) {
                 if (!isSoftlyRemoved(m_mclick_elem)){
-    				m_mclick_elem->onMiddleRelease();
+                    m_mclick_elem->onMiddleRelease();
                 }
                 m_mClickReleased = true;
-			}
-		} else if (btn == sf::Mouse::Right) {
-			if (m_rclick_elem) {
+            }
+        } else if (btn == sf::Mouse::Right) {
+            if (m_rclick_elem) {
                 if (!isSoftlyRemoved(m_rclick_elem)){
-    				m_rclick_elem->onRightRelease();
+                    m_rclick_elem->onRightRelease();
                 }
                 m_rClickReleased = true;
-			}
-		}
+            }
+        }
     }
 
     void Window::handleKeyDown(sf::Keyboard::Key key){
@@ -351,37 +351,37 @@ namespace ui {
             return;
         }
 
-		// if no command was found, send key stroke to the current element
+        // if no command was found, send key stroke to the current element
         assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
-		auto elem = propagate(this, m_focus_elem, &dom::Control::onKeyDown, key);
+        auto elem = propagate(this, m_focus_elem, &dom::Control::onKeyDown, key);
 
-		// and send key up to last element receiving same keystroke
-		// in case of switching focus while key is held
-		auto key_it = m_keypressed_elems.find(key);
-		if (key_it != m_keypressed_elems.end()) {
-			if (key_it->second && key_it->second != elem) {
+        // and send key up to last element receiving same keystroke
+        // in case of switching focus while key is held
+        auto key_it = m_keypressed_elems.find(key);
+        if (key_it != m_keypressed_elems.end()) {
+            if (key_it->second && key_it->second != elem) {
                 if (!isSoftlyRemoved(key_it->second)){
-    				key_it->second->onKeyUp(key);
+                    key_it->second->onKeyUp(key);
                 }
-				key_it->second = elem;
-			}
-		} else if (elem) {
-			m_keypressed_elems[key] = elem;
-		}
+                key_it->second = elem;
+            }
+        } else if (elem) {
+            m_keypressed_elems[key] = elem;
+        }
 
         // TODO: keyboard navigation
     }
 
     void Window::handleKeyUp(sf::Keyboard::Key key){
         auto it = m_keypressed_elems.find(key);
-		if (it != m_keypressed_elems.end()) {
+        if (it != m_keypressed_elems.end()) {
             auto e = it->second;
-			assert(e);
+            assert(e);
             if (!isSoftlyRemoved(e)){
-    		    e->onKeyUp(key);
+                e->onKeyUp(key);
             }
-			m_keypressed_elems.erase(it);
-		}
+            m_keypressed_elems.erase(it);
+        }
     }
 
     void Window::handleType(sf::Int32 unicode){
@@ -430,12 +430,12 @@ namespace ui {
         }
 
         for (auto it = pathUp.begin(); it != pathUp.end(); ++it) {
-			(*it)->onMouseOut();
-		}
+            (*it)->onMouseOut();
+        }
 
-		for (auto it = pathDown.rbegin(); it != pathDown.rend(); ++it) {
-			(*it)->onMouseOver();
-		}
+        for (auto it = pathDown.rbegin(); it != pathDown.rend(); ++it) {
+            (*it)->onMouseOver();
+        }
 
         m_hover_elem = newElem;
 
@@ -446,7 +446,7 @@ namespace ui {
 
     bool Window::handleCommand(Key key){
         // search for longest matching set of keys in registered commands
-		size_t max = 0;
+        size_t max = 0;
         KeyboardCommandSignal* best_cmd = nullptr;
         for (const auto& cmd : m_commands) {
             if (cmd->trigger == key) {
@@ -461,11 +461,11 @@ namespace ui {
             }
         }
 
-		if (best_cmd) {
-			// if one was found, invoke that command
+        if (best_cmd) {
+            // if one was found, invoke that command
             best_cmd->callback();
-			return true;
-		}
+            return true;
+        }
         return false;
     }
 
@@ -480,26 +480,26 @@ namespace ui {
 
         switch (key){
             case Key::BackSpace:
-			    m_text_entry->handleBackspace();
-			    break;
-		    case Key::Delete:
-			    m_text_entry->handleDelete();
-			    break;
-		    case Key::Left:
-			    m_text_entry->handleLeft();
-			    break;
-		    case Key::Right:
-			    m_text_entry->handleRight();
-			    break;
-		    case Key::Home:
-			    m_text_entry->handleHome();
-			    break;
-		    case Key::End:
-			    m_text_entry->handleEnd();
-			    break;
-		    case Key::Enter:
-			    m_text_entry->handleReturn();
-			    break;
+                m_text_entry->handleBackspace();
+                break;
+            case Key::Delete:
+                m_text_entry->handleDelete();
+                break;
+            case Key::Left:
+                m_text_entry->handleLeft();
+                break;
+            case Key::Right:
+                m_text_entry->handleRight();
+                break;
+            case Key::Home:
+                m_text_entry->handleHome();
+                break;
+            case Key::End:
+                m_text_entry->handleEnd();
+                break;
+            case Key::Enter:
+                m_text_entry->handleReturn();
+                break;
             case Key::Insert:
                 m_text_entry->handleInsert();
                 break;

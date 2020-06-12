@@ -25,14 +25,14 @@ namespace ui::dom {
         // write a sequence of text
         void write(const String& text, const sf::Font& font, const Color& color = {}, unsigned charsize = 15, TextStyle style = TextStyle::Regular);
         
-		// write a line break, causing inline elements to continue on a new line
-		void writeLineBreak();
+        // write a line break, causing inline elements to continue on a new line
+        void writeLineBreak();
 
-		// write a page break, causing all elements to continue on a new line
-		void writePageBreak(float height = 0.0f);
+        // write a page break, causing all elements to continue on a new line
+        void writePageBreak(float height = 0.0f);
 
-		// write a tab
-		void writeTab(float width = 50.0f);
+        // write a tab
+        void writeTab(float width = 50.0f);
 
         template<typename T, typename... Args>
         T& add(Args&&... args);

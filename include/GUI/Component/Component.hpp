@@ -18,7 +18,7 @@ namespace ui {
 
     class InternalComponent;
 
-    class Component {
+    class Component : public ObserverOwner {
     public:
         Component() noexcept;
         Component(Component&&) noexcept;
@@ -70,7 +70,6 @@ namespace ui {
     private:
         bool m_isMounted;
         ComponentParent* m_parent;
-        std::vector<ObserverBase*> m_observers;
 
         ComponentParent* toComponentParent() noexcept;
         virtual const ComponentParent* toComponentParent() const noexcept;
@@ -96,11 +95,11 @@ namespace ui {
         /**
          * Inserts an element into the DOM on behalf of a child component. This method is only
          * intended to be called from a child component as in `parent()->insertChildElement(..., this, ...);`
-         * - element			: the element to insert
-         * - whichDescentdent	: The component which requested the insertion
-         * - beforeElement		: (optional) a previously-inserted sibling element in the DOM before which the
+         * - element            : the element to insert
+         * - whichDescentdent    : The component which requested the insertion
+         * - beforeElement        : (optional) a previously-inserted sibling element in the DOM before which the
          *                        new element will be inserted. Passing nullptr results in the new element simply
-         *   					  being appended to the rest of its siblings from the same component.
+         *                         being appended to the rest of its siblings from the same component.
         */
         virtual void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* whichDescendent, const dom::Element* beforeElement) = 0;
 
@@ -232,7 +231,7 @@ namespace ui {
         }
 
         // Creates a TextComponent
-        AnyComponent(Property<String>&);
+        AnyComponent(const Property<String>&);
         AnyComponent(String);
         AnyComponent(const char*); // TODO: support for other string literals
 

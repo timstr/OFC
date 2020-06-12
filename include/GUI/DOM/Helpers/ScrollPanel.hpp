@@ -11,11 +11,11 @@ namespace ui::dom {
         template<typename... Args>
         ScrollPanel(Args&&... args);
 
-		void showHorizontalScrollBar(bool enable);
+        void showHorizontalScrollBar(bool enable);
 
-		void showVerticalScrollBar(bool enable);
+        void showVerticalScrollBar(bool enable);
 
-		void showResizeButton(bool enable);
+        void showResizeButton(bool enable);
 
         ContainerType& inner();
         const ContainerType& inner() const;
