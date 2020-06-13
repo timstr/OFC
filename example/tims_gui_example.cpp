@@ -73,15 +73,8 @@ int main(){
     );
     */
     
-    auto vec = Property{std::vector<int>{0, 1, 2, 3, 4}};
-    auto numItems = DerivedProperty<String, std::vector<int>>(
-        vec,
-        [](const ListOfEdits<int>& v){
-            return ui::String(std::to_string(v.newValue().size()));
-        }
-    );
-    // TODO: how can derived properties be safely passed and stored? Maybe add a constructor Observer(SomeDerivedPropertyType&&) that takes ownership instead of holding a reference
-
+    auto vec = Property{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};
+    
     AnyComponent comp = UseFont(&getFont()).with(
         List(
             Button("Clear All").onClick([&vec] {
@@ -105,7 +98,10 @@ int main(){
                 std::cout << '\n';
             }),
             "There are ",
-            TextComponent(numItems),
+            TextComponent(DerivedProperty<String, std::vector<int>>(
+                [](const ListOfEdits<int>& v){ return ui::String(std::to_string(v.newValue().size())); },
+                vec
+            )),
             " things."
         )
     );

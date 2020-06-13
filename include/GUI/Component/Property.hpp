@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -203,19 +204,28 @@ namespace ui {
             , m_previousValue(std::nullopt) {
 
         }
-        PropertyBase(T&& t)
+        PropertyBase(T&& t) noexcept
             : m_value(std::move(t))
             , m_previousValue(std::nullopt) {
 
         }
-        ~PropertyBase() noexcept {
+        PropertyBase(PropertyBase&& pb) noexcept
+            : m_value(std::move(pb.m_value))
+            , m_previousValue(std::move(pb.m_previousValue))
+            , m_observers(std::move(pb.m_observers)) {
+
+            for (auto& o : m_observers) {
+                assert(o->getProperty() == &pb);
+                o->assign(*this);
+            }
+        }
+        virtual ~PropertyBase() noexcept {
             for (auto& o : m_observers) {
                 o->reset();
             }
         }
 
         PropertyBase(const PropertyBase&) = delete;
-        PropertyBase(PropertyBase&&) = delete;
         PropertyBase& operator=(PropertyBase&&) = delete;
         PropertyBase& operator=(const PropertyBase&) = delete;
 
@@ -303,11 +313,36 @@ namespace ui {
     template<typename T>
     class PropertyOrValue final {
     public:
-        // PropertyOrValue is implictly constructible from an l-value reference
+        explicit PropertyOrValue() noexcept
+            : m_targetProperty(nullptr)
+            , m_ownProperty(nullptr)
+            , m_fixedValue(std::nullopt) {
+
+        }
+
+        // PropertyOrValue is implictly constructible from a reference
         // to a matching property, in which case it will point to that property
         // and contain no fixed value.
         PropertyOrValue(const PropertyBase<T>& target) noexcept
-            : m_target(&target)
+            : m_targetProperty(&target)
+            , m_ownProperty(nullptr)
+            , m_fixedValue(std::nullopt) {
+
+        }
+
+        // PropertyOrValue is implicitly constructible from an r-value reference to
+        // a derived property, in which case that property is moved from and ownership
+        // is taken.
+        template<
+            typename DerivedPropertyType,
+            typename std::enable_if_t<
+                std::is_base_of_v<PropertyBase<T>, std::decay_t<DerivedPropertyType>> &&
+                !std::is_same_v<std::decay_t<DerivedPropertyType>, Property<T>>
+            >* = nullptr
+        >
+        PropertyOrValue(DerivedPropertyType&& derivedProperty) noexcept
+            : m_targetProperty(nullptr)
+            , m_ownProperty(std::make_unique<std::decay_t<DerivedPropertyType>>(std::move(derivedProperty)))
             , m_fixedValue(std::nullopt) {
 
         }
@@ -318,20 +353,24 @@ namespace ui {
         template<
             typename... Args,
             std::enable_if_t<
-            !std::is_same_v<const PropertyBase<T>&, Args...> &&
-            std::is_constructible_v<T, Args...>
+                (sizeof...(Args) > 0) &&
+                !std::is_same_v<const PropertyBase<T>&, Args...> &&
+                std::is_constructible_v<T, Args...>
             >* = nullptr
         >
         PropertyOrValue(Args&&... args)
-            : m_target(nullptr)
+            : m_targetProperty(nullptr)
+            , m_ownProperty(nullptr)
             , m_fixedValue(std::in_place, std::forward<Args>(args)...) {
 
         }
 
         PropertyOrValue(PropertyOrValue&& p) noexcept
-            : m_target(std::exchange(p.m_target, nullptr))
+            : m_targetProperty(std::exchange(p.m_targetProperty, nullptr))
+            , m_ownProperty(std::move(p.m_ownProperty))
             , m_fixedValue(std::move(p.m_fixedValue)) {
-
+            assert(!hasProperty() || !hasFixedValue());
+            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
         }
 
         PropertyOrValue(const PropertyOrValue&) = delete;
@@ -339,26 +378,83 @@ namespace ui {
         ~PropertyOrValue() noexcept = default;
 
         PropertyOrValue& operator=(PropertyOrValue&& p) noexcept {
-            m_target = std::exchange(p.m_target, nullptr);
+            if (&p == this) {
+                return *this;
+            }
+            assert(!p.hasProperty() || !p.hasFixedValue());
+            assert(!p.hasProperty() || (p.hasTargetProperty() != p.hasOwnProperty()));
+            assert(!hasProperty() || !hasFixedValue());
+            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
+            m_targetProperty = std::exchange(p.m_targetProperty, nullptr);
+            m_ownProperty = std::move(p.m_ownProperty);
             m_fixedValue = std::move(p.m_fixedValue);
+            assert(!hasProperty() || !hasFixedValue());
+            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
+            return *this;
         }
 
         PropertyOrValue& operator=(const PropertyOrValue&) = delete;
 
-        const T& getOnce() noexcept {
-            assert((m_target == nullptr) == m_fixedValue.has_value());
-            if (m_target) {
-                return m_target->getOnce();
+        bool hasTargetProperty() const noexcept {
+            return m_targetProperty != nullptr;
+        }
+
+        bool hasOwnProperty() const noexcept {
+            return m_ownProperty != nullptr;
+        }
+
+        bool hasProperty() const noexcept {
+            return hasTargetProperty() || hasOwnProperty();
+        }
+
+        bool hasFixedValue() const noexcept {
+            return m_fixedValue.has_value();
+        }
+
+        bool hasValue() const noexcept {
+            assert(!hasProperty() || !hasFixedValue());
+            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
+            return hasProperty() || hasFixedValue();
+        }
+
+        PropertyBase<T>* getProperty() noexcept {
+            return const_cast<PropertyBase<T>*>(const_cast<const PropertyOrValue<T>*>(this)->getProperty());
+        }
+        const PropertyBase<T>* getProperty() const noexcept {
+            assert(!hasProperty() || !hasFixedValue());
+            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
+            if (m_targetProperty) {
+                return m_targetProperty;
+            }
+            return m_ownProperty.get();
+        }
+
+        const T& getValueOnce() const noexcept {
+            assert(!hasProperty() || !hasFixedValue());
+            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
+            assert(hasValue());
+            if (m_targetProperty) {
+                return m_targetProperty->getOnce();
+            } else if (m_ownProperty) {
+                return m_ownProperty->getOnce();
             } else {
+                assert(m_fixedValue.has_value());
                 return *m_fixedValue;
             }
         }
 
-    private:
-        const PropertyBase<T>* m_target;
-        std::optional<T> m_fixedValue;
+        void reset() {
+            assert(!hasProperty() || !hasFixedValue());
+            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
+            m_targetProperty = nullptr;
+            m_ownProperty = nullptr;
+            m_fixedValue.reset();
+        }
 
-        friend Observer<T>;
+    private:
+        const PropertyBase<T>* m_targetProperty;
+        std::unique_ptr<PropertyBase<T>> m_ownProperty;
+        std::optional<T> m_fixedValue;
     };
 
     class ObserverBase;
@@ -406,48 +502,36 @@ namespace ui {
     class Observer : public ObserverBase {
     public:
         template<typename ObserverOwnerType>
-        Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>), const PropertyBase<T>& target)
-            : ObserverBase(self)
-            , m_target(&target)
-            , m_fixedValue(std::nullopt)
-            , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
-            m_target->m_observers.push_back(this);
-        }
-        template<typename ObserverOwnerType>
-        Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>), T fixedValue)
-            : ObserverBase(self)
-            , m_target(nullptr)
-            , m_fixedValue(std::move(fixedValue))
-            , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
-
-        }
-        template<typename ObserverOwnerType>
         Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>), PropertyOrValue<T> pv)
             : ObserverBase(self)
-            , m_target(nullptr)
-            , m_fixedValue(std::nullopt)
+            , m_propertyOrValue(std::move(pv))
             , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
-            assign(pv);
+
+            if (auto p = m_propertyOrValue.getProperty()) {
+                auto& v = p->m_observers;
+                assert(std::count(v.begin(), v.end(), this) == 0);
+                v.push_back(this);
+            }
         }
         template<typename ObserverOwnerType>
         Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>))
             : ObserverBase(self)
-            , m_target(nullptr)
-            , m_fixedValue(std::nullopt)
+            , m_propertyOrValue()
             , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
 
         }
 
         Observer(Observer&& o) noexcept 
             : ObserverBase(std::move(o))
-            , m_target(std::exchange(o.m_target, nullptr))
-            , m_fixedValue(std::exchange(o.m_fixedValue, std::nullopt))
+            , m_propertyOrValue(std::move(o.m_propertyOrValue))
             , m_onUpdate(std::exchange(o.m_onUpdate, nullptr)) {
-            if (m_target) {
-                auto& v = m_target->m_observers;
+            if (auto p = m_propertyOrValue.getProperty()) {
+                auto& v = p->m_observers;
                 assert(std::count(v.begin(), v.end(), &o) == 1);
                 assert(std::count(v.begin(), v.end(), this) == 0);
-                *std::find(v.begin(), v.end(), &o) = this;
+                auto it = std::find(v.begin(), v.end(), &o);
+                assert(it != v.end());
+                *it = this;
             }
         }
         Observer& operator=(Observer&& o) {
@@ -455,14 +539,15 @@ namespace ui {
                 return *this;
             }
             reset();
-            m_target = std::exchange(o.m_target, nullptr);
-            m_fixedValue = std::exchange(o.m_fixedValue, std::nullopt);
+            m_propertyOrValue = std::move(o.m_propertyOrValue);
             m_onUpdate = std::exchange(o.m_onUpdate, nullptr);
-            if (m_target) {
-                auto& v = m_target->m_observers;
+            if (auto p = m_propertyOrValue.getProperty()) {
+                auto& v = p->m_observers;
                 assert(std::count(v.begin(), v.end(), &o) == 1);
                 assert(std::count(v.begin(), v.end(), this) == 0);
-                *std::find(v.begin(), v.end(), &o) = this;
+                auto it = std::find(v.begin(), v.end(), &o);
+                assert(it != v.end());
+                *it = this;
             }
             return *this;
         }
@@ -474,76 +559,97 @@ namespace ui {
         Observer& operator=(const Observer&) = delete;
 
         void assign(const PropertyBase<T>& target) {
-            m_target = &target;
-            m_fixedValue = std::nullopt;
-
             // if target is dirty, bring this observer up to speed with its previous
             // value so that next update purge will be accurate.
             // Otherwise, if target is clean, bring this observer up to speed with
-            // its current value.
-            const auto diff = Difference<T>::computeFirst(
-                target.m_previousValue.has_value() ?
-                    static_cast<const T&>(*target.m_previousValue) :
-                    static_cast<const T&>(target.m_value)
-            );
+            // its current value
+            const T& newValue = target.m_previousValue.has_value() ?
+                static_cast<const T&>(*target.m_previousValue) :
+                static_cast<const T&>(target.m_value);
+
+            const auto diff = [&] {
+                if (m_propertyOrValue.hasValue()) {
+                    return Difference<T>::compute(
+                        m_propertyOrValue.getValueOnce(),
+                        newValue
+                    );
+                } else {
+                    return Difference<T>::computeFirst(newValue);
+                }
+            }();
+            reset();
+            assert(!m_propertyOrValue.hasValue());
+            m_propertyOrValue = target;
+            assert(m_propertyOrValue.hasTargetProperty());
+            assert(!m_propertyOrValue.hasOwnProperty());
+            assert(!m_propertyOrValue.hasFixedValue());
             update(diff);
-            m_target->m_observers.push_back(this);
+            auto p = m_propertyOrValue.getProperty();
+            assert(p);
+            auto& v = p->m_observers;
+            assert(std::count(v.begin(), v.end(), this) == 0);
+            v.push_back(this);
         }
 
         void assign(T fixedValue) {
-            m_target = nullptr;
-            const auto diff = Difference<T>::compute(
-                static_cast<const T&>(*m_fixedValue),
-                static_cast<const T&>(fixedValue)
-            );
-            m_fixedValue = std::move(fixedValue);
+            const auto diff = [&] {
+                if (m_propertyOrValue.hasValue()) {
+                    return Difference<T>::compute(
+                        m_propertyOrValue.getValueOnce(),
+                        static_cast<const T&>(fixedValue)
+                    );
+                } else {
+                    return Difference<T>::computeFirst(static_cast<const T&>(fixedValue));
+                }
+            }();
+            reset();
+            assert(!m_propertyOrValue.hasValue());
+
+            m_propertyOrValue = std::move(fixedValue);
             update(diff);
+            assert(m_propertyOrValue.hasFixedValue());
+            assert(!m_propertyOrValue.hasTargetProperty());
+            assert(!m_propertyOrValue.hasOwnProperty());
         }
 
+        // NOTE: if the PropertyOrValue that is passed owns a property, this Observer does NOT
+        // take ownership of that property, and instead stores a reference to it.
+        // This behaviour is needed for ContextProvider and ContextConsumer to work as expected.
         void assign(const PropertyOrValue<T>& pv) {
-            assert(pv.m_fixedValue.has_value() || pv.m_target);
-            if (pv.m_target) {
-                assign(*pv.m_target);
+            assert(pv.hasValue());
+            if (auto p = pv.getProperty()) {
+                assign(*p);
             } else {
-                assign(static_cast<const T&>(*pv.m_fixedValue));
+                assert(pv.hasFixedValue());
+                assign(pv.getValueOnce());
             }
-        }
-
-        bool hasTarget() const noexcept {
-            return m_target;
-        }
-
-        bool hasFixedValue() const noexcept {
-            return m_fixedValue.has_value();
         }
 
         bool hasValue() const noexcept {
-            return hasTarget() || hasFixedValue();
+            return m_propertyOrValue.hasValue();
+        }
+
+        bool hasFixedValue() const noexcept {
+            return m_propertyOrValue.hasFixedValue();
+        }
+
+        const PropertyBase<T>* getProperty() const noexcept {
+            return m_propertyOrValue.getProperty();
         }
 
         const T& getValueOnce() const noexcept {
-            assert(hasValue());
-            if (m_target) {
-                return m_target->getOnce();
-            } else {
-                return *m_fixedValue;
-            }
-        }
-
-        const Property<T>* target() const noexcept {
-            return m_target;
+            return m_propertyOrValue.getValueOnce();
         }
 
         void reset() {
-            if (m_target) {
-                auto& v = m_target->m_observers;
+            if (auto p = m_propertyOrValue.getProperty()) {
+                auto& v = p->m_observers;
                 assert(std::count(v.begin(), v.end(), this) == 1);
                 auto it = std::find(v.begin(), v.end(), this);
                 assert(it != v.end());
                 v.erase(it);
             }
-            m_target = nullptr;
-            m_fixedValue.reset();
+            m_propertyOrValue.reset();
         }
 
         void update(DiffArgType<T> t) {
@@ -553,8 +659,8 @@ namespace ui {
         }
 
     private:
-        const PropertyBase<T>* m_target;
-        std::optional<T> m_fixedValue;
+        PropertyOrValue<T> m_propertyOrValue;
+
         std::function<void(ObserverOwner*, DiffArgType<T>)> m_onUpdate;
 
         template<typename ObserverOwnerType>
@@ -580,17 +686,12 @@ namespace ui {
         friend Property<T>;
     };
 
-    // Property that is a pure function of another property.
-    // Useful for 
-    // TODO: inheriting from Property<T> doesn't really make sense,
-    // in terms of inheriting set() and m_value. If those could be moved
-    // into a sibling class like PrimaryProperty (subject to some all-around
-    // renaming), this could be neatly resolved.
+    // Property that is a pure function of another property
     template<typename T, typename U>
     class DerivedProperty : public PropertyBase<T>, public ObserverOwner {
     public:
-        DerivedProperty(PropertyOrValue<U> p, std::function<T(DiffArgType<U>)> f)
-            : PropertyBase<T>(f(Difference<U>::computeFirst(p.getOnce())))
+        DerivedProperty(std::function<T(DiffArgType<U>)> f, PropertyOrValue<U> p)
+            : PropertyBase<T>(f(Difference<U>::computeFirst(p.getValueOnce())))
             , m_fn(std::move(f))
             , m_observer(this, &DerivedProperty::onUpdate, std::move(p)) {
 
@@ -605,5 +706,38 @@ namespace ui {
             PropertyBase<T>::set(m_fn(u));
         }
     };
+
+    template<typename U, std::size_t Index, typename Derived>
+    class DerivedPropertyArgumentImpl {
+        DerivedPropertyArgumentImpl(PropertyOrValue<U> p)
+            : m_observer(static_cast<Derived*>(this), &DerivedPropertyArgumentImpl<U, Index, Derived>::onUpdate, std::move(p)) {
+
+        }
+
+    private:
+        Observer<U> m_observer;
+
+        void onUpdate(DiffArgType<U> u) {
+            static_cast<Derived*>(this)->updateFrom<U, Index>(u);
+        }
+    };
+
+    // Property that is a pure function of two or more properties
+    // TODO: can this be made more efficient when multiple input
+    // properties have changed?
+    /*template<typename T, typename U1, typename U2, typename... URest>
+    class DerivedProperty
+        : public PropertyBase<T>
+        , public ObserverOwner
+        , private DerivedPropertyArgumentImpl<U1, sizeof...(URest) + 1, DerivedProperty>
+        , private DerivedPropertyArgumentImpl<U2, sizeof...(URest), DerivedProperty>
+        , private DerivedPropertyArgumentImpl<URest, sizeof...(URest), DerivedProperty>... {
+
+    private:
+        template<typename U, std::size_t Index>
+        void updateFrom(DiffArgType<U> u) {
+            // TODO
+        }
+    };*/
 
 } // namespace ui
