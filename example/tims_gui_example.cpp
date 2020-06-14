@@ -74,6 +74,8 @@ int main(){
 
     auto vec = Property{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};
 
+    auto num = Property<std::size_t>{1000};
+
     AnyComponent comp = UseFont(&getFont()).with(
         List(
             Button("Clear All").onClick([&vec] {
@@ -100,6 +102,13 @@ int main(){
             TextComponent(vec.map(
                 [](const ListOfEdits<int>& v){ return ui::String(std::to_string(v.newValue().size())); }
             )),
+            " things.",
+            " If you added ",
+            TextComponent(num.map([](std::size_t n){ return ui::String(std::to_string(n)); })),
+            " then you would have ",
+            TextComponent(combine(vec, num).map([](const ListOfEdits<int>& v, std::size_t n) {
+                return ui::String(std::to_string(v.newValue().size() + n));
+            })),
             " things."
         )
     );

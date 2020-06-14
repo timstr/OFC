@@ -192,6 +192,9 @@ namespace ui {
     class Property;
 
     template<typename T>
+    class PropertyOrValue;
+
+    template<typename T>
     class Observer;
 
     template<typename T, typename U, typename... Rest>
@@ -237,12 +240,17 @@ namespace ui {
         }
 
         template<typename F>
-        DerivedProperty<
-            std::invoke_result_t<std::decay_t<F>, DiffArgType<T>>,
-            T
-        > map(F&& f) const {
-            return {std::forward<F>(f), PropertyOrValue<T>(static_cast<const PropertyBase<T>&>(*this))};
+        auto map(F&& f) const & {
+            using R = std::invoke_result_t<std::decay_t<F>, DiffArgType<T>>;
+                
+            return DerivedProperty<R, T> {
+                std::forward<F>(f),
+                PropertyOrValue<T>(static_cast<const PropertyBase<T>&>(*this))
+            };
         }
+
+        template<typename F>
+        void map(F&& f) const && = delete;
 
     protected:
 
@@ -315,12 +323,41 @@ namespace ui {
         using PropertyBase::getOnce;
         using PropertyBase::getOnceMutable;
         using PropertyBase::set;
-        using PropertyBase::map;
 
     private:
     };
 
-    // TODO: add a combine() function that works like PropertyBase::map but for more than one property
+    template<typename T, typename... Rest>
+    class CombinedProperties final {
+    public:
+        CombinedProperties(const PropertyBase<T>& t, const PropertyBase<Rest>&... rest) 
+            : m_properties(&t, (&rest)...) {
+
+        }
+
+        template<typename F>
+        auto map(F&& f) && noexcept {
+            using R = std::invoke_result_t<std::decay_t<F>, DiffArgType<T>, DiffArgType<Rest>...>;
+            return mapImpl<F, R>(std::forward<F>(f), std::make_index_sequence<sizeof...(Rest)>());
+        }
+
+    private:
+        std::tuple<const PropertyBase<T>*, const PropertyBase<Rest>*...> m_properties;
+
+        template<typename F, typename R, std::size_t... Indices>
+        DerivedProperty<R, T, Rest...> mapImpl(F&& f, std::index_sequence<Indices...> /* indices */) {
+            return {
+                std::forward<F>(f),
+                *std::get<0>(m_properties),
+                (*std::get<Indices + 1>(m_properties))...
+            };
+        }
+    };
+
+    template<typename T, typename... Rest>
+    CombinedProperties<T, Rest...> combine(const PropertyBase<T>& t, const PropertyBase<Rest>&... rest) {
+        return { t, rest... };
+    }
 
     template<typename T>
     class PropertyOrValue final {
@@ -711,16 +748,20 @@ namespace ui {
 
             DerivedPropertyBaseImpl(Derived* self, PropertyOrValue<T>&& pvt, PropertyOrValue<U>&& pvu, PropertyOrValue<Rest>&&... pvrest)
                 : Base(self, std::move(pvu), std::move(pvrest)...)
-                , m_observer(self, static_cast<void (Derived::*)(DiffArgType<T>)>(&DerivedPropertyBaseImpl::onUpdate), std::move(pvt)) {
+                , m_observer(
+                    self,
+                    static_cast<void (Derived::*)(DiffArgType<T>)>(&DerivedPropertyBaseImpl::onUpdate),
+                    std::move(pvt)
+                ) {
 
             }
 
             template<std::size_t I>
-            auto getValueOnce() noexcept {
+            decltype(auto) getValueOnce() noexcept {
                 if constexpr (I == Index) {
                     return m_observer.getValueOnce();
                 } else {
-                    return Base::getValue<V, I + 1>(std::move(v));
+                    return Base::getValueOnce<I>();
                 }
             }
 
@@ -742,7 +783,7 @@ namespace ui {
             }
 
             template<std::size_t I>
-            auto getValueOnce() noexcept {
+            decltype(auto) getValueOnce() noexcept {
                 static_assert(I == Index, "Something is wrong here");
                 return m_observer.getValueOnce();
             }
@@ -783,7 +824,7 @@ namespace ui {
 
 
         template<typename V, std::size_t Index>
-        void updateFrom(DiffArgType<V> d) {
+        void updateFrom(DiffArgType<V>& d) {
             updateFromImpl<V, Index>(d, std::make_index_sequence<sizeof...(Rest) + 1>());
         }
 
@@ -799,11 +840,13 @@ namespace ui {
         }
 
         template<typename V, std::size_t Which, std::size_t Current>
-        auto getArgument(DiffArgType<V>& d) {
+        decltype(auto) getArgument(DiffArgType<V>& d) {
             if constexpr (Which == Current) {
                 return DiffArgType<V>{std::move(d)};
             } else {
-                return getValueOnce<Which>();
+                using R = std::tuple_element_t<Current, std::tuple<U, Rest...>>;
+                const auto& v = Base::getValueOnce<Current>();
+                return Difference<R>::compute(v, v);
             }
         }
     };
