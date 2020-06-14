@@ -686,58 +686,114 @@ namespace ui {
         friend Property<T>;
     };
 
-    // Property that is a pure function of another property
-    template<typename T, typename U>
-    class DerivedProperty : public PropertyBase<T>, public ObserverOwner {
-    public:
-        DerivedProperty(std::function<T(DiffArgType<U>)> f, PropertyOrValue<U> p)
-            : PropertyBase<T>(f(Difference<U>::computeFirst(p.getValueOnce())))
-            , m_fn(std::move(f))
-            , m_observer(this, &DerivedProperty::onUpdate, std::move(p)) {
 
-        }
 
-    private:
-        std::function<T(DiffArgType<U>)> m_fn;
-        Observer<U> m_observer;
+    namespace detail {
+        template<typename Derived, std::size_t Index, typename T, typename... Rest>
+        class DerivedPropertyBaseImpl;
 
-        void onUpdate(DiffArgType<U> u) {
-            assert(m_fn);
-            PropertyBase<T>::set(m_fn(u));
-        }
-    };
+        template<typename Derived, std::size_t Index, typename T, typename U, typename... Rest>
+        class DerivedPropertyBaseImpl<Derived, Index, T, U, Rest...> : public DerivedPropertyBaseImpl<Derived, Index + 1, U, Rest...> {
+        public:
+            using Base = DerivedPropertyBaseImpl<Derived, Index + 1, U, Rest...>;
 
-    template<typename U, std::size_t Index, typename Derived>
-    class DerivedPropertyArgumentImpl {
-        DerivedPropertyArgumentImpl(PropertyOrValue<U> p)
-            : m_observer(static_cast<Derived*>(this), &DerivedPropertyArgumentImpl<U, Index, Derived>::onUpdate, std::move(p)) {
+            DerivedPropertyBaseImpl(Derived* self, PropertyOrValue<T>&& pvt, PropertyOrValue<U>&& pvu, PropertyOrValue<Rest>&&... pvrest)
+                : Base(self, std::move(pvu), std::move(pvrest)...)
+                , m_observer(self, static_cast<void (Derived::*)(DiffArgType<T>)>(&DerivedPropertyBaseImpl::onUpdate), std::move(pvt)) {
 
-        }
+            }
 
-    private:
-        Observer<U> m_observer;
+            template<std::size_t I>
+            auto getValueOnce() noexcept {
+                if constexpr (I == Index) {
+                    return m_observer.getValueOnce();
+                } else {
+                    return Base::getValue<V, I + 1>(std::move(v));
+                }
+            }
 
-        void onUpdate(DiffArgType<U> u) {
-            static_cast<Derived*>(this)->updateFrom<U, Index>(u);
-        }
-    };
+        private:
+            Observer<T> m_observer;
 
-    // Property that is a pure function of two or more properties
+            void onUpdate(DiffArgType<T> d) {
+                static_cast<Derived*>(this)->updateFrom<T, Index>(d);
+            }
+        };
+
+        template<typename Derived, std::size_t Index, typename T>
+        class DerivedPropertyBaseImpl<Derived, Index, T> {
+        public:
+
+            DerivedPropertyBaseImpl(Derived* self, PropertyOrValue<T>&& pv)
+                : m_observer(self, static_cast<void (Derived::*)(DiffArgType<T>)>(&DerivedPropertyBaseImpl::onUpdate), std::move(pv)) {
+
+            }
+
+            template<std::size_t I>
+            auto getValueOnce() noexcept {
+                static_assert(I == Index, "Something is wrong here");
+                return m_observer.getValueOnce();
+            }
+
+        private:
+            Observer<T> m_observer;
+
+            void onUpdate(DiffArgType<T> d) {
+                static_cast<Derived*>(this)->updateFrom<T, Index>(d);
+            }
+        };
+
+    } // namespace detail
+
+    // Property that is a pure function of one or more properties
     // TODO: can this be made more efficient when multiple input
     // properties have changed?
-    /*template<typename T, typename U1, typename U2, typename... URest>
+    template<typename T, typename U, typename... Rest>
     class DerivedProperty
         : public PropertyBase<T>
         , public ObserverOwner
-        , private DerivedPropertyArgumentImpl<U1, sizeof...(URest) + 1, DerivedProperty>
-        , private DerivedPropertyArgumentImpl<U2, sizeof...(URest), DerivedProperty>
-        , private DerivedPropertyArgumentImpl<URest, sizeof...(URest), DerivedProperty>... {
+        , public detail::DerivedPropertyBaseImpl<DerivedProperty<T, U, Rest...>, 0, U, Rest...> {
+    public:
+        using SelfType = DerivedProperty<T, U, Rest...>;
+        using Base = detail::DerivedPropertyBaseImpl<SelfType, 0, U, Rest...>;
+
+        using FunctionType = std::function<T(DiffArgType<U>, DiffArgType<Rest>...)>;
+
+        DerivedProperty(FunctionType fn, PropertyOrValue<U> u, PropertyOrValue<Rest>... rest)
+            : PropertyBase<T>(fn(
+                Difference<U>::computeFirst(u.getValueOnce()),
+                Difference<Rest>::computeFirst(rest.getValueOnce())...
+            ))
+            , Base(this, std::move(u), std::move(rest)...)
+            , m_fn(std::move(fn)) {
+
+        }
+
+
+        template<typename V, std::size_t Index>
+        void updateFrom(DiffArgType<V> d) {
+            updateFromImpl<V, Index>(d, std::make_index_sequence<sizeof...(Rest) + 1>());
+        }
 
     private:
-        template<typename U, std::size_t Index>
-        void updateFrom(DiffArgType<U> u) {
-            // TODO
+        FunctionType m_fn;
+
+        template<typename V, std::size_t Which, std::size_t... AllIndices>
+        void updateFromImpl(DiffArgType<V>& d, std::index_sequence<AllIndices...> /* allIndices */) {
+            assert(m_fn);
+            PropertyBase<T>::set(m_fn(
+                getArgument<V, Which, AllIndices>(d)...
+            ));
         }
-    };*/
+
+        template<typename V, std::size_t Which, std::size_t Current>
+        auto getArgument(DiffArgType<V>& d) {
+            if constexpr (Which == Current) {
+                return DiffArgType<V>{std::move(d)};
+            } else {
+                return getValueOnce<Which>();
+            }
+        }
+    };
 
 } // namespace ui
