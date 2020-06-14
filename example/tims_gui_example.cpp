@@ -71,9 +71,9 @@ int main(){
             .onChange([](const ui::String& s){ std::cout << "You chose " << s.toAnsiString() << "\n"; })
     );
     */
-    
+
     auto vec = Property{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};
-    
+
     AnyComponent comp = UseFont(&getFont()).with(
         List(
             Button("Clear All").onClick([&vec] {
@@ -97,9 +97,8 @@ int main(){
                 std::cout << '\n';
             }),
             "There are ",
-            TextComponent(DerivedProperty<String, std::vector<int>>(
-                [](const ListOfEdits<int>& v){ return ui::String(std::to_string(v.newValue().size())); },
-                vec
+            TextComponent(vec.map(
+                [](const ListOfEdits<int>& v){ return ui::String(std::to_string(v.newValue().size())); }
             )),
             " things."
         )

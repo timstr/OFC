@@ -194,6 +194,9 @@ namespace ui {
     template<typename T>
     class Observer;
 
+    template<typename T, typename U, typename... Rest>
+    class DerivedProperty;
+
     // Base class of both Property and DerivedProperty
     template<typename T>
     class PropertyBase {
@@ -231,6 +234,14 @@ namespace ui {
 
         const T& getOnce() const noexcept {
             return m_value;
+        }
+
+        template<typename F>
+        DerivedProperty<
+            std::invoke_result_t<std::decay_t<F>, DiffArgType<T>>,
+            T
+        > map(F&& f) const {
+            return {std::forward<F>(f), PropertyOrValue<T>(static_cast<const PropertyBase<T>&>(*this))};
         }
 
     protected:
@@ -304,11 +315,12 @@ namespace ui {
         using PropertyBase::getOnce;
         using PropertyBase::getOnceMutable;
         using PropertyBase::set;
-
-        // TODO: operator= for const T& / T&&?
+        using PropertyBase::map;
 
     private:
     };
+
+    // TODO: add a combine() function that works like PropertyBase::map but for more than one property
 
     template<typename T>
     class PropertyOrValue final {
