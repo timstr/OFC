@@ -824,7 +824,7 @@ namespace ui {
 
 
         template<typename V, std::size_t Index>
-        void updateFrom(DiffArgType<V>& d) {
+        void updateFrom(DiffArgType<V> d) {
             updateFromImpl<V, Index>(d, std::make_index_sequence<sizeof...(Rest) + 1>());
         }
 
@@ -840,9 +840,9 @@ namespace ui {
         }
 
         template<typename V, std::size_t Which, std::size_t Current>
-        decltype(auto) getArgument(DiffArgType<V>& d) {
+        decltype(auto) getArgument(DiffArgType<V> d) {
             if constexpr (Which == Current) {
-                return DiffArgType<V>{std::move(d)};
+                return d;
             } else {
                 using R = std::tuple_element_t<Current, std::tuple<U, Rest...>>;
                 const auto& v = Base::getValueOnce<Current>();
