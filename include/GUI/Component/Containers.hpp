@@ -4,6 +4,8 @@
 
 #include <GUI/DOM/FreeContainer.hpp>
 #include <GUI/DOM/FlowContainer.hpp>
+#include <GUI/DOM/VerticalList.hpp>
+#include <GUI/DOM/HorizontalList.hpp>
 
 namespace ui {
 
@@ -120,7 +122,7 @@ namespace ui {
             m_childComponent.tryUnmount();
         }
 
-        // TODO: add some clean way to specify x/y position or alignment
+        // TODO: add some clean way to specify flow style
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
             auto c = container();
             assert(c);
@@ -138,8 +140,92 @@ namespace ui {
         }
     };
 
+    template<>
+    class ContainerComponent<dom::VerticalList> : public ContainerComponentBase<dom::VerticalList> {
+    public:
+        // TODO: allow any number of arguments
+        ContainerComponent(AnyComponent c)
+            : m_childComponent(std::move(c)) {
+
+        }
+
+    private:
+        AnyComponent m_childComponent;
+
+        std::unique_ptr<dom::VerticalList> createContainer() override {
+            return std::make_unique<dom::VerticalList>();
+        }
+
+        void onMountContainer(const dom::Element* beforeElement) override final {
+            m_childComponent.tryMount(this, beforeElement);
+        }
+
+        void onUnmountContainer() override final {
+            m_childComponent.tryUnmount();
+        }
+
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
+            auto c = container();
+            assert(c);
+            c->insertBefore(beforeElement, std::move(element));
+        }
+
+        void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
+            auto c = container();
+            assert(c);
+            c->release(whichElement);
+        }
+
+        std::vector<const Component*> getChildren() const noexcept override final {
+            return {m_childComponent.get()};
+        }
+    };
+
+    template<>
+    class ContainerComponent<dom::HorizontalList> : public ContainerComponentBase<dom::HorizontalList> {
+    public:
+        // TODO: allow any number of arguments
+        ContainerComponent(AnyComponent c)
+            : m_childComponent(std::move(c)) {
+
+        }
+
+    private:
+        AnyComponent m_childComponent;
+
+        std::unique_ptr<dom::HorizontalList> createContainer() override {
+            return std::make_unique<dom::HorizontalList>();
+        }
+
+        void onMountContainer(const dom::Element* beforeElement) override final {
+            m_childComponent.tryMount(this, beforeElement);
+        }
+
+        void onUnmountContainer() override final {
+            m_childComponent.tryUnmount();
+        }
+
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
+            auto c = container();
+            assert(c);
+            c->insertBefore(beforeElement, std::move(element));
+        }
+
+        void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
+            auto c = container();
+            assert(c);
+            c->release(whichElement);
+        }
+
+        std::vector<const Component*> getChildren() const noexcept override final {
+            return {m_childComponent.get()};
+        }
+    };
+
     using FreeContainer = ContainerComponent<dom::FreeContainer>;
     using FlowContainer = ContainerComponent<dom::FlowContainer>;
+    using VerticalList = ContainerComponent<dom::VerticalList>;
+    using HorizontalList = ContainerComponent<dom::HorizontalList>;
 
     // TODO: specialize other containers
 

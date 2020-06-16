@@ -330,8 +330,8 @@ namespace ui {
     template<typename T, typename... Rest>
     class CombinedProperties final {
     public:
-        CombinedProperties(const PropertyBase<T>& t, const PropertyBase<Rest>&... rest) 
-            : m_properties(&t, (&rest)...) {
+        CombinedProperties(PropertyOrValue<T>&& t, PropertyOrValue<Rest>&&... rest) 
+            : m_properties(std::move(t), std::move(rest)...) {
 
         }
 
@@ -342,21 +342,57 @@ namespace ui {
         }
 
     private:
-        std::tuple<const PropertyBase<T>*, const PropertyBase<Rest>*...> m_properties;
+        std::tuple<PropertyOrValue<T>, PropertyOrValue<Rest>...> m_properties;
 
         template<typename F, typename R, std::size_t... Indices>
         DerivedProperty<R, T, Rest...> mapImpl(F&& f, std::index_sequence<Indices...> /* indices */) {
             return {
                 std::forward<F>(f),
-                *std::get<0>(m_properties),
-                (*std::get<Indices + 1>(m_properties))...
+                std::move(std::get<0>(m_properties)),
+                std::move(std::get<Indices + 1>(m_properties))...
             };
         }
     };
 
+    namespace detail {
+        template<typename T>
+        struct DeduceProperty {
+            using Type = std::decay_t<T>;
+        };
+
+        template<typename T>
+        struct DeduceProperty<Property<T>> {
+            using Type = T;
+        };
+
+        template<typename T>
+        struct DeduceProperty<PropertyBase<T>> {
+            using Type = T;
+        };
+
+        template<typename T, typename U, typename... Rest>
+        struct DeduceProperty<DerivedProperty<T, U, Rest...>> {
+            using Type = T;
+        };
+
+        template<typename T>
+        struct DeduceProperty<PropertyOrValue<T>> {
+            using Type = T;
+        };
+
+        template<typename T>
+        using DeducePropertyType = typename DeduceProperty<std::decay_t<T>>::Type;
+    } // namespace detail
+
     template<typename T, typename... Rest>
-    CombinedProperties<T, Rest...> combine(const PropertyBase<T>& t, const PropertyBase<Rest>&... rest) {
-        return { t, rest... };
+    CombinedProperties<
+        detail::DeducePropertyType<T>,
+        detail::DeducePropertyType<Rest>...
+    > combine(T&& t, Rest&&... rest) {
+        return {
+            PropertyOrValue<detail::DeducePropertyType<T>>{std::forward<T>(t)},
+            PropertyOrValue<detail::DeducePropertyType<Rest>>{std::forward<Rest>(rest)}...
+        };
     }
 
     template<typename T>
@@ -414,6 +450,9 @@ namespace ui {
 
         }
 
+        // PropertyOrValue is copy constructible from another PropertyOrValue,
+        // in which case the new PropertyOrValue will either point to (but not
+        // own) the Property of the original, or hold a copy of its fixed value.
         PropertyOrValue(PropertyOrValue&& p) noexcept
             : m_targetProperty(std::exchange(p.m_targetProperty, nullptr))
             , m_ownProperty(std::move(p.m_ownProperty))
@@ -422,7 +461,13 @@ namespace ui {
             assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
         }
 
-        PropertyOrValue(const PropertyOrValue&) = delete;
+        PropertyOrValue(const PropertyOrValue& p)
+            : m_targetProperty(p.m_targetProperty ? p.m_targetProperty : p.m_ownProperty.get())
+            , m_ownProperty(nullptr)
+            , m_fixedValue(p.m_fixedValue) {
+            assert(!hasProperty() || !hasFixedValue());
+            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
+        }
 
         ~PropertyOrValue() noexcept = default;
 

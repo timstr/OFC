@@ -18,16 +18,10 @@ const sf::Font& getFont() {
     }
     return font;
 }
-/*
+
 struct PulldownMenuState {
-    PulldownMenuState()
-        : currentIndex(0)
-        , expanded(false) {
-
-    }
-
-    ui::Property<std::size_t> currentIndex;
-    ui::Property<bool> expanded;
+    ui::Property<std::size_t> currentIndex {0};
+    ui::Property<bool> expanded {false};
 };
 
 class PulldownMenu : public ui::StatefulComponent<PulldownMenuState> {
@@ -48,32 +42,64 @@ private:
 
     ui::AnyComponent render() const override {
         using namespace ui;
+
+        const auto toggleExpanded = [this]{
+            const auto e = state().expanded.getOnce();
+            stateMutable().expanded.set(!e);
+        };
+
+        const auto indexItems = [](std::size_t i, const ui::ListOfEdits<ui::String>& e) {
+            assert(i < e.newValue().size());
+            return e.newValue()[i];
+        };
+
+        const auto makeItem = [this](const String& str, const std::size_t& i) -> AnyComponent {
+            return Button(str).onClick([this, str, i](){
+                if (m_onChange){
+                    m_onChange(str);
+                }
+                stateMutable().currentIndex.set(i);
+                stateMutable().expanded.set(false);
+            });
+        };
+
         const auto& s = state();
         return If(s.expanded).then(
-            "Expanded"
+            VerticalList(List(
+                Button(
+                    combine(s.currentIndex, m_items).map(indexItems)
+                ).onClick(toggleExpanded),
+                FreeContainer(VerticalList(
+                    ForEach(m_items).Do(makeItem)
+                ))
+            ))
         ).otherwise(
-            Button()
+            Button(
+                combine(s.currentIndex, m_items).map(indexItems)
+            ).onClick(toggleExpanded)
         );
     }
 
 
 };
-*/
+
+template<typename T>
+ui::String make_string(const T& t) {
+    return std::to_string(t);
+}
 
 int main(){
 
     using namespace ui;
 
-    // auto str = Property<String>("Dagnabbit darn drat!");
-    /*
     AnyComponent comp = UseFont(&getFont()).with(
         PulldownMenu(std::vector<String>{"One", "Two", "Three", "Four", "Five"})
             .onChange([](const ui::String& s){ std::cout << "You chose " << s.toAnsiString() << "\n"; })
     );
-    */
+    
 
+    /*
     auto vec = Property{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};
-
     auto num = Property<std::size_t>{1000};
 
     AnyComponent comp = UseFont(&getFont()).with(
@@ -100,19 +126,19 @@ int main(){
             }),
             "There are ",
             TextComponent(vec.map(
-                [](const ListOfEdits<int>& v){ return ui::String(std::to_string(v.newValue().size())); }
+                [](const ListOfEdits<int>& v){ return make_string(v.newValue().size()); }
             )),
             " things.",
             " If you added ",
-            TextComponent(num.map([](std::size_t n){ return ui::String(std::to_string(n)); })),
+            TextComponent(num.map([](std::size_t n){ return make_string(n); })),
             " then you would have ",
             TextComponent(combine(vec, num).map([](const ListOfEdits<int>& v, std::size_t n) {
-                return ui::String(std::to_string(v.newValue().size() + n));
+                return make_string(v.newValue().size() + n);
             })),
             " things."
         )
     );
-    
+    */
 
     auto root = Root::create<dom::FlowContainer>(std::move(comp));
 

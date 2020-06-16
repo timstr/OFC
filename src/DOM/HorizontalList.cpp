@@ -43,6 +43,17 @@ namespace ui::dom {
         // NOTE: m_cells is modified in onRemoveChild
     }
 
+    void HorizontalList::insertBefore(const Element* sibling, std::unique_ptr<Element> theElement) {
+        if (sibling) {
+            auto it = std::find(m_cells.begin(), m_cells.end(), sibling);
+            assert(it != m_cells.end());
+            m_cells.insert(it, theElement.get());
+            adopt(std::move(theElement));
+        } else {
+            push_back(std::move(theElement));
+        }
+    }
+
     void HorizontalList::push_front(std::unique_ptr<Element> e){
         assert(e);
         m_cells.insert(m_cells.begin(), e.get());

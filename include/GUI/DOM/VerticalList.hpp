@@ -6,6 +6,8 @@ namespace ui::dom {
 
     // TODO: alignment options (left/center/right/justify)
 
+    // TODO: remove code duplication between VerticalList and HorizontalList
+
     class VerticalList : public Container {
     public:
         VerticalList();
@@ -22,6 +24,8 @@ namespace ui::dom {
         T& insert(std::size_t index, Args&&... args);
         void erase(std::size_t index);
 
+        void insertBefore(const Element* sibling, std::unique_ptr<Element> theElement);
+
         void push_front(std::unique_ptr<Element>);
         template<typename T, typename... Args>
         T& push_front(Args&&... args);
@@ -33,6 +37,8 @@ namespace ui::dom {
         void pop_back();
 
         void clear();
+
+        using Container::release;
 
         float padding() const noexcept;
         void setPadding(float);

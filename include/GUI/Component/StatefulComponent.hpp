@@ -16,16 +16,18 @@ namespace ui {
     protected:
         virtual AnyComponent render() const = 0;
 
-        StateType& state() noexcept {
+        StateType& stateMutable() const noexcept {
+            assert(m_state != nullptr);
             return *m_state;
         }
         const StateType& state() const noexcept {
+            assert(m_state != nullptr);
             return *m_state;
         }
 
     private:
         AnyComponent m_component;
-        std::unique_ptr<StateType> m_state;
+        mutable std::unique_ptr<StateType> m_state;
 
         void onMount(const dom::Element* beforeElement) override final {
             m_component = render();

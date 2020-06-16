@@ -33,6 +33,7 @@ namespace ui {
 
         void onMount(const dom::Element* beforeSibling) override final {
             assert(m_fn);
+            assert(m_components.empty());
             const auto& vals = m_observer.getValueOnce();
             m_components.reserve(vals.size());
             auto i = std::size_t{0};
@@ -53,6 +54,7 @@ namespace ui {
             for (auto it = m_components.rbegin(), itEnd = m_components.rend(); it != itEnd; ++it) {
                 it->first.tryUnmount();
             }
+            m_components.clear();
         }
 
         std::vector<const Component*> getChildren() const noexcept override final {
