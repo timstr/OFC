@@ -2,8 +2,8 @@
 
 namespace ui {
 
-    If::If(const Property<bool>& c)
-        : m_condition(this, &If::updateCondition, c) {
+    If::If(PropertyOrValue<bool> c)
+        : m_condition(this, &If::updateCondition, std::move(c)) {
 
     }
 
@@ -16,6 +16,7 @@ namespace ui {
         m_elseComponent = std::move(c);
         return *this;
     }
+
     void If::onMount(const dom::Element* beforeElement) {
         if (m_condition.getValueOnce()) {
             m_thenComponent.tryMount(this, beforeElement);
@@ -36,12 +37,10 @@ namespace ui {
     void If::updateCondition(bool b) {
         m_thenComponent.tryUnmount();
         m_elseComponent.tryUnmount();
-        auto nextComp = getNextComponent();
-        auto nextElement = nextComp ? nextComp->getFirstElement() : nullptr;
         if (b) {
-            m_thenComponent.tryMount(this, nextElement);
+            m_thenComponent.tryMount(this, nullptr);
         } else {
-            m_elseComponent.tryMount(this, nextElement);
+            m_elseComponent.tryMount(this, nullptr);
         }
     }
     

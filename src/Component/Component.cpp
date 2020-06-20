@@ -165,6 +165,10 @@ namespace ui {
 
     void AnyComponent::tryMount(InternalComponent* self, const dom::Element* beforeElement) {
         if (m_component && !m_component->isMounted()){
+            if (beforeElement == nullptr) {
+                auto nextComp = self->getNextComponent();
+                beforeElement = nextComp ? nextComp->getFirstElement() : nullptr;
+            }
             m_component->mount(self, beforeElement);
         }
     }
@@ -177,6 +181,11 @@ namespace ui {
 
     bool AnyComponent::isMounted() const noexcept {
         return m_component ? m_component->isMounted() : false;
+    }
+
+    void AnyComponent::reset() {
+        assert(!isMounted());
+        m_component = nullptr;
     }
 
     

@@ -64,20 +64,17 @@ private:
         };
 
         const auto& s = state();
-        return If(s.expanded).then(
-            VerticalList(List(
-                Button(
-                    combine(s.currentIndex, m_items).map(indexItems)
-                ).onClick(toggleExpanded),
+
+        return VerticalList(List(
+            Button(
+                combine(s.currentIndex, m_items).map(indexItems)
+            ).onClick(toggleExpanded),
+            If(s.expanded).then(
                 FreeContainer(VerticalList(
                     ForEach(m_items).Do(makeItem)
                 ))
-            ))
-        ).otherwise(
-            Button(
-                combine(s.currentIndex, m_items).map(indexItems)
-            ).onClick(toggleExpanded)
-        );
+            )
+        ));
     }
 
 
@@ -96,7 +93,29 @@ int main(){
         PulldownMenu(std::vector<String>{"One", "Two", "Three", "Four", "Five"})
             .onChange([](const ui::String& s){ std::cout << "You chose " << s.toAnsiString() << "\n"; })
     );
-    
+
+    /*
+    auto condition1 = Property<bool>{false};
+    auto condition2 = Property<bool>{false};
+
+    auto TrueFalseButton = [](Property<bool>& p) -> AnyComponent {
+        return Button(p.map([](bool b) -> String { return b ? "true" : "false"; }))
+            .onClick([&]{ p.set(!p.getOnce()); });
+    };
+
+    AnyComponent comp = UseFont(&getFont()).with(List(
+        TrueFalseButton(condition1),
+        TrueFalseButton(condition2),
+        If(condition1)
+            .then("then1")
+            .otherwise(List(
+                "otherwise1 ",
+                If(condition2)
+                    .then("then2")
+                    .otherwise("otherwise2")
+            ))
+    ));
+    */
 
     /*
     auto vec = Property{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};

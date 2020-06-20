@@ -167,6 +167,9 @@ namespace ui {
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
             auto c = container();
             assert(c);
+            if (beforeElement && beforeElement->getParentContainer() != c) {
+                beforeElement = nullptr;
+            }
             c->insertBefore(beforeElement, std::move(element));
         }
 

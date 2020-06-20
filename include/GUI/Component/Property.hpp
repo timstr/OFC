@@ -18,6 +18,40 @@ namespace ui {
 
     class Component;
 
+    template<typename T>
+    using CRefOrValue = std::conditional_t<
+        std::is_scalar_v<std::decay_t<T>>,
+        std::decay_t<T>,
+        const std::decay_t<T>&
+    >;
+
+    template<typename T>
+    struct Difference {
+        using ValueType = T;
+
+        // For scalar types, the difference argument type is simply that type with all top-level
+        // CV-qualifications removed. This saves users from having to type the arguments of update
+        // functions for simple pointers as `const SomeType* const&` when `const SomeType*` suffices
+        // For other, more complicated types, the difference argument type is a reference to const T
+        using ArgType = CRefOrValue<T>;
+
+        static std::decay_t<T> compute(const T& /* vOld */, const T& vNew) noexcept {
+            return vNew;
+        }
+
+        static std::decay_t<T> computeFirst(const T& vNew) noexcept {
+            return vNew;
+        }
+    };
+
+    template<typename T>
+    using DiffArgType = typename Difference<T>::ArgType;
+
+    template<typename T>
+    using DiffValueType = typename Difference<T>::ValueType;
+
+    template<typename T>
+    using DiffInnerType = typename Difference<T>::InnerType;
 
     template<typename T>
     class ListOfEdits {
@@ -153,28 +187,10 @@ namespace ui {
     };
 
     template<typename T>
-    using CRefOrValue = std::conditional_t<std::is_scalar_v<T>, T, const T&>;
-
-    template<typename T>
-    struct Difference {
-        // For scalar types, the difference argument type is simply that type with all top-level
-        // CV-qualifications removed. This saves users from having to type the arguments of update
-        // functions for simple pointers as `const SomeType* const&` when `const SomeType*` suffices
-        // For other, more complicated types, the difference argument type is a reference to const T
-        using ArgType = CRefOrValue<T>;
-
-        static std::decay_t<T> compute(const T& /* vOld */, const T& vNew) noexcept {
-            return vNew;
-        }
-
-        static std::decay_t<T> computeFirst(const T& vNew) noexcept {
-            return vNew;
-        }
-    };
-
-    template<typename T>
     struct Difference<std::vector<T>> {
+        using ValueType = ListOfEdits<T>&;
         using ArgType = const ListOfEdits<T>&;
+        using InnerType = T;
 
         static ListOfEdits<T> compute(const std::vector<T>& vOld, const std::vector<T>& vNew) noexcept {
             return ListOfEdits<T>{vOld, vNew};
@@ -184,9 +200,6 @@ namespace ui {
             return ListOfEdits<T>{std::vector<T>{}, vNew};
         }
     };
-
-    template<typename T>
-    using DiffArgType = typename Difference<T>::ArgType;
 
     template<typename T>
     class Property;

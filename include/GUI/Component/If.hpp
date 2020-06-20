@@ -6,14 +6,11 @@ namespace ui {
 
     class If : public ForwardingComponent {
     public:
-        If(const Property<bool>& c);
+        If(PropertyOrValue<bool> c);
 
         If& then(AnyComponent c);
 
         If& otherwise(AnyComponent c);
-
-        // TODO: // add elseif(condition) method that adds another `If` component
-        // as m_elseComponent and returns a reference to it
 
     private:
         Observer<bool> m_condition;

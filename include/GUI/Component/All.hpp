@@ -8,6 +8,8 @@
 #include <GUI/Component/If.hpp>
 #include <GUI/Component/List.hpp>
 #include <GUI/Component/PureComponent.hpp>
-#include <GUI/Component/StatefulComponent.hpp>
-#include <GUI/Component/Text.hpp>
 #include <GUI/Component/Root.hpp>
+#include <GUI/Component/StatefulComponent.hpp>
+#include <GUI/Component/Switch.hpp>
+#include <GUI/Component/Text.hpp>
+#include <GUI/Component/When.hpp>

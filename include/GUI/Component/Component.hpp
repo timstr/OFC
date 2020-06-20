@@ -186,29 +186,6 @@ namespace ui {
         void onRemoveChildElement(dom::Element* whichElement, const Component* whichDescendent) override final;
     };
 
-    // TODO: add support for stateful components
-    // i.e. components that have associated state which does not purely
-    // depend on the component properties. Useful for things like:
-    // - x/y position of draggable objects
-    // - positions of scrollable contents
-    // - oh, so many things, really
-    // The ReactJS-style way of doing this would be to have something like
-    // a StatefulComponent<StateType> base class, where StateType is an
-    // aggregrate struct/class containing nothing but public Property<T> members.
-    // Computing diffs over the entire state as ReactJS does is not necessary, since
-    // re-rendering would already be tied to the individual properties within the state.
-    // StatefulComponent<StateType> should probably rely upon a method like
-    // virtual AnyComponent StatefulComponent<StateType>::render(const StateType state&) = 0;
-    // whose return value is used in onMount, where that `state` parameter that is passed
-    // is a reference to the component's own state member object.
-    // Typically, such StatefulComponents will not accept any children, but may
-    // choose to do so, for example, by accepting AnyComponent in their constructor
-    // or named-parameter-idiom-style member functions.
-    // Note that for this StatefulComponent idea to work properly with AnyComponent,
-    // every such derived class must be able to be moved from. This probably means
-    // storing the state inside a unique_ptr<StateType> and letting special member
-    // function generation do the rest.
-
     // To be used in public API methods where client can pass any component
     class AnyComponent final {
     public:
@@ -249,6 +226,8 @@ namespace ui {
         void tryUnmount();
 
         bool isMounted() const noexcept;
+
+        void reset();
 
     private:
         std::unique_ptr<Component> m_component;
