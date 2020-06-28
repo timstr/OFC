@@ -282,7 +282,7 @@ namespace ui {
             m_value = std::move(t);
         }
 
-        T& getOnceMutable() noexcept {
+        T& getOnceMut() noexcept {
             if (!m_previousValue.has_value()) {
                 m_previousValue.emplace(static_cast<const T&>(m_value));
                 registerForUpdate();
@@ -334,7 +334,7 @@ namespace ui {
 
 
         using PropertyBase::getOnce;
-        using PropertyBase::getOnceMutable;
+        using PropertyBase::getOnceMut;
         using PropertyBase::set;
 
     private:
@@ -463,9 +463,6 @@ namespace ui {
 
         }
 
-        // PropertyOrValue is copy constructible from another PropertyOrValue,
-        // in which case the new PropertyOrValue will either point to (but not
-        // own) the Property of the original, or hold a copy of its fixed value.
         PropertyOrValue(PropertyOrValue&& p) noexcept
             : m_targetProperty(std::exchange(p.m_targetProperty, nullptr))
             , m_ownProperty(std::move(p.m_ownProperty))
@@ -474,15 +471,23 @@ namespace ui {
             assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
         }
 
-        PropertyOrValue(const PropertyOrValue& p)
-            : m_targetProperty(p.m_targetProperty ? p.m_targetProperty : p.m_ownProperty.get())
-            , m_ownProperty(nullptr)
-            , m_fixedValue(p.m_fixedValue) {
-            assert(!hasProperty() || !hasFixedValue());
-            assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));
-        }
-
         ~PropertyOrValue() noexcept = default;
+
+        // Returns a copy of the PropertyOrValue, except that if the original owns
+        // its own derived property, the returned copy will point to that derived
+        // property instead of owning a copy.
+        PropertyOrValue view() const noexcept {
+            static_assert(std::is_copy_constructible_v<T>, "The stored type must be copy constructible to take a view");
+            if (m_fixedValue.has_value()) {
+                return static_cast<const T&>(*m_fixedValue);
+            } else if (m_targetProperty){
+                return static_cast<const PropertyBase<T>&>(*m_targetProperty);
+            } else if (m_ownProperty) {
+                return static_cast<const PropertyBase<T>&>(*m_ownProperty);
+            } else {
+                return PropertyOrValue{};
+            }
+        }
 
         PropertyOrValue& operator=(PropertyOrValue&& p) noexcept {
             if (&p == this) {

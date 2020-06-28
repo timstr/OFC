@@ -118,33 +118,33 @@ namespace ui::dom {
         return m_heights[column];
     }
 
-    void GridContainer::putCell(size_t column, size_t row, std::unique_ptr<Element> e){
-        assert(row >= 0 && row < m_rows);
-        assert(column >= 0 && column < m_cols);
-        auto prev = m_cells[row][column].child;
+    void GridContainer::putCell(size_t x, size_t y, std::unique_ptr<Element> e){
+        assert(x >= 0 && x < m_cols);
+        assert(y >= 0 && y < m_rows);
+        auto prev = m_cells[y][x].child;
         if (prev){
             release(prev);
         }
-        assert(!getCell(row, column));
+        assert(!getCell(x, y));
         auto eptr = e.get();
         if (e){
             adopt(std::move(e));
         }
-        m_cells[row][column].child = eptr;
+        m_cells[y][x].child = eptr;
     }
 
-    void GridContainer::clearCell(size_t column, size_t row){
-        putCell(row, column, nullptr);
+    void GridContainer::clearCell(size_t x, size_t y){
+        putCell(x, y, nullptr);
     }
 
-    Element* GridContainer::getCell(size_t column, size_t row){
-        return const_cast<Element*>(const_cast<const GridContainer*>(this)->getCell(row, column));
+    Element* GridContainer::getCell(size_t x, size_t y){
+        return const_cast<Element*>(const_cast<const GridContainer*>(this)->getCell(x, y));
     }
 
-    const Element* GridContainer::getCell(size_t column, size_t row) const {
-        assert(row >= 0 && row < m_rows);
-        assert(column >= 0 && column < m_cols);
-        return m_cells[row][column].child;
+    const Element* GridContainer::getCell(size_t x, size_t y) const {
+        assert(x >= 0 && x < m_cols);
+        assert(y >= 0 && y < m_rows);
+        return m_cells[y][x].child;
     }
 
     vec2 GridContainer::update(){

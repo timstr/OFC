@@ -121,11 +121,10 @@ namespace ui {
         friend class ContextProvider;
     };
 
-    // Component producing any number of children?
-    // Possibly representing a dom::Container??????
+    // Component producing any number of children and not directly
+    // representing any DOM elements.
     class InternalComponent : public Component, public ComponentParent {
     public:
-        // TODO: ?
 
     private:
         void* findContextProvider(const std::type_info&) noexcept override;
@@ -234,16 +233,5 @@ namespace ui {
 
         friend class InternalComponent;
     };
-
-
-    // TODO: Switch(x).Case(val1, anycomp).Case(val2, anycomp).Default(anycomp)
-    // (will require x's value type to support == and move-construction
-
-    // TODO: safe dereferencing of pointers/optionals
-    // This will be very similar to ForEach, but just needs an appropriate name
-    // e.g. WhenHasValue(Property<const T*>).then([](const T& t){ return SomeComponent(t); })
-    // or WhenHasValue(Property<std::optional<T>>).then([](const T& t){ return SomeComponent(t); })
-    // Naming ideas:
-    // - When, Whenever, Maybe, Possibly, Perhaps, IfDeferred, IfHasValue, IfFull, IfSomething
 
 } // namespace ui

@@ -16,7 +16,7 @@ namespace ui {
     protected:
         virtual AnyComponent render() const = 0;
 
-        StateType& stateMutable() const noexcept {
+        StateType& stateMut() const noexcept {
             assert(m_state != nullptr);
             return *m_state;
         }

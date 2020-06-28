@@ -12,7 +12,7 @@ namespace ui {
 
         }
 
-        ForEach& Do(std::function<AnyComponent(CRefOrValue<T>, const std::size_t&)> f) {
+        ForEach& Do(std::function<AnyComponent(CRefOrValue<T>, const Property<std::size_t>&)> f) {
             assert(f);
             m_fn = std::move(f);
             return *this;
@@ -20,7 +20,7 @@ namespace ui {
 
         ForEach& Do(std::function<AnyComponent(CRefOrValue<T>)> f) {
             assert(f);
-            m_fn = [f = std::move(f)](CRefOrValue<T> v, const std::size_t& /* index */){
+            m_fn = [f = std::move(f)](CRefOrValue<T> v, const Property<std::size_t>& /* index */){
                 return f(v);
             };
             return *this;
@@ -28,8 +28,8 @@ namespace ui {
 
     private:
         Observer<std::vector<T>> m_observer;
-        std::function<AnyComponent(CRefOrValue<T>, const std::size_t&)> m_fn;
-        std::vector<std::pair<AnyComponent, std::unique_ptr<std::size_t>>> m_components;
+        std::function<AnyComponent(CRefOrValue<T>, const Property<std::size_t>&)> m_fn;
+        std::vector<std::pair<AnyComponent, std::unique_ptr<Property<std::size_t>>>> m_components;
 
         void onMount(const dom::Element* beforeSibling) override final {
             assert(m_fn);
@@ -38,7 +38,7 @@ namespace ui {
             m_components.reserve(vals.size());
             auto i = std::size_t{0};
             for (const auto& v : vals) {
-                auto pi = std::make_unique<std::size_t>(i);
+                auto pi = std::make_unique<Property<std::size_t>>(i);
                 m_components.emplace_back(
                     m_fn(v, *pi),
                     std::move(pi)
@@ -72,7 +72,7 @@ namespace ui {
             auto i = std::size_t{0};
             for (const auto& e : edits.getEdits()) {
                 if (e.insertion()) {
-                    auto pi = std::make_unique<std::size_t>(i);
+                    auto pi = std::make_unique<Property<std::size_t>>(i);
                     auto nextComp = (it == m_components.end()) ? getNextComponent() : it->first.get();
                     auto nextElement = nextComp ? nextComp->getFirstElement() : nullptr;
                     it = m_components.emplace(
@@ -92,7 +92,7 @@ namespace ui {
                     assert(it != m_components.end());
                     assert(e.nothing());
                     assert(it != m_components.end());
-                    *it->second = i;
+                    it->second->set(i);
                     ++it;
                     ++i;
                 }

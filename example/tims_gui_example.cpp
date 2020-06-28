@@ -31,21 +31,28 @@ public:
 
     }
 
-    PulldownMenu& onChange(std::function<void(const ui::String&)> f) {
+    PulldownMenu& onChange(std::function<void(const ui::String&, std::size_t)> f) {
         m_onChange = std::move(f);
+        return *this;
+    }
+
+    PulldownMenu& onChange(std::function<void(const ui::String&)> f) {
+        m_onChange = [f = std::move(f)](const ui::String& s, std::size_t /* index */){
+            f(s);
+        };
         return *this;
     }
 
 private:
     ui::PropertyOrValue<std::vector<ui::String>> m_items;
-    std::function<void(const ui::String&)> m_onChange;
+    std::function<void(const ui::String&, std::size_t)> m_onChange;
 
     ui::AnyComponent render() const override {
         using namespace ui;
 
         const auto toggleExpanded = [this]{
             const auto e = state().expanded.getOnce();
-            stateMutable().expanded.set(!e);
+            stateMut().expanded.set(!e);
         };
 
         const auto indexItems = [](std::size_t i, const ui::ListOfEdits<ui::String>& e) {
@@ -53,13 +60,13 @@ private:
             return e.newValue()[i];
         };
 
-        const auto makeItem = [this](const String& str, const std::size_t& i) -> AnyComponent {
-            return Button(str).onClick([this, str, i](){
+        const auto makeItem = [this](const String& str, const Property<std::size_t>& idx) -> AnyComponent {
+            return Button(str).onClick([this, str, &idx](){
                 if (m_onChange){
-                    m_onChange(str);
+                    m_onChange(str, idx.getOnce());
                 }
-                stateMutable().currentIndex.set(i);
-                stateMutable().expanded.set(false);
+                stateMut().currentIndex.set(idx.getOnce());
+                stateMut().expanded.set(false);
             });
         };
 
@@ -67,11 +74,11 @@ private:
 
         return VerticalList(List(
             Button(
-                combine(s.currentIndex, m_items).map(indexItems)
+                combine(s.currentIndex, m_items.view()).map(indexItems)
             ).onClick(toggleExpanded),
-            If(s.expanded).then(
-                FreeContainer(VerticalList(
-                    ForEach(m_items).Do(makeItem)
+            If(s.expanded)
+                .then(FreeContainer(VerticalList(
+                    ForEach(m_items.view()).Do(makeItem)
                 ))
             )
         ));
@@ -89,33 +96,48 @@ int main(){
 
     using namespace ui;
 
-    AnyComponent comp = UseFont(&getFont()).with(
-        PulldownMenu(std::vector<String>{"One", "Two", "Three", "Four", "Five"})
-            .onChange([](const ui::String& s){ std::cout << "You chose " << s.toAnsiString() << "\n"; })
-    );
+    auto num = Property<int>{0};
 
-    /*
-    auto condition1 = Property<bool>{false};
-    auto condition2 = Property<bool>{false};
+    /*AnyComponent comp = UseFont(&getFont()).with(List(
+        PulldownMenu(std::vector<String>{"Zero", "One", "Two", "Three", "Four", "Five"})
+            .onChange([&](const ui::String& s, std::size_t i){
+                std::cout << "You chose " << s.toAnsiString() << "\n";
+                num.set(static_cast<int>(i));
+            }),
+        " ",
+        Switch(num)
+            .Case(0, "Zero")
+            .Case(1, "One")
+            .Case(2, "Two")
+            .Default("Something else, idk"),
+        ". ",
+        If(num.map([](int i){ return i % 2 == 0; }))
+            .then("It is even.")
+            .otherwise("It is odd.")
+    ));*/
 
-    auto TrueFalseButton = [](Property<bool>& p) -> AnyComponent {
-        return Button(p.map([](bool b) -> String { return b ? "true" : "false"; }))
-            .onClick([&]{ p.set(!p.getOnce()); });
-    };
+    auto items = Property{std::vector{
+        "aaa", "bbb", "ccc", "ddd", "eee",
+        "fff", "ggg", "hhh", "iii", "jjj",
+        "kkk", "lll", "mmm", "nnn", "ooo",
+        "ppp", "qqq", "rrr", "sss", "ttt"
+    }};
 
     AnyComponent comp = UseFont(&getFont()).with(List(
-        TrueFalseButton(condition1),
-        TrueFalseButton(condition2),
-        If(condition1)
-            .then("then1")
-            .otherwise(List(
-                "otherwise1 ",
-                If(condition2)
-                    .then("then2")
-                    .otherwise("otherwise2")
-            ))
+        WrapGrid(TopToBottom, 5, RightToLeft).Containing(
+            ForEach(items).Do([](const char* s, const Property<std::size_t>& idx) -> AnyComponent {
+                return If(idx.map([](std::size_t i){ return i % 2 == 0; }))
+                    .then(s)
+                    .otherwise(Button(s));
+            })
+        ),
+        Button("Remove one").onClick([&] {
+            auto& v = items.getOnceMut();
+            if (v.size() > 0){
+                v.erase(v.begin());
+            }
+        })
     ));
-    */
 
     /*
     auto vec = Property{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};
@@ -159,7 +181,7 @@ int main(){
     );
     */
 
-    auto root = Root::create<dom::FlowContainer>(std::move(comp));
+    auto root = Root::create<FlowContainer>(std::move(comp));
 
     /*
     auto condition = Property<bool>{true};

@@ -561,6 +561,7 @@ namespace ui {
         assert(e->getParentWindow() == this);
         assert(e->m_previousWindow == nullptr);
         assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
+        assert(!isSoftlyRemoved(e));
         e->m_previousWindow = this;
         m_removalQueue.push_back(e);
         cancelUpdate(e);
@@ -599,15 +600,16 @@ namespace ui {
     void Window::undoSoftRemove(dom::Element* e){
         assert(e->getParentWindow() == nullptr);
         assert(e->m_previousWindow == this || e->m_previousWindow == nullptr);
+        assert(isSoftlyRemoved(e));
         if (e->m_previousWindow == this){
             assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 1);
             e->m_previousWindow = nullptr;
-            m_removalQueue.erase(find(
-                begin(m_removalQueue),
-                end(m_removalQueue),
-                e
-            ), end(m_removalQueue));
+            auto it = find(begin(m_removalQueue), end(m_removalQueue), e);
+            assert(it != end(m_removalQueue));
+            m_removalQueue.erase(it);
+            assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
         }
+        e->m_previousWindow = nullptr;
     }
 
     bool Window::isSoftlyRemoved(const dom::Element* e) const {
@@ -683,11 +685,10 @@ namespace ui {
         if (e->m_previousWindow == this){
             assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 1);
             e->m_previousWindow = nullptr;
-            m_removalQueue.erase(find(
-                begin(m_removalQueue),
-                end(m_removalQueue),
-                e
-            ), end(m_removalQueue));
+            auto it = find(begin(m_removalQueue), end(m_removalQueue), e);
+            assert(it != end(m_removalQueue));
+            m_removalQueue.erase(it);
+            assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
         }
         e->m_previousWindow = nullptr;
 
