@@ -1,17 +1,21 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
+
 #include <stdint.h>
+#include <array>
 
 namespace ui {
 
-    // TODO: this is a stupid waste of memory.
-    // HSL and RGB spaces are mutually exclusive and can be put into a just three floats
-    // with a flag to distinguish which mode the color is using. Calling methods like
-    // setHue or setRed will convert the color space.
-    // Doing this instead of forcing an internal RGB representation can preserve the
-    // values the user expects (i.e. hue is degenerate for black/white in RGB space)
-    // for the cost of only a single flag member variable and some conditional checks
+    /**
+     * Color is a point in either the RGB or the HSL color space, plus an alpha channel.
+     * The object is in one of the two spaces at any given time, specifically the space
+     * through which it was most recently modified. For example, calling setHue ensures
+     * the Color object is thereafter in the HSL space, converting from RGB if necessary.
+     * Calling any getters or other const-qualified functions does not modify the object.
+     * For example, calling getHue on an object that is in RGB space performs the same
+     * conversion computations but leaves the object in RGB space.
+     */
     class Color {
     public:
         Color();
@@ -48,10 +52,23 @@ namespace ui {
         uint32_t toInt() const;
 
     private:
-        float r, g, b, h, s, l, a;
+        std::array<float, 3> m_values;
+        float m_alpha;
 
-        void updateRGBFromHSL();
-        void updateHSLFromRGB();
+        enum class Space : std::uint8_t {
+            RGB,
+            HSL
+        };
+
+        Space m_space;
+        
+        Color(Space space, float v0, float v1, float v2, float alpha);
+
+        void makeRGB() noexcept;
+        void makeHSL() noexcept;
+
+        std::array<float, 3> asRGB() const noexcept;
+        std::array<float, 3> asHSL() const noexcept;
     };
 
     Color interpolate(const Color& c0, const Color& c1, float t) noexcept;
