@@ -64,7 +64,7 @@ namespace ui {
                     m_init = true;
                     return m_observer;
                 } else if (auto pv = static_cast<Derived*>(this)->findContext<ContextProviderType>()){
-                    m_observer.assign(*pv);
+                    m_observer.assign(pv->view());
                     m_init = true;
                     return m_observer;
                 } else {

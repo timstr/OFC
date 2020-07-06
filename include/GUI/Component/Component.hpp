@@ -141,14 +141,15 @@ namespace ui {
             static_assert(std::is_base_of_v<dom::Element, ElementType>, "ElementType must derive from dom::Element");
         }
 
-    protected:
         ElementType* element() noexcept {
             return m_element;
         }
+
         const ElementType* element() const noexcept {
             return m_element;
         }
 
+    protected:
         virtual std::unique_ptr<ElementType> createElement() = 0;
 
     private:

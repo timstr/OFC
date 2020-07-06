@@ -724,17 +724,20 @@ namespace ui {
             assert(!m_propertyOrValue.hasOwnProperty());
         }
 
-        // NOTE: if the PropertyOrValue that is passed owns a property, this Observer does NOT
-        // take ownership of that property, and instead stores a reference to it.
-        // This behaviour is needed for ContextProvider and ContextConsumer to work as expected.
-        void assign(const PropertyOrValue<T>& pv) {
+        void assign(PropertyOrValue<T>&& pv) {
             assert(pv.hasValue());
-            if (auto p = pv.getProperty()) {
-                assign(*p);
-            } else {
-                assert(pv.hasFixedValue());
-                assign(pv.getValueOnce());
-            }
+            const auto diff = [&] {
+                if (m_propertyOrValue.hasValue()) {
+                    return Difference<T>::compute(
+                        m_propertyOrValue.getValueOnce(),
+                        static_cast<const T&>(pv.getValueOnce())
+                    );
+                } else {
+                    return Difference<T>::computeFirst(static_cast<const T&>(pv.getValueOnce()));
+                }
+            }();
+            m_propertyOrValue = std::move(pv);
+            update(diff);
         }
 
         bool hasValue() const noexcept {

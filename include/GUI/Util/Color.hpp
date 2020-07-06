@@ -5,6 +5,13 @@
 
 namespace ui {
 
+    // TODO: this is a stupid waste of memory.
+    // HSL and RGB spaces are mutually exclusive and can be put into a just three floats
+    // with a flag to distinguish which mode the color is using. Calling methods like
+    // setHue or setRed will convert the color space.
+    // Doing this instead of forcing an internal RGB representation can preserve the
+    // values the user expects (i.e. hue is degenerate for black/white in RGB space)
+    // for the cost of only a single flag member variable and some conditional checks
     class Color {
     public:
         Color();
