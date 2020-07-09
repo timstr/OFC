@@ -55,7 +55,11 @@ namespace ui {
         r += m;
         g += m;
         b += m;
-        return {r, g, b};
+        return {
+            std::clamp(r, 0.0f, 1.0f),
+            std::clamp(g, 0.0f, 1.0f),
+            std::clamp(b, 0.0f, 1.0f)
+        };
     }
 
     std::array<float, 3> convertRGBToHSL(const std::array<float, 3>& values){
@@ -104,7 +108,7 @@ namespace ui {
             return m_values;
         }
         assert(m_space == Space::HSL);
-        return convertRGBToHSL(m_values);
+        return convertHSLToRGB(m_values);
     }
 
     std::array<float, 3> Color::asHSL() const noexcept {
@@ -112,7 +116,7 @@ namespace ui {
             return m_values;
         }
         assert(m_space == Space::RGB);
-        return convertHSLToRGB(m_values);
+        return convertRGBToHSL(m_values);
     }
 
     Color::Color()
@@ -231,7 +235,7 @@ namespace ui {
 
     void Color::setHue(float v){
         makeHSL();
-        m_values[0] = std::clamp(v, 0.0f, 1.0f);
+        m_values[0] = v - std::floor(v); // hue is modular
     }
 
     void Color::setSaturation(float v){
@@ -255,6 +259,16 @@ namespace ui {
             (static_cast<uint8_t>(std::floor(255.0f * g)) << 16) &
             (static_cast<uint8_t>(std::floor(255.0f * b)) << 8) &
             static_cast<uint8_t>(std::floor(255.0f * m_alpha));
+    }
+
+    bool operator==(const Color& a, const Color& b) noexcept {
+        return (a.m_values == b.m_values) &&
+            (a.m_alpha == b.m_alpha) &&
+            (a.m_space == b.m_space);
+
+    }
+    bool operator!=(const Color& a, const Color& b) noexcept {
+        return !(a == b);
     }
 
     Color interpolate(const Color& c0, const Color& c1, float t) noexcept {

@@ -563,6 +563,21 @@ namespace ui {
             m_fixedValue.reset();
         }
 
+        template<typename F>
+        auto map(F&& f) const {
+            using R = std::invoke_result_t<std::decay_t<F>, DiffArgType<T>>;
+
+            if (hasFixedValue()) {
+                return PropertyOrValue<R>{f(getValueOnce())};
+            } else if (hasProperty()){
+                auto p = getProperty();
+                assert(p);
+                return PropertyOrValue<R>{p->map(std::forward<F>(f))};
+            } else {
+                return PropertyOrValue<R>{};
+            }
+        }
+
     private:
         const PropertyBase<T>* m_targetProperty;
         std::unique_ptr<PropertyBase<T>> m_ownProperty;
@@ -737,6 +752,12 @@ namespace ui {
                 }
             }();
             m_propertyOrValue = std::move(pv);
+            
+            if (auto p = m_propertyOrValue.getProperty()){
+                auto& v = p->m_observers;
+                assert(std::count(v.begin(), v.end(), this) == 0);
+                v.push_back(this);
+            }
             update(diff);
         }
 
@@ -746,6 +767,10 @@ namespace ui {
 
         bool hasFixedValue() const noexcept {
             return m_propertyOrValue.hasFixedValue();
+        }
+
+        const PropertyOrValue<T>& getPropertyOrValue() const noexcept {
+            return m_propertyOrValue;
         }
 
         const PropertyBase<T>* getProperty() const noexcept {

@@ -31,6 +31,7 @@ set(tims-gui_headers
     include/GUI/Component/ForEach.hpp
     include/GUI/Component/If.hpp
     include/GUI/Component/List.hpp
+    include/GUI/Component/MixedComponent.hpp
     include/GUI/Component/Property.hpp
     include/GUI/Component/Property.tpp
     include/GUI/Component/PureComponent.hpp

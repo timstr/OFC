@@ -92,299 +92,84 @@ ui::String make_string(const T& t) {
     return std::to_string(t);
 }
 
-// BEGIN TESTING
-#include <GUI/DOM/Control.hpp>
-#include <GUI/DOM/BoxElement.hpp>
-
-namespace ui {
-
-    template<typename Derived>
-    class Clickable {
-    public:
-        using ElementBase = ui::dom::Control;
-
-        template<typename Base>
-        class ElementMixin : public Base {
-        public:
-            ElementMixin(Derived& component)
-                : Base(component)
-                , m_onLeftClick(static_cast<Clickable<Derived>&>(component).m_onLeftClick)
-                , m_onLeftRelease(static_cast<Clickable<Derived>&>(component).m_onLeftRelease) {
-
-                static_assert(std::is_base_of_v<dom::Control, Base>, "Base class must derive from ui::dom::Control");
-            }
-
-            bool onLeftClick(int i) override final {
-                if (m_onLeftClick) {
-                    return m_onLeftClick(i);
-                }
-                return false;
-            }
-
-            void onLeftRelease() override final {
-                if (m_onLeftRelease) {
-                    m_onLeftRelease();
-                }
-            }
-
-            std::function<bool(int)>& m_onLeftClick;
-            std::function<void()>& m_onLeftRelease;
-        };
-
-        Derived& onLeftClick(std::function<bool(int)> f) {
-            m_onLeftClick = std::move(f);
-            return static_cast<Derived&>(*this);
-        }
-        Derived& onLeftRelease(std::function<void()> f) {
-            m_onLeftRelease = std::move(f);
-            return static_cast<Derived&>(*this);
-        }
-
-        // TODO: middle/right
-
-    private:
-        std::function<bool(int)> m_onLeftClick;
-        std::function<void()> m_onLeftRelease;
-    };
-
-    template<typename Derived>
-    class Scrollable {
-        // TODO
-    };
-
-    // TODO: Hoverable
-    // TODO: Keyboard something something?
-
-    template<typename Derived>
-    class Draggable {
-        // TODO
-    };
-
-    template<typename Derived>
-    class Boxy {
-    public:
-        // TODO: do something about all these darn CRTP down-casts
-        Boxy()
-            : m_backgroundColorObserver(
-                static_cast<Derived*>(this),
-                static_cast<void (Derived::*)(const Color&)>(&Boxy::onUpdateBackgroundColor)
-            )
-            , m_borderColorObserver(
-                static_cast<Derived*>(this),
-                static_cast<void (Derived::*)(const Color&)>(&Boxy::onUpdateBorderColor)
-            )
-            , m_borderThicknessObserver(
-                static_cast<Derived*>(this),
-                static_cast<void (Derived::*)(float)>(&Boxy::onUpdateBorderThickness)
-            )
-            , m_borderRadiusObserver(
-                static_cast<Derived*>(this),
-                static_cast<void (Derived::*)(float)>(&Boxy::onUpdateBorderRadius)
-            ) {
-
-        }
-
-        using ElementBase = dom::BoxElement;
-
-        template<typename Base>
-        class ElementMixin : public Base {
-        public:
-            ElementMixin(Derived& component)
-                : Base(component) {
-                // HACK
-                // TESTING
-                setSize({100.0, 100.0}, true);
-
-
-                setBackgroundColor(component.m_backgroundColorObserver.getValueOnce());
-                setBorderColor(component.m_borderColorObserver.getValueOnce());
-                setBorderThickness(component.m_borderThicknessObserver.getValueOnce());
-                setBorderRadius(component.m_borderRadiusObserver.getValueOnce());
-            }
-        };
-
-        Derived& backgroundColor(PropertyOrValue<Color> pv) {
-            m_backgroundColorObserver.assign(std::move(pv));
-            return static_cast<Derived&>(*this);
-        }
-
-        Derived& borderColor(PropertyOrValue<Color> pv) {
-            m_borderColorObserver.assign(std::move(pv));
-            return static_cast<Derived&>(*this);
-        }
-
-        Derived& borderThickness(PropertyOrValue<float> pv) {
-            m_borderThicknessObserver.assign(std::move(pv));
-            return static_cast<Derived&>(*this);
-        }
-
-        Derived& borderRadius(PropertyOrValue<float> pv) {
-            m_borderRadiusObserver.assign(std::move(pv));
-            return static_cast<Derived&>(*this);
-        }
-
-
-    private:
-        Observer<Color> m_backgroundColorObserver;
-        Observer<Color> m_borderColorObserver;
-        Observer<float> m_borderThicknessObserver;
-        Observer<float> m_borderRadiusObserver;
-
-        void onUpdateBackgroundColor(const Color& c) {
-            auto e = static_cast<Derived*>(this)->element();
-            assert(e);
-            e->setBackgroundColor(c);
-        }
-
-        void onUpdateBorderColor(const Color& c) {
-            auto e = static_cast<Derived*>(this)->element();
-            assert(e);
-            e->setBorderColor(c);
-        }
-
-        void onUpdateBorderThickness(float v) {
-            auto e = static_cast<Derived*>(this)->element();
-            assert(e);
-            e->setBorderThickness(v);
-        }
-
-        void onUpdateBorderRadius(float v) {
-            auto e = static_cast<Derived*>(this)->element();
-            assert(e);
-            e->setBorderRadius(v);
-        }
-    };
-
-
-    // Adapted from https://stackoverflow.com/a/57528226/5023438
-    template<typename... Ts>
-    struct RemoveDuplicatesImpl {
-        // Type is deliberately not defined.
-        // This base case allows for zero types to make the syntax easier on the
-        // eyes, but using this template with zero arguments and attempting
-        // to access Type will result in a substitution failure
-    };
-
-    template<typename T, typename... Ts>
-    struct RemoveDuplicatesImpl<T, Ts...> {
-        using Type = T;
-    };
-
-    template<typename... Ts, typename U, typename... Us>
-    struct RemoveDuplicatesImpl<std::tuple<Ts...>, U, Us...>
-        : std::conditional_t<
-            (std::is_same_v<U, Ts> || ...), // Does U match anything in TS?
-            RemoveDuplicatesImpl<std::tuple<Ts...>, Us...>, // if yes, recurse but don't add the type to the tuple
-            RemoveDuplicatesImpl<std::tuple<Ts..., U>, Us...> // if no, recurse and add the type to the tuple
-        > {
-
-    };
-
-    template<typename... Ts>
-    using RemoveDuplicates = typename RemoveDuplicatesImpl<std::tuple<>, Ts...>::Type;
-
-    template<typename... Bases>
-    class InheritHorizontal : public Bases... {
-
-    };
-
-    template<typename T>
-    class InheritHorizontalTuple;
-
-    template<typename... Bases>
-    class InheritHorizontalTuple<std::tuple<Bases...>> : public InheritHorizontal<Bases...> {
-
-    };
-
-    template<typename... ElementBases>
-    class CommonElementBase
-        : public InheritHorizontalTuple<RemoveDuplicates<ElementBases...>> {
-    public:
-        template<typename Derived>
-        CommonElementBase(Derived& /* unused */) {
-            static_assert(
-                (std::is_base_of_v<dom::Element, ElementBases> && ...),
-                "All element bases must derive from ui::dom::Element"
-            );
-        }
-    };
-
-    template<typename BaseBase, template<typename> typename... Mixins>
-    class InheritVertical; // Deliberately undefined
-
-    template<typename BaseBase>
-    class InheritVertical<BaseBase> : public BaseBase {
-    public:
-        template<typename... Args>
-        InheritVertical(Args&&... args)
-            : BaseBase(std::forward<Args>(args)...) {
-            
-        }
-    };
-
-    template<typename BaseBase, template<typename> typename Mixin, template<typename> typename... Rest>
-    class InheritVertical<BaseBase, Mixin, Rest...>
-        : public Mixin<InheritVertical<BaseBase, Rest...>> {
-    public:
-        template<typename... Args>
-        InheritVertical(Args&&... args)
-            : Mixin<InheritVertical<BaseBase, Rest...>>(std::forward<Args>(args)...) {
-            
-        }
-    };
-
-    template<typename Derived, template<typename> typename... Features>
-    using MixedElement = InheritVertical<
-        CommonElementBase<typename Features<Derived>::ElementBase...>,
-        Features<Derived>::template ElementMixin...
-    >;
-
-    // TODO: add support for containers using existing container components
-    template<template<typename> typename... Features>
-    class MixedComponent
-        : public SimpleComponent<
-            MixedElement<MixedComponent<Features...>, Features...>
-        >
-        , public Features<MixedComponent<Features...>>... {
-
-    public:
-        using ElementType = MixedElement<MixedComponent<Features...>, Features...>;
-
-        // NOTE: various named-parameter-idiom methods are inherited from CRTP 'Features' base classes
-
-    private:
-        std::unique_ptr<ElementType> createElement() override final {
-            static_assert(
-                std::is_constructible_v<ElementType, MixedComponent<Features...>&>,
-                "ElementType must be constructible from a reference to the augmented component type"
-            );
-            return std::make_unique<ElementType>(*this);
-        }
-    };
-
-} // namespace ui
-// END TESTING
-
-
 int main(){
 
     using namespace ui;
 
+    auto randEng = std::default_random_engine{std::random_device{}()};
+    auto dist = std::uniform_real_distribution<float>{0.0f, 1.0f};
+
+    using MyComponent = MixedComponent<Clickable, Boxy, Resizable, Scrollable>;
+    using Action = MyComponent::Action;
+
+    auto bgColor = Property<Color>{0xFFFF00FF};
+
+    auto inFocus = Property<bool>{false};
+
+    auto pos = Property{vec2{0.0f, 0.0f}};
+
     AnyComponent comp = UseFont(&getFont()).with(List(
         "Before  ",
-        MixedComponent<Clickable, Boxy>{}
-            .onLeftClick([](int i){
-                std::cout << "clicked " << i << " time(s)\n";
+        MyComponent{}
+            .width(100.0f)
+            .height(100.0f)
+            .onLeftClick([&](int i, Action action){
+                auto c = bgColor.getOnce();
+                c.setHue(dist(randEng));
+                bgColor.set(c);
                 return true;
-            }).
-            onLeftRelease([] {
-                std::cout << "released\n";
             })
-            .backgroundColor(0xFFFF00FF)
+            .onScroll([&](vec2 delta) {
+                auto c = bgColor.getOnce();
+                c.setSaturation(c.saturation() + delta.x * 0.05f);
+                c.setLightness(c.lightness() + delta.y * 0.05f);
+                bgColor.set(c);
+                return true;
+            })
+            .backgroundColor(bgColor)
             .borderColor(0xFF)
             .borderThickness(5.0f)
             .borderRadius(10.0f),
-        "  After"
+        "  After",
+        MixedComponent<Focusable, Boxy, Resizable, KeyPressable>{}
+            .onGainFocus([&](){
+                inFocus.set(true);
+            })
+            .onLoseFocus([&](){
+                inFocus.set(false);
+            })
+            .size(vec2{100.0f, 20.0f})
+            .backgroundColor(inFocus.map([](bool b) -> Color {
+                return b ? 0xFF0000FF : 0x0000FFFF;
+            })),
+        FreeContainer(
+            MixedComponent<Clickable, Boxy, Resizable, Positionable, Draggable, KeyPressable>{}
+                .backgroundColor(0xFF0000FF)
+                .borderColor(0x440000FF)
+                .borderThickness(2.0f)
+                .borderRadius(10.0f)
+                .width(20.0f)
+                .height(20.0f)
+                .position(pos)
+                .onKeyDown([&](Key k){
+                    if (k == Key::Return){
+                        pos.set({
+                            dist(randEng) * 100.0f,
+                            dist(randEng) * 100.0f
+                        });
+                        return true;
+                    }
+                    return false;
+                })
+                .onLeftClick([](int, auto action) {
+                    action.startDrag();
+                    return true;
+                })
+                .onLeftRelease([](auto action) {
+                    action.stopDrag();
+                    return true;
+                })
+        )
     ));
     
     /*

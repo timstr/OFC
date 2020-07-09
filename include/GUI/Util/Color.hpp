@@ -69,7 +69,12 @@ namespace ui {
 
         std::array<float, 3> asRGB() const noexcept;
         std::array<float, 3> asHSL() const noexcept;
+        
+        friend bool operator==(const Color& a, const Color& b) noexcept;
+        friend bool operator!=(const Color& a, const Color& b) noexcept;
     };
+
+    
 
     Color interpolate(const Color& c0, const Color& c1, float t) noexcept;
 

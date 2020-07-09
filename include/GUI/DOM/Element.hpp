@@ -141,6 +141,17 @@ namespace ui::dom {
         Control* getParentControl();
         const Control* getParentControl() const;
 
+        virtual Container* toContainer();
+        const Container* toContainer() const;
+        virtual Control* toControl();
+        const Control* toControl() const;
+        virtual Draggable* toDraggable();
+        const Draggable* toDraggable() const;
+        virtual Text* toText();
+        const Text* toText() const;
+        virtual TextEntry* toTextEntry();
+        const TextEntry* toTextEntry() const;
+
         /*
         If an element's size is changed internally (via setSize() or if it is a container
         and just changed size due to modified contents):
@@ -203,17 +214,6 @@ namespace ui::dom {
         Container* m_parent;
 
         Window* m_previousWindow;
-
-        virtual Container* toContainer();
-        const Container* toContainer() const;
-        virtual Control* toControl();
-        const Control* toControl() const;
-        virtual Draggable* toDraggable();
-        const Draggable* toDraggable() const;
-        virtual Text* toText();
-        const Text* toText() const;
-        virtual TextEntry* toTextEntry();
-        const TextEntry* toTextEntry() const;
 
         virtual Window* getWindow() const;
 

@@ -210,8 +210,8 @@ namespace ui {
                     } else if (event.mouseWheelScroll.wheel == sf::Mouse::Wheel::VerticalWheel){
                         delta.y = event.mouseWheelScroll.delta;
                     }
-                    const auto x = static_cast<float>(event.mouseButton.x);
-                    const auto y = static_cast<float>(event.mouseButton.y);
+                    const auto x = static_cast<float>(event.mouseWheelScroll.x);
+                    const auto y = static_cast<float>(event.mouseWheelScroll.y);
                     handleScroll({x, y}, delta);
                     break;
                 }

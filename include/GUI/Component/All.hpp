@@ -7,6 +7,7 @@
 #include <GUI/Component/ForEach.hpp>
 #include <GUI/Component/If.hpp>
 #include <GUI/Component/List.hpp>
+#include <GUI/Component/MixedComponent.hpp>
 #include <GUI/Component/PureComponent.hpp>
 #include <GUI/Component/Root.hpp>
 #include <GUI/Component/StatefulComponent.hpp>
