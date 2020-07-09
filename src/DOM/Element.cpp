@@ -232,10 +232,8 @@ namespace ui::dom {
     
     bool Element::hit(vec2 p) const {
         return
-            (p.x >= m_position.x) &&
-            (p.x < m_position.x + m_size.x) &&
-            (p.y >= m_position.y) &&
-            (p.y < m_position.y + m_size.y);
+            (p.x >= 0.0f && p.x < m_size.x) && 
+            (p.y >= 0.0f && p.y < m_size.y);
     }
 
     bool Element::visible() const noexcept {

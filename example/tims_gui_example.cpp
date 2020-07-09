@@ -143,13 +143,17 @@ int main(){
                 return b ? 0xFF0000FF : 0x0000FFFF;
             })),
         FreeContainer(
-            MixedComponent<Clickable, Boxy, Resizable, Positionable, Draggable, KeyPressable>{}
+            MixedComponent<Clickable, Boxy, Resizable, Positionable, Draggable, KeyPressable, HitTestable>{}
                 .backgroundColor(0xFF0000FF)
                 .borderColor(0x440000FF)
                 .borderThickness(2.0f)
                 .borderRadius(10.0f)
                 .width(20.0f)
                 .height(20.0f)
+                .hitTest([](vec2 p) {
+                    const auto d = p - vec2{10.0f, 10.0f};
+                    return (d.x * d.x + d.y * d.y <= 100.0f);
+                })
                 .position(pos)
                 .onKeyDown([&](Key k){
                     if (k == Key::Return){

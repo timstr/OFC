@@ -362,7 +362,7 @@ namespace ui::dom {
         }
         for (auto it = m_children.rbegin(), end = m_children.rend(); it != end; ++it){
             auto& c = it->child;
-            if (auto e = c->findElementAt(p - pos(), exclude)){
+            if (auto e = c->findElementAt(p - c->pos(), exclude)){
                 return e;
             }
         }

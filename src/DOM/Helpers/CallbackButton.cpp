@@ -64,7 +64,7 @@ namespace ui::dom {
     }
 
     void CallbackButton::onLeftRelease(){
-        if (hit(pos() + localMousePos())){
+        if (hit(localMousePos())){
             m_state = State::Hover;
             fadeColor(backgroundColor(), m_hoverColor);
         } else {

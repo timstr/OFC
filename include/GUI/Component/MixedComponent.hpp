@@ -9,34 +9,37 @@ namespace ui {
     //------------------------
     // Tag classes used to represent mixable element traits
 
-    class Boxy;
+    class Boxy {};
     // Properties: backgroundColor, borderColor, borderThickness, borderRadius
 
-    class Resizable;
+    class Resizable {};
     // Properties: width,height,minWidth,minHeight,maxWidth,maxHeight,widthForce,heightForce
 
-    class Positionable;
+    class Positionable {};
     // Properties: left, top
 
-    class Scrollable;
+    class HitTestable {};
+    // Handlers: hitTest
+
+    class Scrollable {};
     // Handlers: onScroll
 
-    class Hoverable;
-    // Handlers: onHover, onHoverWith
+    class Hoverable {};
+    // Handlers: onHover, onHoverWith<T>, onDrop<T>
 
-    class Clickable;
+    class Clickable {};
     // Handlers: onLeftClick, onLeftRelease, onMiddleClick, onMiddleRelease, onRightClick, onRightRelease
 
-    class KeyPressable;
+    class KeyPressable {};
     // Handlers: onKeyDown, onKeyUp
 
-    class Focusable;
+    class Focusable {};
     // Handlers: onGainFocus, onLoseFocus
     // Actions: grabFocus
 
-    class Draggable;
+    class Draggable {};
     // Handlers: onDrag
-    // Actions: startDrag, stopDrag, drop
+    // Actions: startDrag, stopDrag, drop<T>
 
     namespace mix {
         //------------------------
@@ -431,6 +434,49 @@ namespace ui {
                 }
             }
 
+        };
+
+        //------------------------
+        // Specializations for HitTestable
+
+        template<>
+        struct ElementBase<HitTestable> {
+            using Type = dom::Element;
+        };
+
+        template<typename... AllTags>
+        class ComponentBase<HitTestable, AllTags...> : private ComponentBaseHelper<HitTestable, AllTags...> {
+        public:
+            using Action = MixedAction<AllTags...>;
+        
+            decltype(auto) hitTest(std::function<bool(vec2)> f) {
+                m_hitTest = std::move(f);
+                return self();
+            }
+
+        private:
+            std::function<bool(vec2)> m_hitTest;
+
+            friend ElementMixin;
+        };
+
+        template<typename BaseElement, typename... AllTags>
+        class ElementMixin<HitTestable, BaseElement, AllTags...> : public BaseElement {
+        public:
+            using ComponentType = MixedComponent<AllTags...>;
+
+            ElementMixin(ComponentType& component)
+                : BaseElement(component) {
+                static_assert(std::is_base_of_v<dom::Element, BaseElement>, "Base class must derive from ui::dom::Control");
+            }
+
+            bool hit(vec2 p) const override final {
+                auto& f = component().m_hitTest;
+                if (f) {
+                    return f(p);
+                }
+                return Element::hit(p);
+            }
         };
 
         //------------------------
@@ -1002,7 +1048,7 @@ namespace ui {
                 );
             }
 
-            MixedComponent<Tags...>& component() noexcept {
+            MixedComponent<Tags...>& component() const noexcept {
                 return m_component;
             }
 
