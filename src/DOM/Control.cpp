@@ -40,16 +40,12 @@ namespace ui::dom {
         return false;
     }
 
-    void Control::onMouseOver(){
+    void Control::onMouseEnter(Draggable*){
 
     }
 
-    void Control::onMouseOut(){
+    void Control::onMouseLeave(Draggable*){
 
-    }
-
-    bool Control::onHover(Draggable*){
-        return false;
     }
 
     bool Control::onDrop(Draggable*){

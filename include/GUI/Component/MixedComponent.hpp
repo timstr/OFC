@@ -3,6 +3,11 @@
 #include <GUI/DOM/Control.hpp>
 #include <GUI/DOM/BoxElement.hpp>
 #include <GUI/DOM/Draggable.hpp>
+#include <GUI/Component/Component.hpp>
+#include <GUI/Component/Property.hpp>
+
+#include <GUI/Util/TemplateMetaProgramming.hpp>
+#include <GUI/Util/UniqueAny.hpp>
 
 namespace ui {
     
@@ -21,11 +26,15 @@ namespace ui {
     class HitTestable {};
     // Handlers: hitTest
 
+    class Draggable {};
+    // Handlers: onDrag
+    // Actions: startDrag, startDragWith<T>, stopDrag, drop<T>
+
     class Scrollable {};
     // Handlers: onScroll
 
     class Hoverable {};
-    // Handlers: onHover, onHoverWith<T>, onDrop<T>
+    // Handlers: onMouseEnter, onMousEnterWith<T>, onMouseLeave, onMouseLeaveWith<T>, onDrop<T>, 
 
     class Clickable {};
     // Handlers: onLeftClick, onLeftRelease, onMiddleClick, onMiddleRelease, onRightClick, onRightRelease
@@ -36,10 +45,6 @@ namespace ui {
     class Focusable {};
     // Handlers: onGainFocus, onLoseFocus
     // Actions: grabFocus
-
-    class Draggable {};
-    // Handlers: onDrag
-    // Actions: startDrag, stopDrag, drop<T>
 
     namespace mix {
         //------------------------
@@ -433,7 +438,6 @@ namespace ui {
                     (this->*f)(o.getValueOnce());
                 }
             }
-
         };
 
         //------------------------
@@ -476,6 +480,114 @@ namespace ui {
                     return f(p);
                 }
                 return Element::hit(p);
+            }
+        };
+
+        //------------------------
+        // Specializations for Draggable
+
+        template<typename DerivedAction>
+        class ActionBase<Draggable, DerivedAction> {
+        public:
+            void startDrag() {
+                auto self = static_cast<DerivedAction*>(this);
+                auto d = self->element().toDraggable();
+                assert(d);
+                auto vd = dynamic_cast<ValueDraggable*>(d);
+                assert(vd);
+                vd->clearValue();
+                vd->startDrag();
+            }
+
+            template<typename T>
+            void startDrag(tmp::DontDeduce<T> value) {
+                auto self = static_cast<DerivedAction*>(this);
+                auto d = self->element().toDraggable();
+                assert(d);
+                auto vd = dynamic_cast<ValueDraggable*>(d);
+                assert(vd);
+                vd->setValue(makeUniqueAny<T>(std::move(value)));
+                vd->startDrag();
+            }
+
+            void stopDrag() {
+                auto self = static_cast<DerivedAction*>(this);
+                auto c = self->element().toDraggable();
+                assert(c);
+                c->stopDrag();
+            }
+
+            // TODO: make location choosable (maybe from presets like top-left, middle, mouse position, etc)
+            // Mouse position is used for now
+            template<typename T>
+            void drop(tmp::DontDeduce<T> value) {
+                auto self = static_cast<DerivedAction*>(this);
+                auto d = self->element().toDraggable();
+                assert(d);
+                auto vd = dynamic_cast<ValueDraggable*>(d);
+                assert(vd);
+                vd->setValue(makeUniqueAny<T>(std::move(value)));
+                vd->drop(vd->localMousePos());
+            }
+        };
+
+        // Custom dom::Element type, non-templated so that it can be identified via dynamic_cast
+        // in Hoverable::onDrop (and value can be further inspected
+        class ValueDraggable : public dom::Draggable {
+        public:
+            void setValue(UniqueAny value);
+
+            void clearValue();
+
+            const UniqueAny& getValue() const noexcept;
+
+        private:
+            UniqueAny m_value;
+        };
+
+        template<>
+        struct ElementBase<Draggable> {
+            using Type = ValueDraggable;
+        };
+
+        template<typename... AllTags>
+        class ComponentBase<Draggable, AllTags...> : private ComponentBaseHelper<Draggable, AllTags...> {
+        public:
+            using Action = MixedAction<AllTags...>;
+        
+            decltype(auto) onDrag(std::function<void(vec2)> f) {
+                m_onDrag = [f = std::move(f)](vec2 d, Action /* unused */){
+                    f(d);
+                };
+                return self();
+            }
+            decltype(auto) onGainFocus(std::function<void(vec2, Action)> f) {
+                m_onDrag = std::move(f);
+                return self();
+            }
+
+        private:
+            std::function<void(vec2, Action)> m_onDrag;
+
+            friend ElementMixin;
+        };
+
+        template<typename BaseElement, typename... AllTags>
+        class ElementMixin<Draggable, BaseElement, AllTags...> : public BaseElement {
+        public:
+            using ComponentType = MixedComponent<AllTags...>;
+            using Action = MixedAction<AllTags...>;
+
+            ElementMixin(ComponentType& component)
+                : BaseElement(component) {
+                static_assert(std::is_base_of_v<dom::Draggable, BaseElement>, "Base class must derive from ui::dom::Draggable");
+            }
+
+            void onDrag() override final {
+                auto& f = component().m_onDrag;
+                if (f) {
+                    f(pos(), Action{this});
+                }
             }
         };
 
@@ -531,10 +643,142 @@ namespace ui {
 
         //------------------------
         // Specializations for Hoverable
+        
+        template<>
+        struct ElementBase<Hoverable> {
+            using Type = dom::Control;
+        };
 
-        // TODO: onHover/onDrop both take pointers to dom::Draggable elements, but these
-        // are meaningless in the context of the Component API. Perhaps the Draggable
-        // and Hoverable traits should agree on some kind of signal type to distinguish elements?
+        template<typename... AllTags>
+        class ComponentBase<Hoverable, AllTags...> : private ComponentBaseHelper<Hoverable, AllTags...> {
+        public:
+            using Action = MixedAction<AllTags...>;
+        
+            decltype(auto) onMouseEnter(std::function<void()> f) {
+                assert(!static_cast<bool>(m_onMouseEnter));
+                m_onMouseEnter = std::move(f);
+                return self();
+            }
+
+            template<typename T>
+            decltype(auto) onMouseEnterWith(std::function<void(CRefOrValue<T>)> f) {
+                wrapAndAdd<T, void>(std::move(f), m_onMouseEnterWithHandlers);
+                return self();
+            }
+        
+            decltype(auto) onMouseLeave(std::function<void()> f) {
+                assert(!static_cast<bool>(m_onMouseLeave));
+                m_onMouseLeave = std::move(f);
+                return self();
+            }
+
+            template<typename T>
+            decltype(auto) onMouseLeaveWith(std::function<void(CRefOrValue<T>)> f) {
+                wrapAndAdd<T, void>(std::move(f), m_onMouseLeaveWithHandlers);
+                return self();
+            }
+
+            template<typename T>
+            decltype(auto) onDrop(std::function<bool(CRefOrValue<T>)> f) {
+                wrapAndAdd<T, bool>(std::move(f), m_onDropHandlers);
+                return self();
+            }
+
+        private:
+            std::function<void()> m_onMouseEnter;
+            std::function<void()> m_onMouseLeave;
+
+            template<typename R>
+            using TypeDispatchMap = std::map<std::type_info const*, std::function<R(const UniqueAny&)>>;
+
+            TypeDispatchMap<void> m_onMouseEnterWithHandlers;
+            TypeDispatchMap<void> m_onMouseLeaveWithHandlers;
+            TypeDispatchMap<bool> m_onDropHandlers;
+
+            template<typename T, typename R>
+            void wrapAndAdd(std::function<R(CRefOrValue<T>)>&& f, TypeDispatchMap<R>& m) {
+                auto ti = &typeid(T);
+                assert(m.find(ti) == m.end());
+                auto ff = [f = std::move(f)](const UniqueAny& ua){
+                    auto p = ua.getIf<T>();
+                    assert(p);
+                    return f(*p);
+                };
+                m.emplace(ti, std::move(ff));
+            }
+
+            friend ElementMixin;
+        };
+
+        template<typename BaseElement, typename... AllTags>
+        class ElementMixin<Hoverable, BaseElement, AllTags...> : public BaseElement {
+        public:
+            using ComponentType = MixedComponent<AllTags...>;
+            using Action = MixedAction<AllTags...>;
+
+            ElementMixin(ComponentType& component)
+                : BaseElement(component) {
+
+                static_assert(std::is_base_of_v<dom::Control, BaseElement>, "Base class must derive from ui::dom::Control");
+            }
+
+            void onMouseEnter(dom::Draggable* d) override final {
+                if (d) {
+                    if (lookupAndCall<void>(d, component().m_onMouseEnterWithHandlers)) {
+                        return;
+                    }
+                }
+                auto& f = component().m_onMouseEnter;
+                if (f) {
+                    f();
+                }
+            }
+
+            void onMouseLeave(dom::Draggable* d) override final {
+                if (d) {
+                    if (lookupAndCall<void>(d, component().m_onMouseLeaveWithHandlers)) {
+                        return;
+                    }
+                }
+                auto& f = component().m_onMouseLeave;
+                if (f) {
+                    f();
+                }
+            }
+
+            bool onDrop(dom::Draggable* d) override final {
+                return lookupAndCall<bool>(d, component().m_onDropHandlers);
+            }
+
+        private:
+            template<typename R>
+            using TypeDispatchMap = std::map<std::type_info const*, std::function<R(const UniqueAny&)>>;
+
+            template<typename R>
+            bool lookupAndCall(dom::Draggable* d, const TypeDispatchMap<R>& m) {
+                assert(d);
+                if (auto vd = dynamic_cast<ValueDraggable*>(d)) {
+                    auto& v = vd->getValue();
+                    if (!v.hasValue()) {
+                        return false;
+                    }
+                    auto t = v.getType();
+                    assert(t);
+                    auto it = m.find(t);
+                    if (it == m.end()) {
+                        return false;
+                    }
+                    if constexpr (std::is_void_v<R>){
+                        it->second(v);
+                        return true;
+                    } else {
+                        return it->second(v);
+                    }
+                }
+                return false;
+            }
+        };
+    
 
         //------------------------
         // Specializations for Clickable
@@ -826,196 +1070,6 @@ namespace ui {
         };
 
         //------------------------
-        // Specializations for Draggable
-
-        template<typename DerivedAction>
-        class ActionBase<Draggable, DerivedAction> {
-        public:
-            void startDrag() {
-                auto self = static_cast<DerivedAction*>(this);
-                auto c = self->element().toDraggable();
-                assert(c);
-                c->startDrag();
-            }
-
-            void stopDrag() {
-                auto self = static_cast<DerivedAction*>(this);
-                auto c = self->element().toDraggable();
-                assert(c);
-                c->stopDrag();
-            }
-
-            void drop(vec2 where = {0.0f, 0.0f}) {
-                auto self = static_cast<DerivedAction*>(this);
-                auto c = self->element().toDraggable();
-                assert(c);
-                c->drop();
-            }
-        };
-
-        template<>
-        struct ElementBase<Draggable> {
-            using Type = dom::Draggable;
-        };
-
-        template<typename... AllTags>
-        class ComponentBase<Draggable, AllTags...> : private ComponentBaseHelper<Draggable, AllTags...> {
-        public:
-            using Action = MixedAction<AllTags...>;
-        
-            decltype(auto) onDrag(std::function<void(vec2)> f) {
-                m_onDrag = [f = std::move(f)](vec2 d, Action /* unused */){
-                    f(d);
-                };
-                return self();
-            }
-            decltype(auto) onGainFocus(std::function<void(vec2, Action)> f) {
-                m_onDrag = std::move(f);
-                return self();
-            }
-
-        private:
-            std::function<void(vec2, Action)> m_onDrag;
-
-            friend ElementMixin;
-        };
-
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Draggable, BaseElement, AllTags...> : public BaseElement {
-        public:
-            using ComponentType = MixedComponent<AllTags...>;
-            using Action = MixedAction<AllTags...>;
-
-            ElementMixin(ComponentType& component)
-                : BaseElement(component) {
-                static_assert(std::is_base_of_v<dom::Draggable, BaseElement>, "Base class must derive from ui::dom::Draggable");
-            }
-
-            void onDrag() override final {
-                auto& f = component().m_onDrag;
-                if (f) {
-                    f(pos(), Action{this});
-                }
-            }
-        };
-
-        //------------------------
-        // Helper template building blocks
-
-        template<typename T, template<typename...> typename To>
-        struct ReapplyImpl;
-
-        template<template<typename...> typename From, typename... Args, template<typename...> typename To>
-        struct ReapplyImpl<From<Args...>, To> {
-            using Type = To<Args...>;
-        };
-
-        // Given a desired (uninstantiated) variadic template and a given instantiation
-        // of another variadic template, returns the desired variadic template
-        // instantiated with the same parameters
-        template<typename FromApplied, template<typename...> typename To>
-        using Reapply = typename ReapplyImpl<FromApplied, To>::Type;
-
-
-        // Given a template taking two parameters and a type, effectively binds that type
-        // to the first parameter and returns a new template taking a single parameter
-        // which maps to the second parameter.
-        template<template<typename, typename...> typename TT, typename... U>
-        struct Curry {
-    
-            template<typename... T>
-            using Result = TT<U..., T...>;
-        };
-
-
-
-        template<typename... Ts>
-        struct FilterImpl;
-
-        template<typename ToRemove, typename... Acc>
-        struct FilterImpl<ToRemove, std::tuple<Acc...>> {
-            using Type = std::tuple<Acc...>;
-        };
-
-        template<typename ToRemove, typename... Acc, typename T, typename... Rest>
-        struct FilterImpl<ToRemove, std::tuple<Acc...>, T, Rest...>
-            : std::conditional_t<
-                std::is_same_v<ToRemove, T>,
-                FilterImpl<ToRemove, std::tuple<Acc...>, Rest...>,
-                FilterImpl<ToRemove, std::tuple<Acc..., T>, Rest...>
-            > {
-
-        };
-
-        // Given a type to remove and a list of types, returns a std::tuple containing
-        // that list of types minus any occurences of the type to remove
-        template<typename ToRemove, typename... Ts>
-        using Filter = typename FilterImpl<ToRemove, std::tuple<>, Ts...>::Type;
-
-
-
-        // Adapted from https://stackoverflow.com/a/57528226/5023438
-        template<typename... Ts>
-        struct RemoveDuplicatesImpl;
-
-        template<typename T, typename... Ts>
-        struct RemoveDuplicatesImpl<T, Ts...> {
-            using Type = T;
-        };
-
-        template<typename... Ts, typename U, typename... Us>
-        struct RemoveDuplicatesImpl<std::tuple<Ts...>, U, Us...>
-            : std::conditional_t<
-                (std::is_same_v<U, Ts> || ...), // Does U match anything in TS?
-                RemoveDuplicatesImpl<std::tuple<Ts...>, Us...>, // if yes, recurse but don't add the type to the tuple
-                RemoveDuplicatesImpl<std::tuple<Ts..., U>, Us...> // if no, recurse and add the type to the tuple
-            > {
-
-        };
-
-        // Given a list of types, returns a std::tuple containing the same types minus any
-        // duplicates. In case of duplicate types anywhere in the list, only the leftmost
-        // occurence is preserved.
-        template<typename... Ts>
-        using RemoveDuplicates = typename RemoveDuplicatesImpl<std::tuple<>, Ts...>::Type;
-
-
-        // Given a list of types, inherits from all those types separately and independently
-        template<typename... Bases>
-        class InheritParallel : public Bases... {
-
-        };
-
-
-        // Given an initial base class (base case base class, hence BaseBase), and a list
-        // of mixin templates, creates an inheritance chain with BaseBase at the root and
-        // with each Mixin deriving in order from the previous class.
-        // Each mixin is expected to be a class that derives from its template parameter.
-        template<typename BaseBase, template<typename> typename... Mixins>
-        class InheritSerial;
-
-        template<typename BaseBase>
-        class InheritSerial<BaseBase> : public BaseBase {
-        public:
-            template<typename... Args>
-            InheritSerial(Args&&... args)
-                : BaseBase(std::forward<Args>(args)...) {
-            
-            }
-        };
-
-        template<typename BaseBase, template<typename> typename Mixin, template<typename> typename... Rest>
-        class InheritSerial<BaseBase, Mixin, Rest...>
-            : public Mixin<InheritSerial<BaseBase, Rest...>> {
-        public:
-            template<typename... Args>
-            InheritSerial(Args&&... args)
-                : Mixin<InheritSerial<BaseBase, Rest...>>(std::forward<Args>(args)...) {
-            
-            }
-        };
-     
-        //------------------------
         // Element base class from list of required bases
         template<typename... Tags>
         class CommonElementBase
@@ -1028,14 +1082,14 @@ namespace ui {
 
                 // otherwise, remove all occurences of dom::Element, remove any duplicates,
                 // and inherit from all the resulting types in parallel
-                Reapply<
-                    Reapply<
-                        RemoveDuplicates<
+                tmp::Reapply<
+                    tmp::Reapply<
+                        tmp::RemoveDuplicates<
                             ElementBaseType<Tags>...
                         >,
-                        Curry<Filter, dom::Element>::template Result
+                        tmp::Curry<tmp::Filter, dom::Element>::template Result
                     >,
-                    InheritParallel
+                    tmp::InheritParallel
                 >
             > {
         public:
@@ -1056,20 +1110,18 @@ namespace ui {
             MixedComponent<Tags...>& m_component;
         };
 
-        //------------------------
-
         template<typename Tag, typename... Tags>
         struct ElementMixinPartial {
             template<typename BaseElement>
             using Result = ElementMixin<Tag, BaseElement, Tags...>;
         };
-
+        
         template<typename... Tags>
-        using MixedElement = InheritSerial<
+        using MixedElement = tmp::InheritSerial<
             CommonElementBase<Tags...>,
             ElementMixinPartial<Tags, Tags...>::template Result...
         >;
-
+        
         template<typename... Tags>
         class MixedAction : public ActionBase<Tags, MixedAction<Tags...>>... {
         public:

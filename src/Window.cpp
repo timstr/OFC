@@ -430,18 +430,14 @@ namespace ui {
         }
 
         for (auto it = pathUp.begin(); it != pathUp.end(); ++it) {
-            (*it)->onMouseOut();
+            (*it)->onMouseLeave(m_drag_elem);
         }
 
         for (auto it = pathDown.rbegin(); it != pathDown.rend(); ++it) {
-            (*it)->onMouseOver();
+            (*it)->onMouseEnter(m_drag_elem);
         }
 
         m_hover_elem = newElem;
-
-        if (m_drag_elem && !isSoftlyRemoved(m_drag_elem)){
-            propagate(this, newElem, &dom::Control::onHover, m_drag_elem);
-        }
     }
 
     bool Window::handleCommand(Key key){

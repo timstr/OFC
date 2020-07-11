@@ -22,10 +22,9 @@ namespace ui::dom {
         bool middleMouseDown() const;
         bool rightMouseDown() const;
         
-        virtual void onMouseOver();
-        virtual void onMouseOut();
+        virtual void onMouseEnter(Draggable*);
+        virtual void onMouseLeave(Draggable*);
 
-        virtual bool onHover(Draggable*);
         virtual bool onDrop(Draggable*);
 
         virtual bool onKeyDown(Key);

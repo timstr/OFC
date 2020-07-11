@@ -35,8 +35,8 @@ namespace ui::dom {
 
         bool onKeyDown(ui::Key) override;
 
-        void onMouseOver() override;
-        void onMouseOut() override;
+        void onMouseEnter(Draggable*) override;
+        void onMouseLeave(Draggable*) override;
 
     private:
 

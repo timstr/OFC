@@ -87,14 +87,14 @@ namespace ui::dom {
         return false;
     }
 
-    void CallbackButton::onMouseOver(){
+    void CallbackButton::onMouseEnter(Draggable*){
         if (m_state != State::Active){
             m_state = State::Hover;
             fadeColor(backgroundColor(), m_hoverColor);
         }
     }
 
-    void CallbackButton::onMouseOut(){
+    void CallbackButton::onMouseLeave(Draggable*){
         if (m_state != State::Active){
             m_state = State::Normal;
             fadeColor(backgroundColor(), m_normalColor);

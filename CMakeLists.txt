@@ -68,6 +68,8 @@ set(tims-gui_headers
     include/GUI/Util/Pi.hpp
     include/GUI/Util/RoundedRectangle.hpp
     include/GUI/Util/String.hpp
+    include/GUI/Util/TemplateMetaProgramming.hpp
+    include/GUI/Util/UniqueAny.hpp
     include/GUI/Util/Vec2.hpp
 )
 
@@ -81,6 +83,7 @@ set(tims-gui_srcs
     src/Component/FontContext.cpp
     src/Component/If.cpp
     src/Component/List.cpp
+    src/Component/MixedComponent.cpp
     src/Component/Property.cpp
     src/Component/PureComponent.cpp
     src/Component/Root.cpp
@@ -110,6 +113,7 @@ set(tims-gui_srcs
 
     src/Util/Color.cpp
     src/Util/RoundedRectangle.cpp
+    src/Util/UniqueAny.cpp
 )
 
 add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})

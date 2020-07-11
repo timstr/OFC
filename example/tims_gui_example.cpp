@@ -108,6 +108,8 @@ int main(){
 
     auto pos = Property{vec2{0.0f, 0.0f}};
 
+    auto dropFieldColor = Property<Color>{0x808080FF};
+
     AnyComponent comp = UseFont(&getFont()).with(List(
         "Before  ",
         MyComponent{}
@@ -141,18 +143,38 @@ int main(){
             .size(vec2{100.0f, 20.0f})
             .backgroundColor(inFocus.map([](bool b) -> Color {
                 return b ? 0xFF0000FF : 0x0000FFFF;
-            })),
+            })), 
+        MixedComponent<Hoverable, Boxy, Resizable, Positionable>{}
+            .position(vec2{100.0f, 200.0f})
+            .size(vec2{100.0f, 100.0f})
+            .backgroundColor(dropFieldColor)
+            .borderThickness(1.0f)
+            .borderColor(0xFF)
+            .onMouseEnter([&]{
+                dropFieldColor.set(0x80B080FF);
+            })
+            .onMouseEnterWith<int>([&](int){
+                dropFieldColor.set(0x80FF80FF);
+            })
+            .onMouseLeave([&] {
+                dropFieldColor.set(0x808080FF);
+            })
+            .onDrop<int>([&](int i) {
+                std::cout << "An int was dropped with value " << i << '\n';
+                dropFieldColor.set(0x40FF40FF);
+                return true;
+            }),
         FreeContainer(
             MixedComponent<Clickable, Boxy, Resizable, Positionable, Draggable, KeyPressable, HitTestable>{}
                 .backgroundColor(0xFF0000FF)
                 .borderColor(0x440000FF)
                 .borderThickness(2.0f)
-                .borderRadius(10.0f)
-                .width(20.0f)
-                .height(20.0f)
+                .borderRadius(25.0f)
+                .width(50.0f)
+                .height(50.0f)
                 .hitTest([](vec2 p) {
-                    const auto d = p - vec2{10.0f, 10.0f};
-                    return (d.x * d.x + d.y * d.y <= 100.0f);
+                    const auto d = p - vec2{25.0f, 25.0f};
+                    return (d.x * d.x + d.y * d.y <= 25.0f * 25.0f);
                 })
                 .position(pos)
                 .onKeyDown([&](Key k){
@@ -166,11 +188,14 @@ int main(){
                     return false;
                 })
                 .onLeftClick([](int, auto action) {
-                    action.startDrag();
+                    action.startDrag<int>(42);
                     return true;
                 })
                 .onLeftRelease([](auto action) {
                     action.stopDrag();
+                    auto v = 999;
+                    std::cout << "Dropping an int with value " << v << '\n';
+                    action.drop<int>(v);
                     return true;
                 })
         )
