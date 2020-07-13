@@ -11,22 +11,20 @@
 
 namespace ui {
 
-    // TODO: get rid of the following template
-    // TODO: add ContainerComponent for interface reasons
-    // TODO: in Window, just accept something deriving from ContainerComponent
-
     class ContainerComponent : public InternalComponent {
     public:
 
     };
 
 
-    template<typename ContainerType>
+    template<typename ContainerType, typename Derived>
     class ContainerComponentTemplate : public ContainerComponent {
     public:
         ContainerComponentTemplate() : m_container(nullptr) {
             static_assert(std::is_base_of_v<dom::Container, ContainerType>, "ContainerType must derive from dom::Container");
         }
+
+        using Container = ContainerType;
 
     protected:
         ContainerType* container() noexcept {
@@ -38,6 +36,10 @@ namespace ui {
 
         virtual std::unique_ptr<ContainerType> createContainer() {
             return std::make_unique<ContainerType>();
+        }
+
+        Derived& self() noexcept {
+            return static_cast<Derived&>(*this);
         }
 
     private:
@@ -64,16 +66,16 @@ namespace ui {
     };
 
 
-
-    class FreeContainer : public ContainerComponentTemplate<dom::FreeContainer> {
+    template<typename Derived>
+    class FreeContainerBase : public ContainerComponentTemplate<dom::FreeContainer, Derived> {
     public:
-        FreeContainer(AnyComponent c)
+        FreeContainerBase(AnyComponent c)
             : m_childComponent(std::move(c)) {
 
         }
 
         template<typename... ComponentTypes>
-        FreeContainer(ComponentTypes&&... components)
+        FreeContainerBase(ComponentTypes&&... components)
             : m_childComponent(List(std::forward<ComponentTypes>(components)...)) {
 
         }
@@ -109,15 +111,16 @@ namespace ui {
 
 
 
-    class FlowContainer : public ContainerComponentTemplate<dom::FlowContainer> {
+    template<typename Derived>
+    class FlowContainerBase : public ContainerComponentTemplate<dom::FlowContainer, Derived> {
     public:
-        FlowContainer(AnyComponent c)
+        FlowContainerBase(AnyComponent c)
             : m_childComponent(std::move(c)) {
 
         }
 
         template<typename... ComponentTypes>
-        FlowContainer(ComponentTypes&&... components)
+        FlowContainerBase(ComponentTypes&&... components)
             : m_childComponent(List(std::forward<ComponentTypes>(components)...)) {
 
         }
@@ -153,16 +156,16 @@ namespace ui {
 
 
 
-    class VerticalList : public ContainerComponentTemplate<dom::VerticalList> {
+    template<typename Derived>
+    class VerticalListBase : public ContainerComponentTemplate<dom::VerticalList, Derived> {
     public:
-        // TODO: allow any number of arguments
-        VerticalList(AnyComponent c)
+        VerticalListBase(AnyComponent c)
             : m_childComponent(std::move(c)) {
 
         }
 
         template<typename... ComponentTypes>
-        VerticalList(ComponentTypes&&... components)
+        VerticalListBase(ComponentTypes&&... components)
             : m_childComponent(List(std::forward<ComponentTypes>(components)...)) {
 
         }
@@ -200,15 +203,16 @@ namespace ui {
 
 
 
-    class HorizontalList : public ContainerComponentTemplate<dom::HorizontalList> {
+    template<typename Derived>
+    class HorizontalListBase : public ContainerComponentTemplate<dom::HorizontalList, Derived> {
     public:
-        HorizontalList(AnyComponent c)
+        HorizontalListBase(AnyComponent c)
             : m_childComponent(std::move(c)) {
 
         }
 
         template<typename... ComponentTypes>
-        HorizontalList(ComponentTypes&&... components)
+        HorizontalListBase(ComponentTypes&&... components)
             : m_childComponent(List(std::forward<ComponentTypes>(components)...)) {
 
         }
@@ -301,10 +305,11 @@ namespace ui {
         BottomToTop
     };
 
-    class WrapGrid : public ContainerComponentTemplate<dom::GridContainer> {
+    template<typename Derived>
+    class WrapGridBase : public ContainerComponentTemplate<dom::GridContainer, Derived> {
     public:
 
-        WrapGrid(VerticalDirection vdir, std::size_t numColumns, HorizontalDirection hdir = RightToLeft)
+        WrapGridBase(VerticalDirection vdir, std::size_t numColumns, HorizontalDirection hdir = RightToLeft)
             : m_rowMajor(false)
             , m_verticalDirection(vdir)
             , m_horizontalDirection(hdir)
@@ -312,7 +317,7 @@ namespace ui {
 
         }
 
-        WrapGrid(HorizontalDirection hdir, std::size_t numRows, VerticalDirection vdir = TopToBottom)
+        WrapGridBase(HorizontalDirection hdir, std::size_t numRows, VerticalDirection vdir = TopToBottom)
             : m_rowMajor(true)
             , m_verticalDirection(vdir)
             , m_horizontalDirection(hdir)
@@ -320,18 +325,18 @@ namespace ui {
 
         }
 
-        WrapGrid& Containing(AnyComponent c) {
+        decltype(auto) containing(AnyComponent c) {
             m_childComponent = std::move(c);
-            return *this;
+            return self();
         }
 
         template<
             typename... ComponentTypes,
             std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
         >
-        WrapGrid& Containing(ComponentTypes&&... c) {
+        decltype(auto) containing(ComponentTypes&&... c) {
             m_childComponent = List(std::forward<ComponentTypes>(c)...);
-            return *this;
+            return self();
         }
 
     private:
@@ -421,9 +426,10 @@ namespace ui {
     };
 
     // TODO
-    class ColumnGrid : public ContainerComponentTemplate<dom::GridContainer> {
+    template<typename Derived>
+    class ColumnGridBase : public ContainerComponentTemplate<dom::GridContainer, Derived> {
     public:
-        ColumnGrid();
+        ColumnGridBase();
 
         class Column : public InternalComponent {
         public:
@@ -432,5 +438,40 @@ namespace ui {
         private:
         };
     };
+
+    // TODO: RowGrid
+
+    //--------------------------------
+
+    class FreeContainer : public FreeContainerBase<FreeContainer> {
+    public:
+        using FreeContainerBase::FreeContainerBase;
+    };
+
+    class FlowContainer : public FlowContainerBase<FlowContainer> {
+    public:
+        using FlowContainerBase::FlowContainerBase;
+    };
+
+    class VerticalList : public VerticalListBase<VerticalList> {
+    public:
+        using VerticalListBase::VerticalListBase;
+    };
+
+    class HorizontalList : public HorizontalListBase<HorizontalList> {
+    public:
+        using HorizontalListBase::HorizontalListBase;
+    };
+
+    class WrapGrid : public WrapGridBase<WrapGrid> {
+    public:
+        using WrapGridBase::WrapGridBase;
+    };
+
+    class ColumnGrid : public ColumnGridBase<ColumnGrid> {
+    public:
+        using ColumnGridBase::ColumnGridBase;
+    };
+
 
 } // namespace ui

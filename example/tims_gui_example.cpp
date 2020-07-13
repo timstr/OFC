@@ -95,7 +95,7 @@ ui::String make_string(const T& t) {
 int main(){
 
     using namespace ui;
-
+    /*
     auto randEng = std::default_random_engine{std::random_device{}()};
     auto dist = std::uniform_real_distribution<float>{0.0f, 1.0f};
 
@@ -200,6 +200,7 @@ int main(){
                 })
         )
     ));
+    */
     
     /*
     auto num = Property<int>{0};
@@ -222,7 +223,7 @@ int main(){
             .otherwise("It is odd.")
     ));*/
 
-    /*
+    
     auto items = Property{std::vector{
         "aaa", "bbb", "ccc", "ddd", "eee",
         "fff", "ggg", "hhh", "iii", "jjj",
@@ -231,13 +232,18 @@ int main(){
     }};
 
     AnyComponent comp = UseFont(&getFont()).with(List(
-        WrapGrid(TopToBottom, 5, RightToLeft).Containing(
-            ForEach(items).Do([](const char* s, const Property<std::size_t>& idx) -> AnyComponent {
-                return If(idx.map([](std::size_t i){ return i % 2 == 0; }))
-                    .then(s)
-                    .otherwise(Button(s));
-            })
-        ),
+        MixedContainerComponent<WrapGridBase, Boxy>(TopToBottom, 5, RightToLeft)
+            .backgroundColor(0xffb0b0)
+            .borderColor(0xff)
+            .borderThickness(1.0f)
+            .borderRadius(3.0f)
+            .containing(
+                ForEach(items).Do([](const char* s, const Property<std::size_t>& idx) -> AnyComponent {
+                    return If(idx.map([](std::size_t i){ return i % 2 == 0; }))
+                        .then(s)
+                        .otherwise(Button(s));
+                })
+            ),
         Button("Remove one").onClick([&] {
             auto& v = items.getOnceMut();
             if (v.size() > 0){
@@ -245,7 +251,7 @@ int main(){
             }
         })
     ));
-    */
+    
 
     /*
     auto vec = Property{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};
@@ -303,8 +309,6 @@ int main(){
     );
     auto root = ComponentRoot::create<FreeContainer>(std::move(comp));
     */
-
-    
 
     Window& win = Window::create(std::move(root), 600, 400, "Tim's GUI Test");
 

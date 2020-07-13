@@ -4,6 +4,7 @@
 #include <GUI/DOM/BoxElement.hpp>
 #include <GUI/DOM/Draggable.hpp>
 #include <GUI/Component/Component.hpp>
+#include <GUI/Component/Containers.hpp>
 #include <GUI/Component/Property.hpp>
 
 #include <GUI/Util/TemplateMetaProgramming.hpp>
@@ -64,14 +65,14 @@ namespace ui {
         // This will be used in the CRTP; DerivedComponent shall be left unspecialized so that it may be used as the derived type.
         // casting 'this' to DerivedComponent* is thus allowed in member functions, for example, to return a reference to the
         // component from named-parameter-idiom methods as used in other Component interfaces.
-        template<typename Tag, typename... AllTags>
+        template<typename Tag, template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase;
 
         // Partial specializations shall specialize Tag but not BaseElement, and shall inherit from BaseElement.
         // BaseElement shall derive from the ElementBaseType specialized for the same tag. The constructor of this
         // class must accept an l-value reference to MixedComponent<AllTags...> and use that reference
         // to assign any properties to the element upon initialization.
-        template<typename Tag, typename BaseElement, typename... AllTags>
+        template<typename Tag, typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
         class ElementMixin;
 
         // Partial specializations shall provide member functions for performing actions on instantiated dom::Elements
@@ -94,13 +95,32 @@ namespace ui {
         template<typename... Tags>
         class MixedComponent;
 
+        template<template<typename> typename ContainerComponentType, typename... Tags>
+        class MixedContainerComponent;
+
+        template<typename Unused>
+        class NoContainer {};
+
+        template<template<typename> typename ContainerComponentType, typename... Tags>
+        struct DerivedComponentImpl {
+            using Type = MixedContainerComponent<ContainerComponentType, Tags...>;
+        };
+
+        template<typename... Tags>
+        struct DerivedComponentImpl<NoContainer, Tags...> {
+            using Type = MixedComponent<Tags...>;
+        };
+
+        template<template<typename> typename ContainerComponentType, typename... Tags>
+        using DerivedComponent = typename DerivedComponentImpl<ContainerComponentType, Tags...>::Type;
+        
         //------------------------
         // CRTP-style helper for ComponentBase specializations
-        template<typename CurrentTag, typename... Tags>
+        template<typename CurrentTag, template<typename> typename ContainerComponentType, typename... Tags>
         class ComponentBaseHelper {
         public:
-            using ComponentType = MixedComponent<Tags...>;
-            using ComponentBaseDerived = ComponentBase<CurrentTag, Tags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, Tags...>;
+            using ComponentBaseDerived = ComponentBase<CurrentTag, ContainerComponentType, Tags...>;
         
             decltype(auto) self() noexcept {
                 return static_cast<ComponentType&>(*this);
@@ -115,10 +135,10 @@ namespace ui {
                 return static_cast<void (ComponentType::*)(Args...)>(f);
             }
 
-            auto getElement() noexcept {
-                auto e = self().element();
+            decltype(auto) element() noexcept {
+                auto e = self().getDerivedElement();
                 assert(e);
-                return e;
+                return *e;
             }
         };
 
@@ -130,8 +150,9 @@ namespace ui {
             using Type = dom::BoxElement;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<Boxy, AllTags...> : private ComponentBaseHelper<Boxy, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<Boxy, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<Boxy, ContainerComponentType, AllTags...> {
         public:
             ComponentBase()
                 : m_backgroundColorObserver(selfPtr(), memFn(&ComponentBase::onUpdateBackgroundColor))
@@ -165,33 +186,32 @@ namespace ui {
             Observer<float> m_borderRadiusObserver;
         
             void onUpdateBackgroundColor(const Color& c) {
-                getElement()->setBackgroundColor(c);
+                element().setBackgroundColor(c);
             }
 
             void onUpdateBorderColor(const Color& c) {
-                getElement()->setBorderColor(c);
+                element().setBorderColor(c);
             }
 
             void onUpdateBorderThickness(float v) {
-                getElement()->setBorderThickness(v);
+                element().setBorderThickness(v);
             }
 
             void onUpdateBorderRadius(float v) {
-                getElement()->setBorderRadius(v);
+                element().setBorderRadius(v);
             }
 
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Boxy, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<Boxy, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
 
             ElementMixin(ComponentType& component)
                 : BaseElement(component) {
-                static_assert(std::is_base_of_v<dom::Control, BaseElement>, "Base class must derive from ui::dom::BoxElement");
-            
+                static_assert(std::is_base_of_v<dom::BoxElement, BaseElement>, "Base class must derive from ui::dom::BoxElement");
                 maybeCall(component.m_backgroundColorObserver, &ElementMixin::setBackgroundColor);
                 maybeCall(component.m_borderColorObserver, &ElementMixin::setBorderColor);
                 maybeCall(component.m_borderThicknessObserver, &ElementMixin::setBorderThickness);
@@ -215,8 +235,9 @@ namespace ui {
             using Type = dom::Element;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<Resizable, AllTags...> : private ComponentBaseHelper<Resizable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<Resizable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<Resizable, ContainerComponentType, AllTags...> {
         public:
             ComponentBase()
                 : m_widthObserver(selfPtr(), memFn(&ComponentBase::onUpdateWidth))
@@ -309,36 +330,36 @@ namespace ui {
             Observer<float> m_maxHeightObserver;
 
             void onUpdateWidth(float v) {
-                getElement()->setWidth(v);
+                element().setWidth(v);
             }
 
             void onUpdateHeight(float v) {
-                getElement()->setHeight(v);
+                element().setHeight(v);
             }
 
             void onUpdateMinWidth(float v) {
-                getElement()->setMinWidth(v);
+                element().setMinWidth(v);
             }
 
             void onUpdateMinHeight(float v) {
-                getElement()->setMinHeight(v);
+                element().setMinHeight(v);
             }
 
             void onUpdateMaxWidth(float v) {
-                getElement()->setMaxWidth(v);
+                element().setMaxWidth(v);
             }
 
             void onUpdateMaxHeight(float v) {
-                getElement()->setMaxHeight(v);
+                element().setMaxHeight(v);
             }
 
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Resizable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<Resizable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
 
             ElementMixin(ComponentType& component)
                 : BaseElement(component) {
@@ -376,8 +397,9 @@ namespace ui {
             using Type = dom::Element;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<Positionable, AllTags...> : private ComponentBaseHelper<Positionable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<Positionable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<Positionable, ContainerComponentType, AllTags...> {
         public:
 
             ComponentBase()
@@ -408,20 +430,20 @@ namespace ui {
             Observer<float> m_topObserver;
 
             void onUpdateLeft(float v) {
-                getElement()->setLeft(v);
+                element().setLeft(v);
             }
 
             void onUpdateTop(float v) {
-                getElement()->setTop(v);
+                element().setTop(v);
             }
 
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Positionable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<Positionable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
 
             ElementMixin(ComponentType& component)
                 : BaseElement(component) {
@@ -448,8 +470,9 @@ namespace ui {
             using Type = dom::Element;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<HitTestable, AllTags...> : private ComponentBaseHelper<HitTestable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<HitTestable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<HitTestable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -464,10 +487,10 @@ namespace ui {
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<HitTestable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<HitTestable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
 
             ElementMixin(ComponentType& component)
                 : BaseElement(component) {
@@ -491,7 +514,7 @@ namespace ui {
         public:
             void startDrag() {
                 auto self = static_cast<DerivedAction*>(this);
-                auto d = self->element().toDraggable();
+                auto e = self->element().toDraggable();
                 assert(d);
                 auto vd = dynamic_cast<ValueDraggable*>(d);
                 assert(vd);
@@ -502,7 +525,7 @@ namespace ui {
             template<typename T>
             void startDrag(tmp::DontDeduce<T> value) {
                 auto self = static_cast<DerivedAction*>(this);
-                auto d = self->element().toDraggable();
+                auto e = self->element().toDraggable();
                 assert(d);
                 auto vd = dynamic_cast<ValueDraggable*>(d);
                 assert(vd);
@@ -550,8 +573,9 @@ namespace ui {
             using Type = ValueDraggable;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<Draggable, AllTags...> : private ComponentBaseHelper<Draggable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<Draggable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<Draggable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -572,10 +596,10 @@ namespace ui {
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Draggable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<Draggable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
             using Action = MixedAction<AllTags...>;
 
             ElementMixin(ComponentType& component)
@@ -599,8 +623,9 @@ namespace ui {
             using Type = dom::Control;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<Scrollable, AllTags...> : private ComponentBaseHelper<Scrollable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<Scrollable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<Scrollable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -621,10 +646,10 @@ namespace ui {
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Scrollable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<Scrollable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
             using Action = MixedAction<AllTags...>;
 
             ElementMixin(ComponentType& component)
@@ -649,8 +674,9 @@ namespace ui {
             using Type = dom::Control;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<Hoverable, AllTags...> : private ComponentBaseHelper<Hoverable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<Hoverable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<Hoverable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -710,10 +736,10 @@ namespace ui {
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Hoverable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<Hoverable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
             using Action = MixedAction<AllTags...>;
 
             ElementMixin(ComponentType& component)
@@ -788,8 +814,9 @@ namespace ui {
             using Type = dom::Control;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<Clickable, AllTags...> : private ComponentBaseHelper<Clickable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<Clickable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<Clickable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -865,10 +892,10 @@ namespace ui {
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Clickable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<Clickable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
             using Action = MixedAction<AllTags...>;
 
             ElementMixin(ComponentType& component)
@@ -931,8 +958,9 @@ namespace ui {
             using Type = dom::Control;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<KeyPressable, AllTags...> : private ComponentBaseHelper<KeyPressable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<KeyPressable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<KeyPressable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -964,10 +992,10 @@ namespace ui {
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<KeyPressable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<KeyPressable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
             using Action = MixedAction<AllTags...>;
 
             ElementMixin(ComponentType& component)
@@ -999,7 +1027,7 @@ namespace ui {
         public:
             void grabFocus() {
                 auto self = static_cast<DerivedAction*>(this);
-                auto c = self->element().toControl();
+                auto e = self->element().toControl();
                 assert(c);
                 c->grabFocus();
             }
@@ -1010,8 +1038,9 @@ namespace ui {
             using Type = dom::Control;
         };
 
-        template<typename... AllTags>
-        class ComponentBase<Focusable, AllTags...> : private ComponentBaseHelper<Focusable, AllTags...> {
+        template<template<typename> typename ContainerComponentType, typename... AllTags>
+        class ComponentBase<Focusable, ContainerComponentType, AllTags...>
+            : private ComponentBaseHelper<Focusable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -1043,10 +1072,10 @@ namespace ui {
             friend ElementMixin;
         };
 
-        template<typename BaseElement, typename... AllTags>
-        class ElementMixin<Focusable, BaseElement, AllTags...> : public BaseElement {
+        template<typename BaseElement, template<typename> typename ContainerComponentType, typename... AllTags>
+        class ElementMixin<Focusable, BaseElement, ContainerComponentType, AllTags...> : public BaseElement {
         public:
-            using ComponentType = MixedComponent<AllTags...>;
+            using ComponentType = DerivedComponent<ContainerComponentType, AllTags...>;
             using Action = MixedAction<AllTags...>;
 
             ElementMixin(ComponentType& component)
@@ -1071,7 +1100,7 @@ namespace ui {
 
         //------------------------
         // Element base class from list of required bases
-        template<typename... Tags>
+        template<template<typename> typename ContainerComponentType, typename... Tags>
         class CommonElementBase
             : public std::conditional_t<
                 // If all bases are dom::Element
@@ -1094,7 +1123,7 @@ namespace ui {
             > {
         public:
 
-            CommonElementBase(MixedComponent<Tags...>& component)
+            CommonElementBase(DerivedComponent<ContainerComponentType, Tags...>& component)
                 : m_component(component) {
                 static_assert(
                     (std::is_base_of_v<dom::Element, ElementBaseType<Tags>> && ...),
@@ -1102,24 +1131,24 @@ namespace ui {
                 );
             }
 
-            MixedComponent<Tags...>& component() const noexcept {
+            DerivedComponent<ContainerComponentType, Tags...>& component() const noexcept {
                 return m_component;
             }
 
         private:
-            MixedComponent<Tags...>& m_component;
+            DerivedComponent<ContainerComponentType, Tags...>& m_component;
         };
 
-        template<typename Tag, typename... Tags>
+        template<typename Tag, template<typename> typename ContainerComponentType, typename... Tags>
         struct ElementMixinPartial {
             template<typename BaseElement>
-            using Result = ElementMixin<Tag, BaseElement, Tags...>;
+            using Result = ElementMixin<Tag, BaseElement, ContainerComponentType, Tags...>;
         };
         
-        template<typename... Tags>
+        template<template<typename> typename ContainerComponentType, typename... Tags>
         using MixedElement = tmp::InheritSerial<
-            CommonElementBase<Tags...>,
-            ElementMixinPartial<Tags, Tags...>::template Result...
+            CommonElementBase<ContainerComponentType, Tags...>,
+            ElementMixinPartial<Tags, ContainerComponentType, Tags...>::template Result...
         >;
         
         template<typename... Tags>
@@ -1141,20 +1170,87 @@ namespace ui {
 
         template<typename... Tags>
         class MixedComponent
-            : public SimpleComponent<MixedElement<Tags...>>
-            , public ComponentBase<Tags, Tags...>... {
+            : public SimpleComponent<MixedElement<NoContainer, Tags...>>
+            , public ComponentBase<Tags, NoContainer, Tags...>... {
         public:
 
             // NOTE: various named-parameter-idiom methods are inherited from CRTP 'Features' base classes
             using Action = MixedAction<Tags...>;
 
+            using ElementType = MixedElement<NoContainer, Tags...>;
+
+            ElementType* getDerivedElement() const noexcept {
+                return element();
+            }
+
         private:
-            std::unique_ptr<MixedElement<Tags...>> createElement() override final {
+            std::unique_ptr<ElementType> createElement() override final {
                 static_assert(
-                    std::is_constructible_v<MixedElement<Tags...>, MixedComponent<Tags...>&>,
+                    std::is_constructible_v<ElementType, MixedComponent<Tags...>&>,
                     "The Element must be constructible from a reference to the mixed component type"
                 );
-                return std::make_unique<MixedElement<Tags...>>(*this);
+                return std::make_unique<ElementType>(*this);
+            }
+        };
+
+
+        template<template<typename> typename ContainerComponentType, typename DOMContainerType, typename... Tags>
+        class MixedContainerElement
+            : public DOMContainerType
+            , public MixedElement<ContainerComponentType, Tags...> {
+        public:
+            using ComponentType = MixedContainerComponent<ContainerComponentType, Tags...>;
+            using ElementType = MixedElement<ContainerComponentType, Tags...>;
+            using ContainerComponentSpecialized = ContainerComponentType<ComponentType>;
+
+            class MixedContainerElement(ComponentType& component)
+                : ElementType(component) {
+                static_assert(std::is_base_of_v<ContainerComponent, ContainerComponentSpecialized>);
+                static_assert(std::is_base_of_v<dom::Container, DOMContainerType>);
+                static_assert(std::is_base_of_v<dom::Element, ElementType>);
+                static_assert(!std::is_base_of_v<dom::Container, ElementType>);
+            }
+
+        private:
+            void render(sf::RenderWindow& rw) override final {
+                ElementType::render(rw);
+                DOMContainerType::render(rw);
+            }
+        };
+
+
+        template<template<typename> typename ContainerComponentType, typename... Tags>
+        class MixedContainerComponent
+            : public ContainerComponentType<MixedContainerComponent<ContainerComponentType, Tags...>>
+            , public ComponentBase<Tags, ContainerComponentType, Tags...>... {
+        public:
+            using SelfType = MixedContainerComponent<ContainerComponentType, Tags...>;
+            using ContainerComponentSpecialized = ContainerComponentType<SelfType>;
+
+            template<typename... Args>
+            MixedContainerComponent(Args&&... args)
+                : ContainerComponentSpecialized(std::forward<Args>(args)...) {
+                static_assert(std::is_base_of_v<ContainerComponent, ContainerComponentSpecialized>);
+                static_assert(std::is_base_of_v<Component, SelfType>);
+            }
+            using BaseDOMContainer = typename ContainerComponentType<SelfType>::Container;
+            using MixedDOMContainer = MixedContainerElement<
+                ContainerComponentType,
+                typename ContainerComponentType<SelfType>::Container,
+                Tags...
+            >;
+
+            MixedDOMContainer* getDerivedElement() noexcept {
+                auto c = container();
+                assert(!c || dynamic_cast<MixedDOMContainer*>(c));
+                return static_cast<MixedDOMContainer*>(c);
+            }
+
+        private:
+            std::unique_ptr<BaseDOMContainer> createContainer() override final {
+                static_assert(std::is_constructible_v<MixedDOMContainer, SelfType&>);
+                static_assert(std::is_base_of_v<BaseDOMContainer, MixedDOMContainer>);
+                return std::make_unique<MixedDOMContainer>(*this);
             }
         };
 
@@ -1162,5 +1258,8 @@ namespace ui {
 
     template<typename... Tags>
     using MixedComponent = mix::MixedComponent<Tags...>;
+
+    template<template<typename> typename ContainerComponentType, typename... Tags>
+    using MixedContainerComponent = mix::MixedContainerComponent<ContainerComponentType, Tags...>;
 
 } // namespace ui

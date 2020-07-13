@@ -9,9 +9,11 @@ namespace ui {
         template<typename... ComponentTypes>
         List(ComponentTypes&&... components) {
             static_assert((... && std::is_convertible_v<ComponentTypes, AnyComponent>), "All arguments to List must be convertible to AnyComponent");
-            int dummy[sizeof...(ComponentTypes)] = {
-                (m_components.emplace_back(std::forward<ComponentTypes>(components)), 0)...
-            };
+            if constexpr (sizeof...(ComponentTypes) > 0){
+                int dummy[] = {
+                    (m_components.emplace_back(std::forward<ComponentTypes>(components)), 0)...
+                };
+            }
         }
 
     private:
