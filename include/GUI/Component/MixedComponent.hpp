@@ -525,7 +525,7 @@ namespace ui {
             template<typename T>
             void startDrag(tmp::DontDeduce<T> value) {
                 auto self = static_cast<DerivedAction*>(this);
-                auto e = self->element().toDraggable();
+                auto d = self->element().toDraggable();
                 assert(d);
                 auto vd = dynamic_cast<ValueDraggable*>(d);
                 assert(vd);
@@ -1180,7 +1180,7 @@ namespace ui {
             using ElementType = MixedElement<NoContainer, Tags...>;
 
             ElementType* getDerivedElement() const noexcept {
-                return element();
+                return SimpleComponent<MixedElement<NoContainer, Tags...>>::element();
             }
 
         private:

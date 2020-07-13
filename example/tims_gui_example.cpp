@@ -95,7 +95,7 @@ ui::String make_string(const T& t) {
 int main(){
 
     using namespace ui;
-    /*
+    
     auto randEng = std::default_random_engine{std::random_device{}()};
     auto dist = std::uniform_real_distribution<float>{0.0f, 1.0f};
 
@@ -200,7 +200,7 @@ int main(){
                 })
         )
     ));
-    */
+    
     
     /*
     auto num = Property<int>{0};
@@ -231,6 +231,7 @@ int main(){
         "ppp", "qqq", "rrr", "sss", "ttt"
     }};
 
+    /*
     AnyComponent comp = UseFont(&getFont()).with(List(
         MixedContainerComponent<WrapGridBase, Boxy>(TopToBottom, 5, RightToLeft)
             .backgroundColor(0xffb0b0)
@@ -251,7 +252,7 @@ int main(){
             }
         })
     ));
-    
+    */
 
     /*
     auto vec = Property{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};

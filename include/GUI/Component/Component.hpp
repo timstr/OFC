@@ -141,11 +141,11 @@ namespace ui {
             static_assert(std::is_base_of_v<dom::Element, ElementType>, "ElementType must derive from dom::Element");
         }
 
-        ElementType* element() noexcept {
+        ElementType* element() const noexcept {
             return m_element;
         }
 
-        const ElementType* element() const noexcept {
+        dom::Element* getElement() const noexcept override final {
             return m_element;
         }
 
@@ -167,10 +167,6 @@ namespace ui {
             assert(m_element);
             eraseElement(m_element);
             m_element = nullptr;
-        }
-
-        dom::Element* getElement() const noexcept override final {
-            return m_element;
         }
     };
 
