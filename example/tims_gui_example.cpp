@@ -24,7 +24,7 @@ struct PulldownMenuState {
     ui::Property<bool> expanded {false};
 };
 
-class PulldownMenu : public ui::StatefulComponent<PulldownMenuState> {
+class PulldownMenu : public ui::StatefulComponent<PulldownMenuState, ui::Ephemeral> {
 public:
     PulldownMenu(ui::PropertyOrValue<std::vector<ui::String>> items)
         :  m_items(std::move(items)) {
@@ -92,17 +92,169 @@ ui::String make_string(const T& t) {
     return std::to_string(t);
 }
 
+// TODO: persistent additional state
+// Supposing some model is being used to generate the UI (such as a flo::Network containing various properties),
+// there may be additional state stored in the components using that model which is not intrinsically part of the
+// model (such as on-screen position of an object, colour of some widget, other user preferences, etc).
+// The additional state on its own is simple, each stateful component can simply store what it wants to in its state.
+// The only tricky part is serialization and deserialization.
+// Design option 1:
+// every Property<T> allows attaching state that is associated with a specific instance of a component.
+// (-) this would bloat every Property
+// (-) mapping between component states and model state would be challening and error-prone
+// (-) some Property<T> values are not directly tied to the model (such as derived properties)
+// (-) model state might have too many responsibilities
+// Design option 2:
+// model state and all (or just some) UI state is serialized separately. UI state has some kind of deterministic and
+// error-checking structure for doing this safely.
+// (+) model structure and Property<T> interface can stay the same (serialization will still be needed either way)
+// (+) component hierarchy is already well-structured, model state can probably be managed by recursing through
+//     the tree
+// (+) far more separation of concerns
+// Example serialization:
+// 1. model only is serialized
+// 2. UI state is serialized by recursing through all instantiated components in order
+// Example deserialization:
+// 1. model only is deserialized
+// 2. UI is instantiated (either using default state)
+// 2. UI state is deserialized by recursing through all instantiated components in order (the component structure must
+//    match that of the serialized state, but this should be easy enough given the functional style of the component API)
+// The above workflows could be enabled simply by adding something to the Component interface for serializing/deserializing
+// the component's state, if any exists. A couple virtual methods could achieve this simply.
+
+
+struct CoolState {
+    ui::Property<ui::vec2> position;
+};
+
+void serialize(ui::Serializer& s, const CoolState& cs) {
+    auto p = cs.position.getOnce();
+    s.f32(p.x).f32(p.y);
+}
+
+void deserialize(ui::Deserializer& d, CoolState& cs) {
+    cs.position.set(ui::vec2{d.f32(), d.f32()});
+}
+
+class CoolComponent : public ui::StatefulComponent<CoolState, ui::Persistent> {
+public:
+    CoolComponent()
+        : StatefulComponent(CoolState{ ui::Property{ui::vec2{0.0f, 0.0f}} }) {
+
+    }
+
+private:
+    ui::AnyComponent render() const override {
+        using namespace ui;
+        return MixedContainerComponent<FreeContainerBase, Boxy, Resizable>{
+            "Hello, world!"
+        }
+            .backgroundColor(0xFF0000FF)
+            .size(vec2{500.0f, 500.0f})
+            .borderRadius(5.0f);
+    }
+};
+
+// TODO: animations
+// the way to enable animations should be as part of StatefulComponent:
+// - animations can modify some part of a component's state
+// - how to do???
+
+// TODO
+
+/*
+Observables and Functional Components - OFC
+
+ofc::tmp::template metaprogramming junk
+ofc::ui::Component this that
+ofc::ui::dom::Element and friends
+ofc::Property ==(rename to)==> one of:
+ - ofc::Val (for simply VALue) <- this might be clearest and least awkward (ob* might cause confusion between observer and observable)
+
+TODO: add distinction between active and inactive observer (e.g. whether or not the observer is receiving updates at all)
+ - this should be made part of the observer's state (e.g. via setActive(bool) member function)
+TODO: add distinction between lazy and eager observers (e.g. observers that do or don't immediately respond to updates)
+- this could (should???) be done at type system level
+- example:
+    - ofc::Obv<std::vector, ofc::Eager> (Eager is default parameter) or
+    - ofc::Obv<std::vector, ofc::Lazy>
+
+ofc::Observer ==(rename to)==> one of:
+ - ofc::Obs (for OBserVer)
+ - ofc::Watcher
+ - ofc::Reacter
+*/
+
 int main(){
 
     using namespace ui;
-    
-    auto randEng = std::default_random_engine{std::random_device{}()};
+
+    // AnyComponent comp = UseFont(&getFont()).with(CoolComponent{});
+
+    auto Box = [](AnyComponent c) {
+        return MixedContainerComponent<FreeContainerBase, Boxy, Resizable>{}
+            .sizeForce(vec2{30.0f, 30.0f})
+            .backgroundColor(0x66FF66FF)
+            .borderColor(0x440000FF)
+            .borderThickness(1.0f)
+            .containing(
+                Center{std::move(c)}
+            );
+    };
+
+    // TODO: fix automatic resizing of dom::GridContainer
+
+    AnyComponent comp = UseFont(&getFont()).with(
+        MixedContainerComponent<ColumnGridBase, Boxy, Resizable>{TopToBottom}
+            .minSize(vec2{200.0f, 200.0f})
+            .backgroundColor(0xFF0044FF)
+            .borderColor(0xFF)
+            .borderThickness(1.0f)
+            .borderRadius(5.0f)
+            .containing(
+                Column(Box("A"), Box("B"), Box("C")),
+                Column(Box("D"), Box("E"), Box("F"), Box("G"), Box("H")),
+                Column(Box("I"), Box("J"))
+            )
+    );
+
+    /* auto words = Property{std::vector<String>{"Hello", "world"}};
+
+    AnyComponent comp = UseFont(&getFont()).with(
+        MixedContainerComponent<FreeContainerBase, Boxy, Resizable, Clickable>{
+                Center{HorizontalList{
+                    ForEach(words).Do([](const ui::String& s){ return s; })
+                }}
+            }
+            .backgroundColor(0xFF0000FF)
+            .minSize(vec2{200.0f, 200.0f})
+            .borderRadius(5.0f)
+            .onLeftClick([&](int){
+                std::cout << "AAAaaa you clicked me\n";
+                words.getOnceMut().push_back("eek"); 
+                return true;
+            })
+    ); */
+
+    // TODO: how to access mounted component for serialization?
+
+    /*auto randEng = std::default_random_engine{std::random_device{}()};
     auto dist = std::uniform_real_distribution<float>{0.0f, 1.0f};
 
     using MyComponent = MixedComponent<Clickable, Boxy, Resizable, Scrollable>;
     using Action = MyComponent::Action;
 
     auto bgColor = Property<Color>{0xFFFF00FF};
+
+    {
+        auto s = Serializer{};
+
+        s.object(bgColor.getOnce());
+
+        auto d = Deserializer{s.dump()};
+
+        bgColor.set(d.object<Color>());
+    }
 
     auto inFocus = Property<bool>{false};
 
@@ -199,7 +351,7 @@ int main(){
                     return true;
                 })
         )
-    ));
+    ));*/
     
     
     /*
@@ -224,14 +376,14 @@ int main(){
     ));*/
 
     
-    auto items = Property{std::vector{
+    /*auto items = Property{std::vector{
         "aaa", "bbb", "ccc", "ddd", "eee",
         "fff", "ggg", "hhh", "iii", "jjj",
         "kkk", "lll", "mmm", "nnn", "ooo",
         "ppp", "qqq", "rrr", "sss", "ttt"
     }};
 
-    /*
+    
     AnyComponent comp = UseFont(&getFont()).with(List(
         MixedContainerComponent<WrapGridBase, Boxy>(TopToBottom, 5, RightToLeft)
             .backgroundColor(0xffb0b0)

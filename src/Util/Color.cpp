@@ -1,5 +1,7 @@
 #include <GUI/Util/Color.hpp>
 
+#include <GUI/Serialization/Serialization.hpp>
+
 #include <cassert>
 #include <cmath>
 #include <algorithm>
@@ -269,6 +271,45 @@ namespace ui {
     }
     bool operator!=(const Color& a, const Color& b) noexcept {
         return !(a == b);
+    }
+
+    void serialize(Serializer& s, const Color& c) {
+        auto spaceCode = [&]() -> std::uint8_t {
+            switch (c.m_space) {
+            case Color::Space::RGB:
+                return 0;
+            case Color::Space::HSL:
+                return 1;
+            default:
+                assert(false);
+                return 0;
+            }
+        }();
+
+        s.u8(spaceCode)
+            .f32(c.m_values[0])
+            .f32(c.m_values[1])
+            .f32(c.m_values[2])
+            .f32(c.m_alpha);
+    }
+
+    void deserialize(Deserializer& s, Color& c) {
+        auto space = [&]() {
+            switch (s.u8()) {
+            case 0:
+                return Color::Space::RGB;
+            case 1:
+                return Color::Space::HSL;
+            default:
+                throw SerializationException{};
+            }
+        }();
+
+        c.m_space = space;
+        c.m_values[0] = s.f32();
+        c.m_values[1] = s.f32();
+        c.m_values[2] = s.f32();
+        c.m_alpha = s.f32();
     }
 
     Color interpolate(const Color& c0, const Color& c1, float t) noexcept {

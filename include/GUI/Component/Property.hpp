@@ -804,7 +804,7 @@ namespace ui {
         std::function<void(ObserverOwner*, DiffArgType<T>)> m_onUpdate;
 
         template<typename ObserverOwnerType>
-        static std::function<void(ObserverOwner*, DiffArgType<T>)> makeUpdateFunction(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>)) {
+        static std::function<void(ObserverOwner*, DiffArgType<T>)> makeUpdateFunction(ObserverOwnerType* /* self */, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>)) {
             static_assert(std::is_base_of_v<ObserverOwner, ObserverOwnerType>, "ObserverOwnerType must derive from ObserverOwner");
             // NOTE: self could be captured here, but is not, because it will become a
             // dangling pointer if the ObserverOwner is moved, which will be often in the
@@ -814,6 +814,7 @@ namespace ui {
                 assert(dynamic_cast<ObserverOwnerType*>(self));
                 auto sd = static_cast<ObserverOwnerType*>(self);
                 if constexpr (std::is_base_of_v<Component, ObserverOwnerType>) {
+                    // HACK! This should be replaced with a more general base class member like isActive()
                     const auto mounted = static_cast<Component*>(self)->isMounted();
                     if (!mounted) {
                         return;
@@ -935,6 +936,9 @@ namespace ui {
             if constexpr (Which == Current) {
                 return d;
             } else {
+                // TODO: remove this no-op once MSVC figures out that no, this parameter is not actually unreferenced
+                (void)d;
+
                 using R = std::tuple_element_t<Current, std::tuple<U, Rest...>>;
                 const auto& v = Base::getValueOnce<Current>();
                 return Difference<R>::compute(v, v);

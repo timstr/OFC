@@ -79,13 +79,72 @@ namespace ui {
         return (it == siblings.end()) ? nullptr : *it;
     }
 
+    bool Component::appearsBefore(const Component* other) const noexcept {
+        if (this == other) {
+            return false;
+        }
+
+        const auto walkPath = [](const Component* comp) {
+            std::vector<const Component*> path;
+            while (true) {
+                path.push_back(comp);
+                if (auto p = comp->parent()) {
+                    if (auto c = p->toComponent()) {
+                        comp = c;
+                        continue;
+                    }
+                }
+                break;
+            }
+            return path;
+        };
+
+        const auto pathToSelf = walkPath(this);
+        const auto pathToOther = walkPath(other);
+
+        auto itSelf = pathToSelf.rbegin();
+        auto itOther = pathToOther.rbegin();
+
+        auto parent = (*itSelf)->parent();
+
+        if (parent != (*itOther)->parent()) {
+            return false;
+        }
+
+        while (itSelf != pathToSelf.rend() && itOther != pathToOther.rend()) {
+            if (*itSelf != *itOther) {
+                for (const auto& c : parent->getChildren()) {
+                    if (c == *itSelf) {
+                        return true;
+                    } else if (c == *itOther) {
+                        return false;
+                    }
+                }
+                assert(false);
+            }
+            ++itSelf;
+            ++itOther;
+            parent = (*itSelf)->parent();
+        }
+        assert(false);
+        return false;
+    }
+
     dom::Element* Component::getElement() const noexcept {
         return nullptr;
     }
 
+    void Component::serializeState(Serializer& s) const {
+        serializeStateImpl(s);
+    }
+
+    void Component::deserializeState(Deserializer& d) {
+        deserializeStateImpl(d);
+    }
+
     void Component::insertElement(std::unique_ptr<dom::Element> element, const dom::Element* beforeElement) {
         assert(m_parent);
-        m_parent->onInsertChildElement(std::move(element), this, beforeElement);
+        m_parent->onInsertChildElement(std::move(element), Scope{this, beforeElement});
     }
 
     void Component::eraseElement(dom::Element* element) {
@@ -101,12 +160,28 @@ namespace ui {
         return nullptr;
     }
 
+    void Component::serializeStateImpl(Serializer& s) const {
+        if (auto cp = toComponentParent()) {
+            for (auto c : cp->getChildren()) {
+                c->serializeStateImpl(s);
+            }
+        }
+    }
+
+    void Component::deserializeStateImpl(Deserializer& d) const {
+        if (auto cp = toComponentParent()) {
+            for (auto c : cp->getChildren()) {
+                c->deserializeStateImpl(d);
+            }
+        }
+    }
 
 
 
-    void ForwardingComponent::onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* whichDescendent, const dom::Element* beforeElement) {
+
+    void ForwardingComponent::onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) {
         assert(parent());
-        parent()->onInsertChildElement(std::move(element), whichDescendent, beforeElement);
+        parent()->onInsertChildElement(std::move(element), scope);
     }
 
     void ForwardingComponent::onRemoveChildElement(dom::Element* whichElement, const Component* whichDescendent) {
@@ -194,6 +269,14 @@ namespace ui {
         return nullptr;
     }
 
+    Component* ComponentParent::toComponent() noexcept {
+        return const_cast<Component*>(const_cast<const ComponentParent*>(this)->toComponent());
+    }
+
+    const Component* ComponentParent::toComponent() const noexcept {
+        return nullptr;
+    }
+
     void* InternalComponent::findContextProvider(const std::type_info& ti) noexcept {
         if (parent()) {
             return parent()->findContextProvider(ti);
@@ -203,6 +286,123 @@ namespace ui {
 
     const ComponentParent* InternalComponent::toComponentParent() const noexcept {
         return this;
+    }
+
+    const Component* InternalComponent::toComponent() const noexcept {
+        return this;
+    }
+
+
+    Restorable::Context::Context() noexcept
+        : m_restorable(nullptr) {
+    }
+
+    Restorable::Context::~Context() noexcept {
+        if (m_restorable) {
+            assert(m_restorable->m_context == this);
+            m_restorable->m_context = nullptr;
+        }
+    }
+
+    Restorable::Context::Context(Context&& o) noexcept
+        : m_restorable(std::exchange(o.m_restorable, nullptr)) {
+
+        if (m_restorable) {
+            assert(m_restorable->m_context == &o);
+            m_restorable->m_context = this;
+        }
+    }
+
+    Restorable::Context& Restorable::Context::operator=(Context&& o) noexcept {
+        if (m_restorable) {
+            assert(m_restorable->m_context == this);
+            m_restorable->m_context = nullptr;
+        }
+        m_restorable = std::exchange(o.m_restorable, nullptr);
+        if (m_restorable) {
+            assert(m_restorable->m_context == &o);
+            m_restorable->m_context = this;
+        }
+        return *this;
+    }
+
+    void Restorable::Context::save(Serializer& s) const {
+        assert(m_restorable);
+        auto c = m_restorable->m_component.get();
+        assert(c);
+        assert(c->isMounted());
+        c->serializeState(s);
+    }
+
+    void Restorable::Context::restore(Deserializer& d) {
+        assert(m_restorable);
+        auto c = m_restorable->m_component.get();
+        assert(c);
+        assert(c->isMounted());
+        c->deserializeState(d);
+    }
+
+    Restorable::Restorable(Context& c)
+        : m_context(&c) {
+    }
+
+    Restorable::~Restorable() {
+        if (m_context) {
+            m_context->m_restorable = nullptr;
+        }
+    }
+
+    Restorable::Restorable(Restorable&& o)
+        : m_component(std::move(o.m_component))
+        , m_context(std::exchange(o.m_context, nullptr)) {
+
+        if (m_context) {
+            assert(m_context->m_restorable == &o);
+            m_context->m_restorable = this;
+        }
+    }
+
+    Restorable& Restorable::with(AnyComponent c) {
+        m_component = std::move(c);
+        return *this;
+    }
+
+    void Restorable::onMount(const dom::Element* beforeSibling) {
+        m_component.tryMount(this, beforeSibling);
+    }
+
+    void Restorable::onUnmount() {
+        m_component.tryUnmount();
+    }
+
+    Scope::Scope(const Component* descendent, const dom::Element* beforeElement) noexcept
+        : m_descendent(descendent)
+        , m_beforeElement(beforeElement) {
+    }
+
+    const Component* Scope::descendent() const noexcept {
+        return m_descendent;
+    }
+
+    const dom::Element* Scope::beforeElement() const noexcept {
+        return m_beforeElement;
+    }
+
+    SimpleForwardingComponent::SimpleForwardingComponent(AnyComponent c)
+        : m_child(std::move(c)) {
+
+    }
+
+    void SimpleForwardingComponent::onMount(const dom::Element* e) {
+        m_child.tryMount(this, e);
+    }
+
+    void SimpleForwardingComponent::onUnmount() {
+        m_child.tryUnmount();
+    }
+
+    std::vector<const Component*> SimpleForwardingComponent::getChildren() const noexcept {
+        return { m_child.get() };
     }
 
 } // namespace ui

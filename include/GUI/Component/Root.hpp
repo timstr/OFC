@@ -52,7 +52,7 @@ namespace ui {
 
         }
 
-        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* whichDescendent, const dom::Element* beforeElement) override final;
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* whichDescendent) override final;
 

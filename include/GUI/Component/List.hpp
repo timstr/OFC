@@ -13,6 +13,7 @@ namespace ui {
                 int dummy[] = {
                     (m_components.emplace_back(std::forward<ComponentTypes>(components)), 0)...
                 };
+                (void)dummy;
             }
         }
 

@@ -17,7 +17,7 @@ namespace ui {
         m_component->unmount();
     }
 
-    void Root::onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* whichDescendent, const dom::Element* beforeElement) {
+    void Root::onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& /* scope */) {
         assert(!m_tempContainer);
         auto c = element->toContainer();
         assert(c);
@@ -25,7 +25,7 @@ namespace ui {
         m_tempContainer = std::unique_ptr<dom::Container>(c);
     }
 
-    void Root::onRemoveChildElement(dom::Element* whichElement, const Component* whichDescendent) {
+    void Root::onRemoveChildElement(dom::Element* /* whichElement */, const Component* /* whichDescendent */) {
         // Nothing to do
     }
 

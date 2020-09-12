@@ -4,9 +4,19 @@
 
 namespace ui {
 
-    template<typename StateType>
+    struct Persistent {};
+    struct Ephemeral {};
+
+    template<typename StateType, typename PersistenceType>
     class StatefulComponent : public ForwardingComponent {
     public:
+        static_assert(
+            std::is_same_v<PersistenceType, Persistent> || std::is_same_v<PersistenceType, Ephemeral>,
+            "PersistenceType must be either ui::Persistent or ui::Ephemeral"
+        );
+
+        static_assert(std::is_class_v<StateType>, "StateType must be a class or struct");
+
         template<typename... Args>
         StatefulComponent(Args&&... args)
             : m_state(std::make_unique<StateType>(std::forward<Args>(args)...)) {
@@ -40,6 +50,20 @@ namespace ui {
 
         std::vector<const Component*> getChildren() const noexcept override final {
             return { m_component.get() };
+        }
+
+        void serializeStateImpl(Serializer& s) const override final {
+            if constexpr (std::is_same_v<PersistenceType, Persistent>) {
+                s.object<StateType>(state());
+            }
+            Component::serializeStateImpl(s);
+        }
+
+        void deserializeStateImpl(Deserializer& d) const override final {
+            if constexpr (std::is_same_v<PersistenceType, Persistent>) {
+                d.object<StateType>(stateMut());
+            }
+            Component::deserializeStateImpl(d);
         }
     };
 

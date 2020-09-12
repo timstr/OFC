@@ -3,6 +3,29 @@
 #include <tuple>
 
 namespace ui::tmp {
+    
+    template<typename T>
+    struct Tag {};
+
+    template<typename T>
+    struct TautologyImpl {
+        constexpr static bool Value = true;
+    };
+
+    template<typename T>
+    constexpr bool Tautology = TautologyImpl<T>::Value;
+
+
+
+    template<typename T>
+    struct ContradictionImpl {
+        constexpr static bool Value = false;
+    };
+
+    template<typename T>
+    constexpr bool Contradiction = ContradictionImpl<T>::Value;
+
+
 
     template<typename T>
     struct DontDeduceImpl {

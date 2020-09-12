@@ -2,10 +2,13 @@
 
 #include <SFML/Graphics/Color.hpp>
 
-#include <stdint.h>
+#include <cstdint>
 #include <array>
 
 namespace ui {
+
+    class Serializer;
+    class Deserializer;
 
     /**
      * Color is a point in either the RGB or the HSL color space, plus an alpha channel.
@@ -72,6 +75,9 @@ namespace ui {
         
         friend bool operator==(const Color& a, const Color& b) noexcept;
         friend bool operator!=(const Color& a, const Color& b) noexcept;
+
+        friend void serialize(Serializer& s, const Color& c);
+        friend void deserialize(Deserializer& s, Color& c);
     };
 
     

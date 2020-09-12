@@ -11,7 +11,6 @@ else()
     find_package(SFML 2.4 COMPONENTS system window graphics audio main REQUIRED)
 endif()
 
-
 if (NOT SFML_FOUND)
     message(FATAL_ERROR "Could not find SFML. Please install SFML.")
 endif()
@@ -40,6 +39,8 @@ set(tims-gui_headers
     include/GUI/Component/Switch.hpp
     include/GUI/Component/Text.hpp
     include/GUI/Component/When.hpp
+
+    include/GUI/Serialization/Serialization.hpp
 
     include/GUI/DOM/BoxElement.hpp
     include/GUI/DOM/Container.hpp
@@ -80,6 +81,7 @@ set(tims-gui_srcs
 
     src/Component/Buttons.cpp
     src/Component/Component.cpp
+    src/Component/Containers.cpp
     src/Component/FontContext.cpp
     src/Component/If.cpp
     src/Component/List.cpp
@@ -88,6 +90,8 @@ set(tims-gui_srcs
     src/Component/PureComponent.cpp
     src/Component/Root.cpp
     src/Component/Text.cpp
+
+    src/Serialization/Serialization.cpp
 
     src/DOM/BoxElement.cpp
     src/DOM/Container.cpp
@@ -154,5 +158,24 @@ if(TIMS_GUI_GENERATE_EXAMPLE)
 endif()
 
 if(MSVC)
-    target_compile_options(tims-gui PUBLIC "/wd4250")
+    target_compile_options(tims-gui PUBLIC
+        # increase warning level
+        "/W4"
+
+        # Turn warning "not all control paths return a value" into an error
+        "/we4715"
+
+        # Disable warning "class X inherits Y::Z via dominance" because it is dumb and knows nothing of virtual inheritance
+        "/wd4250"
+
+        # use sane exception handling, rather than trying to catch segfaults and allowing resource leaks and UB.
+        # Yes, MSVC is genuinely that stupid by default. See "Default exception handling behavior" at
+        # https://docs.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=vs-2019
+        "/EHsc" 
+
+        # turn warning C4239 (non-standard extension that allows temporaries to be bound to
+        # non-const references, yay microsoft) into an error
+        # This extension is without question the source of many bugs and disastrous surprises
+        "/we4239"
+    )
 endif()

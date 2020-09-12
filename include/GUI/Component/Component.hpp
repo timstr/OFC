@@ -7,7 +7,11 @@
 #include <GUI/DOM/FreeContainer.hpp>
 #include <GUI/DOM/Text.hpp>
 
+#include <GUI/Serialization/Serialization.hpp>
+
 #include <memory>
+#include <typeinfo>
+#include <any>
 #include <typeinfo>
 
 namespace ui {
@@ -53,7 +57,12 @@ namespace ui {
 
         const Component* getNextComponent() const noexcept;
 
+        bool appearsBefore(const Component* other) const noexcept;
+
         virtual dom::Element* getElement() const noexcept;
+
+        void serializeState(Serializer&) const;
+        void deserializeState(Deserializer&);
 
     protected:
         void insertElement(std::unique_ptr<dom::Element> element, const dom::Element* beforeElement);
@@ -77,6 +86,85 @@ namespace ui {
         friend ObserverBase;
 
         friend ComponentParent;
+
+        template<typename StateType, typename PersistenceType>
+        friend class StatefulComponent;
+
+        virtual void serializeStateImpl(Serializer&) const;
+        virtual void deserializeStateImpl(Deserializer&) const;
+    };
+
+    class Scope {
+    public:
+        Scope(const Component* descendent, const dom::Element* beforeElement) noexcept;
+
+        const Component* descendent() const noexcept;
+
+        const dom::Element* beforeElement() const noexcept;
+
+        /**
+         * Adds some value or simply a tag to the scope.
+         * If an item of the same type already exists,
+         * nothing is done. This enables shadowing to
+         * work intuitively, since innermost components
+         * add items to the scope before outer components
+         * see the same scope.
+         * Examples:
+         *  - the item could be a single empty trait class,
+         *    like `class FlowBlock {}`, which is added per-component
+         *    and for which the existence is checked in FlowContainerBase
+         * - the item could be a simple struct like
+         *   `class GridCellCoordinate { int x, int y };` which has a bit more
+         *    information
+         */
+
+        template<typename T, typename... Args>
+        void add(Args&&... args) {
+            auto a = std::make_any<T>(std::forward<Args>(args)...);
+            auto it = find_if(
+                begin(m_items),
+                end(m_items),
+                [](const std::any& a) {
+                    return a.type() == typeid(T);
+                }
+            );
+            if (it != end(m_items)) {
+                *it = std::move(a);
+            }
+            m_items.push_back(std::move(a));
+        }
+
+        template<typename T>
+        bool has() const noexcept {
+            auto it = find_if(
+                begin(m_items),
+                end(m_items),
+                [](const std::any& a) {
+                    return a.type() == typeid(T);
+                }
+            );
+            return it != end(m_items);
+        }
+
+        template<typename T>
+        const T* get() const noexcept {
+            auto it = find_if(
+                begin(m_items),
+                end(m_items),
+                [](const std::any& a) {
+                    return a.type() == typeid(T);
+                }
+            );
+            if (it != end(m_items)) {
+                return std::any_cast<T>(&*it);
+            }
+            return nullptr;
+        }
+
+    private:
+        const Component* const m_descendent;
+        const dom::Element* const m_beforeElement;
+        std::vector<std::any> m_items;
     };
 
     // ComponentParent is the basic parent type to all components.
@@ -101,7 +189,7 @@ namespace ui {
          *                        new element will be inserted. Passing nullptr results in the new element simply
          *                         being appended to the rest of its siblings from the same component.
         */
-        virtual void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* whichDescendent, const dom::Element* beforeElement) = 0;
+        virtual void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) = 0;
 
         /**
          * 
@@ -112,6 +200,9 @@ namespace ui {
 
     private:
         virtual void* findContextProvider(const std::type_info&) noexcept;
+
+        Component* toComponent() noexcept;
+        virtual const Component* toComponent() const noexcept;
 
         friend Component;
 
@@ -130,6 +221,7 @@ namespace ui {
         void* findContextProvider(const std::type_info&) noexcept override;
 
         const ComponentParent* toComponentParent() const noexcept override final;
+        const Component* toComponent() const noexcept override final;
     };
 
     // Component representing a single dom::Element type that unconditionally
@@ -174,12 +266,9 @@ namespace ui {
     // calls on to its parent
     class ForwardingComponent : public InternalComponent {
     public:
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override;
 
-
-    private:
-        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* whichDescendent, const dom::Element* beforeElement) override final;
-
-        void onRemoveChildElement(dom::Element* whichElement, const Component* whichDescendent) override final;
+        void onRemoveChildElement(dom::Element* whichElement, const Component* whichDescendent) override;
     };
 
     // To be used in public API methods where client can pass any component
@@ -229,6 +318,63 @@ namespace ui {
         std::unique_ptr<Component> m_component;
 
         friend class InternalComponent;
+    };
+
+    class SimpleForwardingComponent : public ForwardingComponent {
+    public:
+        SimpleForwardingComponent(AnyComponent);
+
+    private:
+        AnyComponent m_child;
+        
+        void onMount(const dom::Element*) override final;
+        void onUnmount() override final;
+
+        std::vector<const Component*> getChildren() const noexcept override final;
+    };
+
+    class Restorable : public InternalComponent {
+    public:
+        class Context {
+        public:
+            Context() noexcept;
+            ~Context() noexcept;
+
+            Context(Context&&) noexcept;
+            Context& operator=(Context&&) noexcept;
+
+            Context(const Context&) = delete;
+            Context& operator=(const Context&) = delete;
+            
+            void save(Serializer&) const;
+
+            void restore(Deserializer&);
+        private:
+            Restorable* m_restorable;
+
+            friend Restorable;
+        };
+
+        
+        Restorable(Context&);
+        ~Restorable();
+
+        Restorable(Restorable&&);
+        
+        Restorable() = delete;
+        Restorable(const Restorable&) = delete;
+        Restorable& operator=(Restorable&&) = delete;
+        Restorable& operator=(const Restorable&&) = delete;
+
+        Restorable& with(AnyComponent);
+
+    private:
+        AnyComponent m_component;
+        Context* m_context;
+
+        void onMount(const dom::Element* beforeSibling);
+
+        void onUnmount();
     };
 
 } // namespace ui

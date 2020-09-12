@@ -66,6 +66,22 @@ namespace ui {
     };
 
 
+
+    namespace detail {
+        class align_CenterVertically {};
+        class align_CenterHorizontally {};
+        class align_InsideLeft {};
+        class align_OutsideLeft {};
+        class align_InsideRight {};
+        class align_OutsideRight {};
+        class align_InsideTop {};
+        class align_OutsideTop {};
+        class align_InsideBottom {};
+        class align_OutsideBottom {};
+    } // namespace detail
+
+
+
     template<typename Derived>
     class FreeContainerBase : public ContainerComponentTemplate<dom::FreeContainer, Derived> {
     public:
@@ -80,6 +96,20 @@ namespace ui {
 
         }
 
+        Derived& containing(AnyComponent c) {
+            m_childComponent = std::move(c);
+            return static_cast<Derived&>(*this);
+        }
+
+        template<
+            typename... ComponentTypes,
+            std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
+        >
+        Derived& containing(ComponentTypes&&... components) {
+            m_childComponent = List(std::forward<ComponentTypes>(components)...);
+            return static_cast<Derived&>(*this);
+        }
+
     private:
         AnyComponent m_childComponent;
 
@@ -91,11 +121,40 @@ namespace ui {
             m_childComponent.tryUnmount();
         }
 
-        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
+            using namespace detail;
+            using Style = dom::FreeContainer::PositionStyle;
             auto c = container();
             assert(c);
             // TODO: insert element before `beforeElement`
-            c->adopt(std::move(element));
+            auto sx = Style::None;
+            auto sy = Style::None;
+
+            if (scope.has<align_InsideLeft>()) {
+                sx = Style::InsideLeft;
+            } else if (scope.has<align_OutsideLeft>()) {
+                sx = Style::OutsideLeft;
+            } else if (scope.has<align_CenterHorizontally>()){
+                sx = Style::Center;
+            } else if (scope.has<align_InsideRight>()) {
+                sx = Style::InsideRight;
+            } else if (scope.has<align_OutsideRight>()) {
+                sx = Style::OutsideRight;
+            }
+
+            if (scope.has<align_InsideTop>()) {
+                sy = Style::InsideTop;
+            } else if (scope.has<align_OutsideTop>()) {
+                sy = Style::OutsideTop;
+            } else if (scope.has<align_CenterVertically>()) {
+                sy = Style::Center;
+            } else if (scope.has<align_InsideBottom>()) {
+                sy = Style::InsideBottom;
+            } else if (scope.has<align_OutsideBottom>()) {
+                sy = Style::OutsideBottom;
+            }
+
+            c->adopt(sx, sy, std::move(element));
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -108,6 +167,16 @@ namespace ui {
             return {m_childComponent.get()};
         }
     };
+
+
+
+    namespace detail {
+        class flowStyle_Inline {};
+        class flowStyle_Block {};
+        class flowStyle_FloatLeft {};
+        class flowStyle_FloatRight {};
+        class flowStyle_Free {};
+    } // namespace
 
 
 
@@ -125,6 +194,20 @@ namespace ui {
 
         }
 
+        Derived& containing(AnyComponent c) {
+            m_childComponent = std::move(c):
+            return static_cast<Derived&>(*this);
+        }
+
+        template<
+            typename... ComponentTypes,
+            std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
+        >
+        Derived& containing(ComponentTypes&&... components) {
+            m_childComponent = List(std::forward<ComponentTypes>(components)...);
+            return static_cast<Derived&>(*this);
+        }
+
     private:
         AnyComponent m_childComponent;
 
@@ -136,11 +219,21 @@ namespace ui {
             m_childComponent.tryUnmount();
         }
 
-        // TODO: add some clean way to specify flow style
-        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
+            using namespace detail;
             auto c = container();
             assert(c);
-            c->adopt(std::move(element), dom::LayoutStyle::Inline, beforeElement);
+            auto style = dom::LayoutStyle::Inline;
+            if (scope.has<flowStyle_Block>()) {
+                style= dom::LayoutStyle::Block;
+            } else if (scope.has<flowStyle_FloatLeft>()) {
+                style= dom::LayoutStyle::FloatLeft;
+            } else if (scope.has<flowStyle_FloatRight>()) {
+                style= dom::LayoutStyle::FloatRight;
+            } else if (scope.has<flowStyle_Free>()) {
+                style= dom::LayoutStyle::Free;
+            }
+            c->adopt(std::move(element), style, scope.beforeElement());
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -170,6 +263,20 @@ namespace ui {
 
         }
 
+        Derived& containing(AnyComponent c) {
+            m_childComponent = std::move(c):
+            return static_cast<Derived&>(*this);
+        }
+
+        template<
+            typename... ComponentTypes,
+            std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
+        >
+        Derived& containing(ComponentTypes&&... components) {
+            m_childComponent = List(std::forward<ComponentTypes>(components)...);
+            return static_cast<Derived&>(*this);
+        }
+
     private:
         AnyComponent m_childComponent;
 
@@ -181,13 +288,14 @@ namespace ui {
             m_childComponent.tryUnmount();
         }
 
-        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
             auto c = container();
             assert(c);
-            if (beforeElement && beforeElement->getParentContainer() != c) {
-                beforeElement = nullptr;
+            auto b = scope.beforeElement();
+            if (b && b->getParentContainer() != c) {
+                b= nullptr;
             }
-            c->insertBefore(beforeElement, std::move(element));
+            c->insertBefore(b, std::move(element));
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -217,6 +325,20 @@ namespace ui {
 
         }
 
+        Derived& containing(AnyComponent c) {
+            m_childComponent = std::move(c):
+            return static_cast<Derived&>(*this);
+        }
+
+        template<
+            typename... ComponentTypes,
+            std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
+        >
+        Derived& containing(ComponentTypes&&... components) {
+            m_childComponent = List(std::forward<ComponentTypes>(components)...);
+            return static_cast<Derived&>(*this);
+        }
+
     private:
         AnyComponent m_childComponent;
 
@@ -228,10 +350,10 @@ namespace ui {
             m_childComponent.tryUnmount();
         }
 
-        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
             auto c = container();
             assert(c);
-            c->insertBefore(beforeElement, std::move(element));
+            c->insertBefore(scope.beforeElement(), std::move(element));
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -393,10 +515,10 @@ namespace ui {
             }
         }
 
-        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Component* /* whichDescendent */, const dom::Element* beforeElement) override final {
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
             assert(element);
-            auto it = beforeElement ?
-                find(begin(m_mountedElements), end(m_mountedElements), beforeElement) :
+            auto it = scope.beforeElement() ?
+                find(begin(m_mountedElements), end(m_mountedElements), scope.beforeElement()) :
                 end(m_mountedElements);
             m_mountedElements.insert(it, element.get());
             auto c = container();
@@ -425,21 +547,317 @@ namespace ui {
         }
     };
 
-    // TODO
+    
+
+    class Row;
+    class Column;
+
+
+
     template<typename Derived>
     class ColumnGridBase : public ContainerComponentTemplate<dom::GridContainer, Derived> {
     public:
-        ColumnGridBase();
+        ColumnGridBase(VerticalDirection dir)
+            : m_direction(dir) {
 
-        class Column : public InternalComponent {
-        public:
-            Column(AnyComponent);
+        }
 
-        private:
-        };
+        decltype(auto) containing(AnyComponent c) {
+            m_childComponent = std::move(c);
+            return self();
+        }
+
+        template<
+            typename... ComponentTypes,
+            std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
+        >
+        decltype(auto) containing(ComponentTypes&&... c) {
+            m_childComponent = List(std::forward<ComponentTypes>(c)...);
+            return self();
+        }
+
+    private:
+        AnyComponent m_childComponent;
+        const VerticalDirection m_direction;
+        std::vector<std::pair<const Column*, std::vector<dom::Element*>>> m_columns;
+        
+        void onMountContainer(const dom::Element* beforeElement) override final {
+            m_childComponent.tryMount(this, beforeElement);
+        }
+
+        void onUnmountContainer() override final {
+            m_childComponent.tryUnmount();
+        }
+
+        void refreshContents() {
+            const auto grid = container();
+
+            // Clear the grid and take ownership of all elements
+            std::vector<std::pair<const Column*, std::vector<std::unique_ptr<dom::Element>>>> columnElements;
+
+            for (const auto& [col, elems] : m_columns) {
+                columnElements.emplace_back(col, std::vector<std::unique_ptr<dom::Element>>{});
+                for (const auto& ePtr : elems) {
+                    columnElements.back().second.push_back(ePtr->orphan());
+                }
+            }
+            assert(std::as_const(*grid).children().size() == 0);
+
+            // Find the number of rows and columns
+            const auto nCols = columnElements.size();
+            const auto largestCol = max_element(
+                begin(columnElements),
+                end(columnElements),
+                [](const auto& col1, const auto& col2) {
+                    return col1.second.size() < col2.second.size();
+                }
+            );
+            const auto nRows = largestCol == end(columnElements) ? std::size_t{0} : largestCol->second.size();
+
+            // Resize the grid
+            grid->setRows(nRows);
+            grid->setColumns(nCols);
+
+            // Re-insert all elements where they belong
+            for (std::size_t col = 0, colEnd = columnElements.size(); col != colEnd; ++col) {
+                auto& elems = columnElements[col].second;
+                for (std::size_t row = 0, rowEnd = elems.size(); row != rowEnd; ++row) {
+                    const auto r = m_direction == TopToBottom ? row : nRows - 1 - row;
+                    grid->putCell(col, r, std::move(elems[row]));
+                }
+            }
+        }
+
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
+            assert(element);
+            const auto tag = scope.get<detail::grid_column>();
+            if (!tag) {
+                throw std::runtime_error("An component was added to a ColumnGrid that was not inside a Column");
+            }
+            const auto c = tag->column;
+
+            // Find the column, or create a new one if it's not found
+            auto it = begin(m_columns);
+            while (true) {
+                if (it == end(m_columns)) {
+                    // The column's position wasn't found: insert it at the end
+                    m_columns.push_back({c, {}});
+                    it = --end(m_columns);
+                    break;
+                }
+                if (c == it->first) {
+                    // The exact column is found: use it and carry on
+                    break;
+                }
+                if (c->appearsBefore(it->first)) {
+                    // The place where the column should be is found: insert a new column
+                    it = m_columns.insert(it, {c, {}});
+                    break;
+                }
+                ++it;
+            }
+            assert(it != end(m_columns));
+
+            auto& [theColumn, theElements] = *it;
+
+            // Find the new element's position in the column and insert it there
+            auto eit = find_if(
+                begin(theElements),
+                end(theElements),
+                [&](const auto& e) {
+                    return e == scope.beforeElement();
+                }
+            );
+
+            theElements.insert(eit, element.get());
+
+            // insert the element at a dummy position to keep the refresh logic simple
+            const auto grid = container();
+            grid->appendColumn();
+            grid->putCell(grid->columns() - 1, 0, std::move(element));
+
+            refreshContents();
+        }
+
+        void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
+            assert(whichElement);
+            
+            for (auto it = begin(m_columns), itEnd = end(m_columns); it != itEnd; ++it){
+                auto& [theColumn, theElements] = *it;
+            
+                auto eit = find(
+                    begin(theElements),
+                    end(theElements),
+                    whichElement
+                );
+                if (eit == end(theElements)) {
+                    continue;
+                }
+
+                theElements.erase(eit);
+
+                if (theElements.size() == 0) {
+                    m_columns.erase(it);
+                }
+
+                whichElement->orphan();
+
+                refreshContents();
+
+                return;
+            }
+            assert(false);
+        }
+
+        std::vector<const Component*> getChildren() const noexcept override final {
+            return { m_childComponent.get() };
+        }
     };
 
-    // TODO: RowGrid
+
+    //------------------------------------------
+
+    template<typename T>
+    class ScopeTagComponent : public SimpleForwardingComponent {
+    public:
+        using SimpleForwardingComponent::SimpleForwardingComponent;
+
+    private:
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
+            auto s = scope;
+            s.add<T>();
+            SimpleForwardingComponent::onInsertChildElement(std::move(element), s);
+        }
+    };
+
+    //------------------------------------------
+
+    class CenterVertically : public ScopeTagComponent<detail::align_CenterVertically> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class CenterHorizontally : public ScopeTagComponent<detail::align_CenterHorizontally> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class Center : public SimpleForwardingComponent {
+    public:
+        using SimpleForwardingComponent::SimpleForwardingComponent;
+
+    private:
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
+    };
+
+    class AlignInsideLeft : public ScopeTagComponent<detail::align_InsideLeft> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class AlignOutsideLeft : public ScopeTagComponent<detail::align_OutsideLeft> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class AlignInsideRight : public ScopeTagComponent<detail::align_InsideRight> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class AlignOutsideRight : public ScopeTagComponent<detail::align_OutsideRight> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class AlignInsideTop : public ScopeTagComponent<detail::align_InsideTop> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class AlignOutsideTop : public ScopeTagComponent<detail::align_OutsideTop> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class AlignInsideBottom : public ScopeTagComponent<detail::align_InsideBottom> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class AlignOutsideBottom : public ScopeTagComponent<detail::align_OutsideBottom> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    //--------------------------------
+
+
+    class FlowInline : public ScopeTagComponent<detail::flowStyle_Inline> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class FlowBlock : public ScopeTagComponent<detail::flowStyle_Block> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class FlowFloatLeft : public ScopeTagComponent<detail::flowStyle_FloatLeft> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class FlowFloatRight : public ScopeTagComponent<detail::flowStyle_FloatRight> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    class FlowFree : public ScopeTagComponent<detail::flowStyle_Free> {
+    public:
+        using ScopeTagComponent::ScopeTagComponent;
+    };
+
+    namespace detail {
+        class grid_row {
+        public:
+            grid_row(const Row* theRow) noexcept;
+            const Row* const row;
+        };
+
+        class grid_column {
+        public:
+            grid_column(const Column* theColumn) noexcept;
+            const Column* const column;
+        };
+    }
+
+    // TODO: "weight" for row and column (see dom::GridContainer)
+
+    class Row : public SimpleForwardingComponent {
+    public:
+        using SimpleForwardingComponent::SimpleForwardingComponent;
+
+    private:
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
+    };
+
+    class Column : public SimpleForwardingComponent {
+    public:
+        Column(AnyComponent);
+
+        template<
+            typename... ComponentTypes,
+            std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
+        >
+        Column(ComponentTypes&&... components)
+            : SimpleForwardingComponent(List(std::forward<ComponentTypes>(components)...)) {
+
+        }
+
+    private:
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
+    };
 
     //--------------------------------
 
@@ -472,6 +890,7 @@ namespace ui {
     public:
         using ColumnGridBase::ColumnGridBase;
     };
-
+    
+    // TODO: RowGrid
 
 } // namespace ui

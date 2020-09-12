@@ -2,6 +2,8 @@
 
 #include <GUI/DOM/Container.hpp>
 
+#include <cstdint>
+
 namespace ui::dom {
 
     // TODO per-element or per-freecontainer margins
@@ -11,7 +13,7 @@ namespace ui::dom {
     public:
         
         // How a free element is positioned relative to its parent
-        enum PositionStyle {
+        enum class PositionStyle : std::uint8_t {
             // the element's position is left untouched
             None,
 
