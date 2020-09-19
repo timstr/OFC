@@ -11,7 +11,7 @@ namespace ui::dom {
 
     class FreeContainer : public Container {
     public:
-        
+
         // How a free element is positioned relative to its parent
         enum class PositionStyle : std::uint8_t {
             // the element's position is left untouched

@@ -161,6 +161,8 @@ namespace ui {
             return nullptr;
         }
 
+        std::size_t size() const noexcept;
+
     private:
         const Component* const m_descendent;
         const dom::Element* const m_beforeElement;

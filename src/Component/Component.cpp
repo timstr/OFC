@@ -388,6 +388,10 @@ namespace ui {
         return m_beforeElement;
     }
 
+    std::size_t Scope::size() const noexcept {
+        return m_items.size();
+    }
+
     SimpleForwardingComponent::SimpleForwardingComponent(AnyComponent c)
         : m_child(std::move(c)) {
 

@@ -195,7 +195,7 @@ namespace ui {
         }
 
         Derived& containing(AnyComponent c) {
-            m_childComponent = std::move(c):
+            m_childComponent = std::move(c);
             return static_cast<Derived&>(*this);
         }
 
@@ -264,7 +264,7 @@ namespace ui {
         }
 
         Derived& containing(AnyComponent c) {
-            m_childComponent = std::move(c):
+            m_childComponent = std::move(c);
             return static_cast<Derived&>(*this);
         }
 
@@ -326,7 +326,7 @@ namespace ui {
         }
 
         Derived& containing(AnyComponent c) {
-            m_childComponent = std::move(c):
+            m_childComponent = std::move(c);
             return static_cast<Derived&>(*this);
         }
 

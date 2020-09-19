@@ -191,31 +191,34 @@ int main(){
 
     // AnyComponent comp = UseFont(&getFont()).with(CoolComponent{});
 
-    auto Box = [](AnyComponent c) {
-        return MixedContainerComponent<FreeContainerBase, Boxy, Resizable>{}
+    auto Box = [](AnyComponent c) -> AnyComponent {
+        return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, Clickable>{}
             .sizeForce(vec2{30.0f, 30.0f})
             .backgroundColor(0x66FF66FF)
             .borderColor(0x440000FF)
-            .borderThickness(1.0f)
+            .borderThickness(2.5f)
             .containing(
                 Center{std::move(c)}
             );
     };
 
-    // TODO: fix automatic resizing of dom::GridContainer
-
     AnyComponent comp = UseFont(&getFont()).with(
-        MixedContainerComponent<ColumnGridBase, Boxy, Resizable>{TopToBottom}
-            .minSize(vec2{200.0f, 200.0f})
-            .backgroundColor(0xFF0044FF)
-            .borderColor(0xFF)
-            .borderThickness(1.0f)
-            .borderRadius(5.0f)
-            .containing(
-                Column(Box("A"), Box("B"), Box("C")),
-                Column(Box("D"), Box("E"), Box("F"), Box("G"), Box("H")),
-                Column(Box("I"), Box("J"))
-            )
+        MixedContainerComponent<FlowContainerBase, Boxy, Resizable>{}
+            .minSize(vec2{500.0f, 500.0f})
+            .backgroundColor(0x000040FF)
+            .containing(MixedContainerComponent<ColumnGridBase, Boxy, Resizable>{TopToBottom}
+//                .minSize(vec2{200.0f, 200.0f}) 
+                .backgroundColor(0xFF0044FF)
+                .borderColor(0xFFFF00FF)
+                .borderThickness(5.0f)
+                .borderRadius(5.0f)
+                .containing(
+                    Column(Box("A")),
+                    Column(Box("A"), Box("B")),
+                    Column(Box("A"), Box("B"), Box("C")),
+                    Column(Box("D"), Box("E"), Box("F"), Box("G"), Box("H")),
+                    Column(Box("I"), Box("J"))
+            ))
     );
 
     /* auto words = Property{std::vector<String>{"Hello", "world"}};

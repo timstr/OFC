@@ -189,7 +189,7 @@ namespace ui::dom {
                         setAvailableSize(c.child, {
                             colPositions[j + 1] - colPositions[j],
                             rowPositions[i + 1] - rowPositions[i]
-                        });
+                        }); 
 
                         const auto required = getRequiredSize(c.child);
 
