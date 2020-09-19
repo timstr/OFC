@@ -103,6 +103,9 @@ namespace ui {
     template<typename T>
     ForEach(const Property<std::vector<T>>&) -> ForEach<T>;
 
+    template<typename T, typename... Args>
+    ForEach(const DerivedProperty<std::vector<T>, Args...>&) -> ForEach<T>;
+
     template<typename T>
     ForEach(std::vector<T>&&) -> ForEach<T>;
 

@@ -264,12 +264,7 @@ namespace ui::dom {
         const auto minWidth = std::accumulate(requiredWidths.begin(), requiredWidths.end(), 0.0f);
         const auto minHeight = std::accumulate(requiredHeights.begin(), requiredHeights.end(), 0.0f);
         
-        if (width() < minWidth){
-            setWidth(minWidth);
-        }
-        if (height() < minHeight){
-            setHeight(minHeight);
-        }
+        setSize({minWidth, minHeight});
 
         const auto availSize = size();
 

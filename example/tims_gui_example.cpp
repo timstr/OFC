@@ -202,23 +202,40 @@ int main(){
             );
     };
 
+    auto numItems = Property<std::size_t>{1};
+
+    auto items = numItems.map([](std::size_t n){
+        std::vector<String> items;
+        items.reserve(n);
+        for (std::size_t i = 0; i < n; ++i){
+            items.push_back(std::to_string(i));
+        }
+        return items;
+    });
+
+    static_assert(std::is_same_v<decltype(items), DerivedProperty<std::vector<String>, std::size_t>>);
+
     AnyComponent comp = UseFont(&getFont()).with(
         MixedContainerComponent<FlowContainerBase, Boxy, Resizable>{}
             .minSize(vec2{500.0f, 500.0f})
             .backgroundColor(0x000040FF)
-            .containing(MixedContainerComponent<ColumnGridBase, Boxy, Resizable>{TopToBottom}
-//                .minSize(vec2{200.0f, 200.0f}) 
-                .backgroundColor(0xFF0044FF)
-                .borderColor(0xFFFF00FF)
-                .borderThickness(5.0f)
-                .borderRadius(5.0f)
-                .containing(
-                    Column(Box("A")),
-                    Column(Box("A"), Box("B")),
-                    Column(Box("A"), Box("B"), Box("C")),
-                    Column(Box("D"), Box("E"), Box("F"), Box("G"), Box("H")),
-                    Column(Box("I"), Box("J"))
-            ))
+            .containing(
+                MixedContainerComponent<ColumnGridBase, Boxy, Resizable>{TopToBottom}
+                    .backgroundColor(0xFF0044FF)
+                    .borderColor(0xFFFF00FF)
+                    .borderThickness(5.0f)
+                    .borderRadius(5.0f)
+                    .containing(
+                        Column(Box("A")),
+                        Column(Box("A"), Box("B")),
+                        Column(Box("A"), Box("B"), Box("C")),
+                        Column(Box("D"), Box("E"), Box("F"), Box("G"), Box("H")),
+                        Column(Box("I"), Box("J")),
+                        Column(ForEach(items).Do([&](const ui::String& s) -> AnyComponent { return Box(s); }))
+                    ),
+                Button("+").onClick([&](){ numItems.set(numItems.getOnce() + 1); }),
+                Button("-").onClick([&](){ numItems.set(std::max(std::size_t{1}, numItems.getOnce()) - 1); })
+            )
     );
 
     /* auto words = Property{std::vector<String>{"Hello", "world"}};
