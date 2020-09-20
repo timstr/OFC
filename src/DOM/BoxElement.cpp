@@ -27,10 +27,16 @@ namespace ui::dom {
     }
 
     void BoxElement::setBorderRadius(float r){
-        m_rect.setRadius(r);
+        m_rect.setRadius(std::max(0.0f, r));
     }
 
     void BoxElement::setBorderThickness(float t){
+        t = std::max(0.0f, t);
+        const auto s = size();
+        m_rect.setSize({
+            std::max(0.0f, s.x - t),
+            std::max(0.0f, s.y - t)
+        });
         m_rect.setOutlineThickness(t);
     }
 
@@ -39,7 +45,12 @@ namespace ui::dom {
     }
 
     void BoxElement::onResize(){
-        m_rect.setSize(size());
+        const auto s = size();
+        const auto t = m_rect.getOutlineThickness();
+        m_rect.setSize({
+            std::max(0.0f, s.x - t),
+            std::max(0.0f, s.y - t)
+        });
     }
 
 } // namespace ui::dom
