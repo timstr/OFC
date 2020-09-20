@@ -5,9 +5,10 @@
 
 #include <GUI/DOM/FreeContainer.hpp>
 #include <GUI/DOM/FlowContainer.hpp>
-#include <GUI/DOM/VerticalList.hpp>
-#include <GUI/DOM/HorizontalList.hpp>
+#include <GUI/DOM/ListContainer.hpp>
 #include <GUI/DOM/GridContainer.hpp>
+
+#include <GUI/Util/Direction.hpp>
 
 namespace ui {
 
@@ -15,6 +16,7 @@ namespace ui {
     public:
 
     };
+
 
 
     template<typename ContainerType, typename Derived>
@@ -85,17 +87,6 @@ namespace ui {
     template<typename Derived>
     class FreeContainerBase : public ContainerComponentTemplate<dom::FreeContainer, Derived> {
     public:
-        FreeContainerBase(AnyComponent c)
-            : m_childComponent(std::move(c)) {
-
-        }
-
-        template<typename... ComponentTypes>
-        FreeContainerBase(ComponentTypes&&... components)
-            : m_childComponent(List(std::forward<ComponentTypes>(components)...)) {
-
-        }
-
         Derived& containing(AnyComponent c) {
             m_childComponent = std::move(c);
             return static_cast<Derived&>(*this);
@@ -180,20 +171,13 @@ namespace ui {
 
 
 
+    // TODO: add text flow direction
+    // TODO: make text flow across lines
+    // TODO: add newline and indentation
+
     template<typename Derived>
     class FlowContainerBase : public ContainerComponentTemplate<dom::FlowContainer, Derived> {
     public:
-        FlowContainerBase(AnyComponent c)
-            : m_childComponent(std::move(c)) {
-
-        }
-
-        template<typename... ComponentTypes>
-        FlowContainerBase(ComponentTypes&&... components)
-            : m_childComponent(List(std::forward<ComponentTypes>(components)...)) {
-
-        }
-
         Derived& containing(AnyComponent c) {
             m_childComponent = std::move(c);
             return static_cast<Derived&>(*this);
@@ -252,14 +236,8 @@ namespace ui {
     template<typename Derived>
     class VerticalListBase : public ContainerComponentTemplate<dom::VerticalList, Derived> {
     public:
-        VerticalListBase(AnyComponent c)
-            : m_childComponent(std::move(c)) {
-
-        }
-
-        template<typename... ComponentTypes>
-        VerticalListBase(ComponentTypes&&... components)
-            : m_childComponent(List(std::forward<ComponentTypes>(components)...)) {
+        VerticalListBase(VerticalDirection direction = TopToBottom)
+            : m_direction(direction) {
 
         }
 
@@ -278,6 +256,7 @@ namespace ui {
         }
 
     private:
+        const VerticalDirection m_direction;
         AnyComponent m_childComponent;
 
         void onMountContainer(const dom::Element* beforeElement) override final {
@@ -293,9 +272,13 @@ namespace ui {
             assert(c);
             auto b = scope.beforeElement();
             if (b && b->getParentContainer() != c) {
-                b= nullptr;
+                b = nullptr;
             }
-            c->insertBefore(b, std::move(element));
+            if (m_direction == TopToBottom){
+                c->insertBefore(b, std::move(element));
+            } else {
+                c->insertAfter(b, std::move(element));
+            }
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -314,14 +297,8 @@ namespace ui {
     template<typename Derived>
     class HorizontalListBase : public ContainerComponentTemplate<dom::HorizontalList, Derived> {
     public:
-        HorizontalListBase(AnyComponent c)
-            : m_childComponent(std::move(c)) {
-
-        }
-
-        template<typename... ComponentTypes>
-        HorizontalListBase(ComponentTypes&&... components)
-            : m_childComponent(List(std::forward<ComponentTypes>(components)...)) {
+        HorizontalListBase(HorizontalDirection direction = LeftToRight)
+            : m_direction(direction) {
 
         }
 
@@ -340,6 +317,7 @@ namespace ui {
         }
 
     private:
+        const HorizontalDirection m_direction;
         AnyComponent m_childComponent;
 
         void onMountContainer(const dom::Element* beforeElement) override final {
@@ -353,7 +331,15 @@ namespace ui {
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
             auto c = container();
             assert(c);
-            c->insertBefore(scope.beforeElement(), std::move(element));
+            auto b = scope.beforeElement();
+            if (b && b->getParentContainer() != c) {
+                b = nullptr;
+            }
+            if (m_direction == LeftToRight){
+                c->insertBefore(b, std::move(element));
+            } else {
+                c->insertAfter(b, std::move(element));
+            }
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -367,65 +353,7 @@ namespace ui {
         }
     };
 
-    // TODO: specialize other containers
 
-    // TODO: grid container will need special interface
-    // Some desirable options:
-    // Grid with fixed number of columns that fills horizontally, then vertically
-    // Example:
-    //    RowMajorWrappingGrid<3>("1", "2", "3", "4", "5", "6", "7", "8", "9")
-    // Output:
-    //    1 2 3
-    //    4 5 6
-    //    7 8 9
-    // Grid with fixed number of rows that fills vertically, then horizontally
-    // Example:
-    //    ColumnMajorWrappingGrid<3>("1", "2", "3", "4", "5", "6", "7", "8", "9")
-    // Output:
-    //    1 4 7
-    //    2 5 8
-    //    3 6 9
-    // Row-oriented grid with distinct rows
-    // Example:
-    //     RowMajorGrid(
-    //         Row("1", "2,", "3"),
-    //         Row("4", "5,", "6"),
-    //         Row("7", "8,", "9")
-    //     )
-    // Output:
-    //    1 2 3
-    //    4 5 6
-    //    7 8 9
-    // Column-oriented grid with distinct columns
-    // Example:
-    //     ColumnMajorGrid(
-    //         Column("1", "2,", "3"),
-    //         Column("4", "5,", "6"),
-    //         Column("7", "8,", "9")
-    //     )
-    // Output:
-    //    1 4 7 
-    //    2 5 8
-    //    3 6 9
-    // Generalizing on Column and Row (to work with internal components like ForEach and If)
-    // will be a bit tricky
-    // When a Row/Column is mounted:
-    // - walk up the component hierarchy and find the nearest RowMajorGrid/ColumnMajorGrid
-    //   (error in case of a mismatch)
-    // - register the component with the grid component which will assign it its own
-    //   row/column index and maintain that index if other components mount or unmount
-    // - when that row/column inserts a dom element, the grid component will process
-    //   the insertion and place the element into the correct place in the grid element
-
-    enum HorizontalDirection : std::uint8_t {
-        RightToLeft,
-        LeftToRight
-    };
-
-    enum VerticalDirection : std::uint8_t {
-        TopToBottom,
-        BottomToTop
-    };
 
     template<typename Derived>
     class WrapGridBase : public ContainerComponentTemplate<dom::GridContainer, Derived> {

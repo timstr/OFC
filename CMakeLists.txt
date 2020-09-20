@@ -50,11 +50,10 @@ set(tims-gui_headers
     include/GUI/DOM/FlowContainer.hpp
     include/GUI/DOM/FreeContainer.hpp
     include/GUI/DOM/GridContainer.hpp
-    include/GUI/DOM/HorizontalList.hpp
     include/GUI/DOM/Image.hpp
+    include/GUI/DOM/ListContainer.hpp
     include/GUI/DOM/Text.hpp
     include/GUI/DOM/TextEntry.hpp
-    include/GUI/DOM/VerticalList.hpp
 
     include/GUI/DOM/Helpers/CallbackButton.hpp
     include/GUI/DOM/Helpers/CallbackTextEntry.hpp
@@ -101,11 +100,10 @@ set(tims-gui_srcs
     src/DOM/FlowContainer.cpp
     src/DOM/FreeContainer.cpp
     src/DOM/GridContainer.cpp
-    src/DOM/HorizontalList.cpp
     src/DOM/Image.cpp
+    src/DOM/ListContainer.cpp
     src/DOM/Text.cpp
     src/DOM/TextEntry.cpp
-    src/DOM/VerticalList.cpp
 
     src/DOM/Helpers/CallbackButton.cpp
     src/DOM/Helpers/CallbackTextEntry.cpp

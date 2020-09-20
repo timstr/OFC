@@ -72,12 +72,12 @@ private:
 
         const auto& s = state();
 
-        return VerticalList(List(
+        return VerticalList{}.containing(List(
             Button(
                 combine(s.currentIndex, m_items.view()).map(indexItems)
             ).onClick(toggleExpanded),
             If(s.expanded)
-                .then(FreeContainer(VerticalList(
+                .then(FreeContainer{}.containing(VerticalList{}.containing(
                     ForEach(m_items.view()).Do(makeItem)
                 ))
             )
@@ -146,12 +146,11 @@ public:
 private:
     ui::AnyComponent render() const override {
         using namespace ui;
-        return MixedContainerComponent<FreeContainerBase, Boxy, Resizable>{
-            "Hello, world!"
-        }
+        return MixedContainerComponent<FreeContainerBase, Boxy, Resizable>{}
             .backgroundColor(0xFF0000FF)
             .size(vec2{500.0f, 500.0f})
-            .borderRadius(5.0f);
+            .borderRadius(5.0f)
+            .containing("Hello, world!");
     }
 };
 
@@ -234,7 +233,11 @@ int main(){
                         Column(ForEach(items).Do([&](const ui::String& s) -> AnyComponent { return Box(s); }))
                     ),
                 Button("+").onClick([&](){ numItems.set(numItems.getOnce() + 1); }),
-                Button("-").onClick([&](){ numItems.set(std::max(std::size_t{1}, numItems.getOnce()) - 1); })
+                Button("-").onClick([&](){ numItems.set(std::max(std::size_t{1}, numItems.getOnce()) - 1); }),
+                MixedContainerComponent<VerticalListBase, Boxy>{BottomToTop}.backgroundColor(0xFFFFFFFF).containing("A", "B", "C"),
+                MixedContainerComponent<VerticalListBase, Boxy>{TopToBottom}.backgroundColor(0xFFFFFFFF).containing("A", "B", "C"),
+                MixedContainerComponent<HorizontalListBase, Boxy>{LeftToRight}.backgroundColor(0xFFFFFFFF).containing("A", "B", "C"),
+                MixedContainerComponent<HorizontalListBase, Boxy>{RightToLeft}.backgroundColor(0xFFFFFFFF).containing("A", "B", "C")
             )
     );
 
@@ -468,7 +471,7 @@ int main(){
     );
     */
 
-    auto root = Root::create<FlowContainer>(std::move(comp));
+    auto root = Root(FreeContainer{}.containing(std::move(comp)));
 
     /*
     auto condition = Property<bool>{true};
