@@ -9,6 +9,11 @@ namespace ui {
         SimpleForwardingComponent::onInsertChildElement(std::move(element), s);
     }
 
+    Row::Row(AnyComponent c)
+        : SimpleForwardingComponent(std::move(c)) {
+
+    }
+
     void Row::onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) {
         auto s = scope;
         s.add<detail::grid_row>(this);

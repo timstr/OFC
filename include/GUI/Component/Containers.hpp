@@ -552,168 +552,217 @@ namespace ui {
     class Row;
     class Column;
 
+    namespace detail {
 
+        template<typename Derived, typename SliceType>
+        class SliceGridBase : public ContainerComponentTemplate<dom::GridContainer, Derived> {
+        public:
 
-    template<typename Derived>
-    class ColumnGridBase : public ContainerComponentTemplate<dom::GridContainer, Derived> {
-    public:
-        ColumnGridBase(VerticalDirection dir)
-            : m_direction(dir) {
+            decltype(auto) containing(AnyComponent c) {
+                m_childComponent = std::move(c);
+                return self();
+            }
 
-        }
+            template<
+                typename... ComponentTypes,
+                std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
+            >
+            decltype(auto) containing(ComponentTypes&&... c) {
+                m_childComponent = List(std::forward<ComponentTypes>(c)...);
+                return self();
+            }
 
-        decltype(auto) containing(AnyComponent c) {
-            m_childComponent = std::move(c);
-            return self();
-        }
+        protected:
+            
+            SliceGridBase(bool outerDirection, bool innerDirection)
+                : m_outerDirection(outerDirection)
+                , m_innerDirection(innerDirection) {
+                static_assert(std::is_same_v<SliceType, Row> || std::is_same_v<SliceType, Column>);
+            }
 
-        template<
-            typename... ComponentTypes,
-            std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
-        >
-        decltype(auto) containing(ComponentTypes&&... c) {
-            m_childComponent = List(std::forward<ComponentTypes>(c)...);
-            return self();
-        }
-
-    private:
-        AnyComponent m_childComponent;
-        const VerticalDirection m_direction;
-        std::vector<std::pair<const Column*, std::vector<dom::Element*>>> m_columns;
+        private:
+            AnyComponent m_childComponent;
+            const bool m_outerDirection;
+            const bool m_innerDirection;
+            std::vector<std::pair<const Component*, std::vector<dom::Element*>>> m_slices;
         
-        void onMountContainer(const dom::Element* beforeElement) override final {
-            m_childComponent.tryMount(this, beforeElement);
-        }
+            void onMountContainer(const dom::Element* beforeElement) override final {
+                m_childComponent.tryMount(this, beforeElement);
+            }
 
-        void onUnmountContainer() override final {
-            m_childComponent.tryUnmount();
-        }
+            void onUnmountContainer() override final {
+                m_childComponent.tryUnmount();
+            }
 
-        void refreshContents() {
-            const auto grid = container();
+            void refreshContents() {
+                const auto grid = container();
 
-            // Clear the grid and take ownership of all elements
-            std::vector<std::pair<const Column*, std::vector<std::unique_ptr<dom::Element>>>> columnElements;
+                // Clear the grid and take ownership of all elements
+                std::vector<std::pair<const Component*, std::vector<std::unique_ptr<dom::Element>>>> sliceElements;
 
-            for (const auto& [col, elems] : m_columns) {
-                columnElements.emplace_back(col, std::vector<std::unique_ptr<dom::Element>>{});
-                for (const auto& ePtr : elems) {
-                    columnElements.back().second.push_back(ePtr->orphan());
+                for (std::size_t i = 0, iEnd = m_slices.size(); i != iEnd; ++i){
+                    const auto& [slice, elems] = m_slices[m_outerDirection ? i : iEnd - 1 - i];
+                    sliceElements.emplace_back(slice, std::vector<std::unique_ptr<dom::Element>>{});
+                    for (const auto& ePtr : elems) {
+                        sliceElements.back().second.push_back(ePtr->orphan());
+                    }
+                }
+                assert(std::as_const(*grid).children().size() == 0);
+
+                // Find the number of rows and columns
+                const auto n = sliceElements.size();
+                const auto largestSlice = max_element(
+                    begin(sliceElements),
+                    end(sliceElements),
+                    [](const auto& slice1, const auto& slice2) {
+                        return slice1.second.size() < slice2.second.size();
+                    }
+                );
+                const auto m = largestSlice == end(sliceElements) ? std::size_t{0} : largestSlice->second.size();
+
+                // Resize the grid
+                if constexpr (std::is_same_v<SliceType, Column>){
+                    grid->setRows(m);
+                    grid->setColumns(n);
+                } else {
+                    grid->setRows(n);
+                    grid->setColumns(m);
+                }
+
+                // Re-insert all elements where they belong
+                for (std::size_t i = 0; i != n; ++i) {
+                    auto& elems = sliceElements[i].second;
+                    for (std::size_t j = 0, jEnd = elems.size(); j != jEnd; ++j) {
+                        const auto jj = m_innerDirection ? j : m - 1 - j;
+
+                        if constexpr (std::is_same_v<SliceType, Column>){
+                            grid->putCell(i, jj, std::move(elems[j]));
+                        } else {
+                            grid->putCell(jj, i, std::move(elems[j]));
+                        }
+                    }
                 }
             }
-            assert(std::as_const(*grid).children().size() == 0);
 
-            // Find the number of rows and columns
-            const auto nCols = columnElements.size();
-            const auto largestCol = max_element(
-                begin(columnElements),
-                end(columnElements),
-                [](const auto& col1, const auto& col2) {
-                    return col1.second.size() < col2.second.size();
+            void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
+                assert(element);
+
+                const auto s = [&]() -> const Component* {
+                    if constexpr (std::is_same_v<SliceType, Column>) {
+                        const auto tag = scope.get<detail::grid_column>();
+                        if (!tag) {
+                            throw std::runtime_error("An component was added to a ColumnGrid that was not inside a Column");
+                        }
+                        return tag->column;;
+                    } else {
+                        const auto tag = scope.get<detail::grid_row>();
+                        if (!tag) {
+                            throw std::runtime_error("An component was added to a RowGrid that was not inside a Row");
+                        }
+                        return tag->row;;
+                    }
+                }();
+                
+
+                // Find the column, or create a new one if it's not found
+                auto it = begin(m_slices);
+                while (true) {
+                    if (it == end(m_slices)) {
+                        // The column's position wasn't found: insert it at the end
+                        m_slices.push_back({s, {}});
+                        it = --end(m_slices);
+                        break;
+                    }
+                    if (s == it->first) {
+                        // The exact column is found: use it and carry on
+                        break;
+                    }
+                    if (s->appearsBefore(it->first)) {
+                        // The place where the column should be is found: insert a new column
+                        it = m_slices.insert(it, {s, {}});
+                        break;
+                    }
+                    ++it;
                 }
-            );
-            const auto nRows = largestCol == end(columnElements) ? std::size_t{0} : largestCol->second.size();
+                assert(it != end(m_slices));
 
-            // Resize the grid
-            grid->setRows(nRows);
-            grid->setColumns(nCols);
+                auto& [theSlice, theElements] = *it;
 
-            // Re-insert all elements where they belong
-            for (std::size_t col = 0, colEnd = columnElements.size(); col != colEnd; ++col) {
-                auto& elems = columnElements[col].second;
-                for (std::size_t row = 0, rowEnd = elems.size(); row != rowEnd; ++row) {
-                    const auto r = m_direction == TopToBottom ? row : nRows - 1 - row;
-                    grid->putCell(col, r, std::move(elems[row]));
-                }
-            }
-        }
-
-        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
-            assert(element);
-            const auto tag = scope.get<detail::grid_column>();
-            if (!tag) {
-                throw std::runtime_error("An component was added to a ColumnGrid that was not inside a Column");
-            }
-            const auto c = tag->column;
-
-            // Find the column, or create a new one if it's not found
-            auto it = begin(m_columns);
-            while (true) {
-                if (it == end(m_columns)) {
-                    // The column's position wasn't found: insert it at the end
-                    m_columns.push_back({c, {}});
-                    it = --end(m_columns);
-                    break;
-                }
-                if (c == it->first) {
-                    // The exact column is found: use it and carry on
-                    break;
-                }
-                if (c->appearsBefore(it->first)) {
-                    // The place where the column should be is found: insert a new column
-                    it = m_columns.insert(it, {c, {}});
-                    break;
-                }
-                ++it;
-            }
-            assert(it != end(m_columns));
-
-            auto& [theColumn, theElements] = *it;
-
-            // Find the new element's position in the column and insert it there
-            auto eit = find_if(
-                begin(theElements),
-                end(theElements),
-                [&](const auto& e) {
-                    return e == scope.beforeElement();
-                }
-            );
-
-            theElements.insert(eit, element.get());
-
-            // insert the element at a dummy position to keep the refresh logic simple
-            const auto grid = container();
-            grid->appendColumn();
-            grid->putCell(grid->columns() - 1, 0, std::move(element));
-
-            refreshContents();
-        }
-
-        void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
-            assert(whichElement);
-            
-            for (auto it = begin(m_columns), itEnd = end(m_columns); it != itEnd; ++it){
-                auto& [theColumn, theElements] = *it;
-            
-                auto eit = find(
+                // Find the new element's position in the column and insert it there
+                auto eit = find_if(
                     begin(theElements),
                     end(theElements),
-                    whichElement
+                    [&](const auto& e) {
+                        return e == scope.beforeElement();
+                    }
                 );
-                if (eit == end(theElements)) {
-                    continue;
-                }
 
-                theElements.erase(eit);
+                theElements.insert(eit, element.get());
 
-                if (theElements.size() == 0) {
-                    m_columns.erase(it);
-                }
-
-                whichElement->orphan();
+                // insert the element at a dummy position to keep the refresh logic simple
+                const auto grid = container();
+                grid->appendColumn();
+                grid->putCell(grid->columns() - 1, 0, std::move(element));
 
                 refreshContents();
-
-                return;
             }
-            assert(false);
-        }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
-            return { m_childComponent.get() };
+            void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
+                assert(whichElement);
+            
+                for (auto it = begin(m_slices), itEnd = end(m_slices); it != itEnd; ++it){
+                    auto& [theSlice, theElements] = *it;
+            
+                    auto eit = find(
+                        begin(theElements),
+                        end(theElements),
+                        whichElement
+                    );
+                    if (eit == end(theElements)) {
+                        continue;
+                    }
+
+                    theElements.erase(eit);
+
+                    if (theElements.size() == 0) {
+                        m_slices.erase(it);
+                    }
+
+                    whichElement->orphan();
+
+                    refreshContents();
+
+                    return;
+                }
+                assert(false);
+            }
+
+            std::vector<const Component*> getChildren() const noexcept override final {
+                return { m_childComponent.get() };
+            }
+        };
+
+    } // namespace detail
+    
+
+    template<typename Derived>
+    class ColumnGridBase : public detail::SliceGridBase<Derived, Column> {
+    public:
+        ColumnGridBase(HorizontalDirection outerDirection, VerticalDirection innerDirection)
+            : SliceGridBase(outerDirection == LeftToRight, innerDirection == TopToBottom) {
+
         }
     };
 
+
+    template<typename Derived>
+    class RowGridBase : public detail::SliceGridBase<Derived, Row> {
+    public:
+        RowGridBase(VerticalDirection outerDirection, HorizontalDirection innerDirection)
+            : SliceGridBase(outerDirection == TopToBottom, innerDirection == LeftToRight) {
+
+        }
+    };
 
     //------------------------------------------
 
@@ -836,7 +885,16 @@ namespace ui {
 
     class Row : public SimpleForwardingComponent {
     public:
-        using SimpleForwardingComponent::SimpleForwardingComponent;
+        Row(AnyComponent);
+
+        template<
+            typename... ComponentTypes,
+            std::enable_if_t<(sizeof...(ComponentTypes) > 1)>* = nullptr
+        >
+        Row(ComponentTypes&&... components)
+            : SimpleForwardingComponent(List(std::forward<ComponentTypes>(components)...)) {
+
+        }
 
     private:
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
@@ -885,12 +943,15 @@ namespace ui {
     public:
         using WrapGridBase::WrapGridBase;
     };
-
+    
     class ColumnGrid : public ColumnGridBase<ColumnGrid> {
     public:
         using ColumnGridBase::ColumnGridBase;
     };
-    
-    // TODO: RowGrid
+
+    class RowGrid : public RowGridBase<ColumnGrid> {
+    public:
+        using RowGridBase::RowGridBase;
+    };
 
 } // namespace ui

@@ -220,7 +220,7 @@ int main(){
             .minSize(vec2{500.0f, 500.0f})
             .backgroundColor(0x000040FF)
             .containing(
-                MixedContainerComponent<ColumnGridBase, Boxy, Resizable>{TopToBottom}
+                MixedContainerComponent<ColumnGridBase, Boxy, Resizable>{RightToLeft, TopToBottom}
                     .backgroundColor(0xFF0044FF)
                     .borderColor(0xFFFF00FF)
                     .borderThickness(5.0f)
