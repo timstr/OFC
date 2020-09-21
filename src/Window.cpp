@@ -196,7 +196,13 @@ namespace ofc::ui {
                     break;
                 }
                 case sf::Event::KeyPressed: {
-                    handleKeyDown(event.key.code);
+                    const auto mod = ModifierKeys(
+                        event.key.alt,
+                        event.key.control,
+                        event.key.shift,
+                        event.key.system
+                    );
+                    handleKeyDown(event.key.code, mod);
                     break;
                 }
                 case sf::Event::KeyReleased: {
@@ -212,13 +218,13 @@ namespace ofc::ui {
                     }
                     const auto x = static_cast<float>(event.mouseWheelScroll.x);
                     const auto y = static_cast<float>(event.mouseWheelScroll.y);
-                    handleScroll({x, y}, delta);
+                    handleScroll({x, y}, delta, modifierKeysFromKeyboard());
                     break;
                 }
                 case sf::Event::MouseButtonPressed: {
                     const auto x = static_cast<float>(event.mouseButton.x);
                     const auto y = static_cast<float>(event.mouseButton.y);
-                    handleMouseDown(event.mouseButton.button, {x, y});
+                    handleMouseDown(event.mouseButton.button, {x, y}, modifierKeysFromKeyboard());
                     break;
                 }
                 case sf::Event::MouseButtonReleased: {
@@ -274,7 +280,7 @@ namespace ofc::ui {
         m_keypressed_elems.clear();
     }
 
-    void Window::handleMouseDown(sf::Mouse::Button btn, vec2 pos){
+    void Window::handleMouseDown(sf::Mouse::Button btn, vec2 pos, ModifierKeys mod){
         const auto hitCtrl = findControlAt(pos);
 
         focusTo(hitCtrl);
@@ -304,13 +310,13 @@ namespace ofc::ui {
         }
 
         if (btn == sf::Mouse::Left) {
-            m_lclick_elem = propagate(this, hitCtrl, &dom::Control::onLeftClick, numClicks);
+            m_lclick_elem = propagate(this, hitCtrl, &dom::Control::onLeftClick, numClicks, mod);
             m_lClickReleased = false;
         } else if (btn == sf::Mouse::Middle) {
-            m_mclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks);
+            m_mclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks, mod);
             m_mClickReleased = false;
-        } else if (btn == sf::Mouse::Middle) {
-            m_rclick_elem = propagate(this, hitCtrl, &dom::Control::onMiddleClick, numClicks);
+        } else if (btn == sf::Mouse::Right) {
+            m_rclick_elem = propagate(this, hitCtrl, &dom::Control::onRightClick, numClicks, mod);
             m_rClickReleased = false;
         }
         
@@ -342,8 +348,9 @@ namespace ofc::ui {
         }
     }
 
-    void Window::handleKeyDown(sf::Keyboard::Key key){
-        if (handleTextEntryKeyDown(key)){
+    // TODO
+    void Window::handleKeyDown(sf::Keyboard::Key key, ModifierKeys mod){
+        if (handleTextEntryKeyDown(key, mod)){
             return;
         }
 
@@ -353,7 +360,7 @@ namespace ofc::ui {
 
         // if no command was found, send key stroke to the current element
         assert(!m_focus_elem || !isSoftlyRemoved(m_focus_elem));
-        auto elem = propagate(this, m_focus_elem, &dom::Control::onKeyDown, key);
+        auto elem = propagate(this, m_focus_elem, &dom::Control::onKeyDown, key, mod);
 
         // and send key up to last element receiving same keystroke
         // in case of switching focus while key is held
@@ -390,9 +397,10 @@ namespace ofc::ui {
         }
     }
 
-    void Window::handleScroll(vec2 pos, vec2 scroll){
+    // TODO
+    void Window::handleScroll(vec2 pos, vec2 scroll, ModifierKeys mod){
         auto elem = findControlAt(pos);
-        propagate(this, elem, &dom::Control::onScroll, scroll);
+        propagate(this, elem, &dom::Control::onScroll, scroll, mod);
     }
 
     void Window::handleDrag(){
@@ -465,33 +473,29 @@ namespace ofc::ui {
         return false;
     }
 
-    bool Window::handleTextEntryKeyDown(Key key){
+    bool Window::handleTextEntryKeyDown(Key key, ModifierKeys mod){
         if (!m_text_entry || isSoftlyRemoved(m_text_entry)){
             return false;
         }
 
-        const bool ctrl =
-            sf::Keyboard::isKeyPressed(Key::LControl) ||
-            sf::Keyboard::isKeyPressed(Key::RControl);
-
         switch (key){
             case Key::BackSpace:
-                m_text_entry->handleBackspace();
+                m_text_entry->handleBackspace(mod);
                 break;
             case Key::Delete:
-                m_text_entry->handleDelete();
+                m_text_entry->handleDelete(mod);
                 break;
             case Key::Left:
-                m_text_entry->handleLeft();
+                m_text_entry->handleLeft(mod);
                 break;
             case Key::Right:
-                m_text_entry->handleRight();
+                m_text_entry->handleRight(mod);
                 break;
             case Key::Home:
-                m_text_entry->handleHome();
+                m_text_entry->handleHome(mod);
                 break;
             case Key::End:
-                m_text_entry->handleEnd();
+                m_text_entry->handleEnd(mod);
                 break;
             case Key::Enter:
                 m_text_entry->handleReturn();
@@ -500,28 +504,28 @@ namespace ofc::ui {
                 m_text_entry->handleInsert();
                 break;
             case Key::A:
-                if (ctrl){
+                if (mod.ctrl()){
                     m_text_entry->handleSelectAll();
                     break;
                 } else {
                     return false;
                 }
             case Key::C:
-                if (ctrl){
+                if (mod.ctrl()){
                     m_text_entry->handleCopy();
                     break;
                 } else {
                     return false;
                 }
             case Key::X:
-                if (ctrl){
+                if (mod.ctrl()){
                     m_text_entry->handleCut();
                     break;
                 } else {
                     return false;
                 }
             case Key::V:
-                if (ctrl){
+                if (mod.ctrl()){
                     m_text_entry->handlePaste();
                     break;
                 } else {
@@ -551,6 +555,22 @@ namespace ofc::ui {
             c = c->getParentControl();
         }
         return false;
+    }
+
+    ModifierKeys Window::modifierKeysFromKeyboard() const noexcept {
+        const bool alt =
+            sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) ||
+            sf::Keyboard::isKeyPressed(sf::Keyboard::RAlt);
+        const bool ctrl =
+            sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) ||
+            sf::Keyboard::isKeyPressed(sf::Keyboard::RControl);
+        const bool shift =
+            sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) ||
+            sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
+        const bool system =
+            sf::Keyboard::isKeyPressed(sf::Keyboard::LSystem) ||
+            sf::Keyboard::isKeyPressed(sf::Keyboard::RSystem);
+        return ModifierKeys(alt, ctrl, shift, system);
     }
 
     void Window::softRemove(dom::Element* e){

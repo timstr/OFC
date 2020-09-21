@@ -12,7 +12,10 @@ namespace ofc::ui {
     }
 
     std::vector<const Component*> PureComponent::getChildren() const noexcept {
-        return { m_component.get() };
+        if (const auto c = m_component.get()){
+            return {c};
+        }
+        return {};
     }
 
 } // namespace ofc::ui

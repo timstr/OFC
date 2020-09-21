@@ -117,10 +117,6 @@ namespace ofc::ui::dom {
         // Cause the element to be rendered in front of its siblings
         void bringToFront();
 
-        // Called whenever the element is removed from the UI, either
-        // directly (from its parent container) or indirectly.
-        virtual void onRemove();
-
         // Removes the element from its parent and destroys it.
         // Throws an exception if the element has no parent.
         // DO NOT use the element after calling close.

@@ -9,9 +9,11 @@
 #include <OFC/Component/If.hpp>
 #include <OFC/Component/List.hpp>
 #include <OFC/Component/MixedComponent.hpp>
+#include <OFC/Component/PullDown.hpp>
 #include <OFC/Component/PureComponent.hpp>
 #include <OFC/Component/Root.hpp>
 #include <OFC/Component/StatefulComponent.hpp>
+#include <OFC/Component/Slider.hpp>
 #include <OFC/Component/Switch.hpp>
 #include <OFC/Component/Text.hpp>
 #include <OFC/Component/When.hpp>

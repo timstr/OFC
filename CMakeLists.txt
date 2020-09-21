@@ -33,9 +33,11 @@ set(ofc_headers
     include/OFC/Component/If.hpp
     include/OFC/Component/List.hpp
     include/OFC/Component/MixedComponent.hpp
+    include/OFC/Component/PullDown.hpp
     include/OFC/Component/PureComponent.hpp
     include/OFC/Component/Root.hpp
     include/OFC/Component/StatefulComponent.hpp
+    include/OFC/Component/Slider.hpp
     include/OFC/Component/Switch.hpp
     include/OFC/Component/Text.hpp
     include/OFC/Component/When.hpp
@@ -56,9 +58,7 @@ set(ofc_headers
     include/OFC/DOM/Helpers/CallbackButton.hpp
     include/OFC/DOM/Helpers/CallbackTextEntry.hpp
     include/OFC/DOM/Helpers/NumberTextEntry.hpp
-    include/OFC/DOM/Helpers/PullDownMenu.hpp
     include/OFC/DOM/Helpers/ScrollPanel.hpp
-    include/OFC/DOM/Helpers/Slider.hpp
     include/OFC/DOM/Helpers/ToggleButton.hpp
 
     include/OFC/Util/Color.hpp
@@ -85,8 +85,10 @@ set(ofc_srcs
     src/Component/If.cpp
     src/Component/List.cpp
     src/Component/MixedComponent.cpp
+    src/Component/PullDown.cpp
     src/Component/PureComponent.cpp
     src/Component/Root.cpp
+    src/Component/Slider.cpp
     src/Component/Text.cpp
 
     src/DOM/BoxElement.cpp
@@ -105,12 +107,11 @@ set(ofc_srcs
     src/DOM/Helpers/CallbackButton.cpp
     src/DOM/Helpers/CallbackTextEntry.cpp
     src/DOM/Helpers/NumberTextEntry.cpp
-    src/DOM/Helpers/PullDownMenu.cpp
     src/DOM/Helpers/ScrollPanel.cpp
-    src/DOM/Helpers/Slider.cpp
     src/DOM/Helpers/ToggleButton.cpp
 
     src/Util/Color.cpp
+    src/Util/Key.cpp
     src/Util/RoundedRectangle.cpp
     src/Util/UniqueAny.cpp
 )

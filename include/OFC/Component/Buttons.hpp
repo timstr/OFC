@@ -24,4 +24,6 @@ namespace ofc::ui {
         void updateFont(const sf::Font*);
     };
 
+    // TODO: toggle button
+
 } // namespace ofc::ui

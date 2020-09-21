@@ -10,9 +10,9 @@ namespace ofc::ui::dom {
     class Control : virtual public Element {
     public:
 
-        virtual bool onLeftClick(int);
-        virtual bool onMiddleClick(int);
-        virtual bool onRightClick(int);
+        virtual bool onLeftClick(int, ModifierKeys);
+        virtual bool onMiddleClick(int, ModifierKeys);
+        virtual bool onRightClick(int, ModifierKeys);
         
         virtual void onLeftRelease();
         virtual void onMiddleRelease();
@@ -27,12 +27,12 @@ namespace ofc::ui::dom {
 
         virtual bool onDrop(Draggable*);
 
-        virtual bool onKeyDown(Key);
+        virtual bool onKeyDown(Key, ModifierKeys);
         virtual void onKeyUp(Key);
 
         bool keyDown(Key) const;
 
-        virtual bool onScroll(vec2);
+        virtual bool onScroll(vec2, ModifierKeys);
 
         virtual void onGainFocus();
         virtual void onLoseFocus();

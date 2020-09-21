@@ -162,31 +162,6 @@ private:
 // - This could completely supercede the existing transitions api
 // - how to do???
 
-// TODO: rename everything
-// TODO: rename Value and move it outside of the Component folder
-/*
-Observables and Functional Components - OFC
-
-ofc::tmp::template metaprogramming junk
-ofc::ui::Component this that
-ofc::ui::dom::Element and friends
-ofc::Value ==(rename to)==> one of:
- - ofc::Val (for simply VALue) <- this might be clearest and least awkward (ob* might cause confusion between observer and observable)
-
-TODO: add distinction between active and inactive observer (e.g. whether or not the observer is receiving updates at all)
- - this should be made part of the observer's state (e.g. via setActive(bool) member function)
-TODO: add distinction between lazy and eager observers (e.g. observers that do or don't immediately respond to updates)
-- this could (should???) be done at type system level
-- example:
-    - ofc::Obv<std::vector, ofc::Eager> (Eager is default parameter) or
-    - ofc::Obv<std::vector, ofc::Lazy>
-
-ofc::Observer ==(rename to)==> one of:
- - ofc::Obv (for OBserVer)
- - ofc::Watcher
- - ofc::Reacter
-*/
-
 // TODO: make a large graph-like data structure and create a UI component for it to test how well this whole library actually works
 
 // TODO: (re)implement helpers like:
@@ -225,7 +200,7 @@ int main(){
         return items;
     });
 
-    static_assert(std::is_same_v<decltype(items), DerivedValue<std::vector<String>, std::size_t>>);
+    auto someNumber = Value{5.0f};
 
     AnyComponent comp = UseFont(&getFont()).with(
         MixedContainerComponent<FlowContainerBase, Boxy, Resizable>{}
@@ -245,12 +220,12 @@ int main(){
                         Column(Box("I"), Box("J")),
                         Column(ForEach(items).Do([&](const String& s) -> AnyComponent { return Box(s); }))
                     ),
+                " ",
                 Button("+").onClick([&](){ numItems.set(numItems.getOnce() + 1); }),
+                " ",
                 Button("-").onClick([&](){ numItems.set(std::max(std::size_t{1}, numItems.getOnce()) - 1); }),
-                MixedContainerComponent<VerticalListBase, Boxy>{BottomToTop}.backgroundColor(0xFFFFFFFF).containing("A", "B", "C"),
-                MixedContainerComponent<VerticalListBase, Boxy>{TopToBottom}.backgroundColor(0xFFFFFFFF).containing("A", "B", "C"),
-                MixedContainerComponent<HorizontalListBase, Boxy>{LeftToRight}.backgroundColor(0xFFFFFFFF).containing("A", "B", "C"),
-                MixedContainerComponent<HorizontalListBase, Boxy>{RightToLeft}.backgroundColor(0xFFFFFFFF).containing("A", "B", "C")
+                " ",
+                Slider<float>{0.0f, 10.0f, someNumber}.onChange([&](float x){ someNumber.set(x); })
             )
     );
 
@@ -469,14 +444,14 @@ int main(){
                 std::cout << '\n';
             }),
             "There are ",
-            TextComponent(vec.map(
+            Text(vec.map(
                 [](const ListOfEdits<int>& v){ return make_string(v.newValue().size()); }
             )),
             " things.",
             " If you added ",
-            TextComponent(num.map([](std::size_t n){ return make_string(n); })),
+            Text(num.map([](std::size_t n){ return make_string(n); })),
             " then you would have ",
-            TextComponent(combine(vec, num).map([](const ListOfEdits<int>& v, std::size_t n) {
+            Text(combine(vec, num).map([](const ListOfEdits<int>& v, std::size_t n) {
                 return make_string(v.newValue().size() + n);
             })),
             " things."

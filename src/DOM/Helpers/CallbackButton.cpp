@@ -53,7 +53,7 @@ namespace ofc::ui::dom {
         return m_label;
     }
 
-    bool CallbackButton::onLeftClick(int){
+    bool CallbackButton::onLeftClick(int, ModifierKeys){
         m_state = State::Active;
         clearTransitions();
         setBackgroundColor(m_activeColor);
@@ -73,7 +73,7 @@ namespace ofc::ui::dom {
         }
     }
 
-    bool CallbackButton::onKeyDown(ui::Key key){
+    bool CallbackButton::onKeyDown(ui::Key key, ModifierKeys){
         if (key == ui::Key::Return || key == ui::Key::Space){
             fadeColor(
                 m_activeColor,
@@ -108,11 +108,6 @@ namespace ofc::ui::dom {
                 setBackgroundColor(interpolate(from, to, static_cast<float>(t)));
             }
         );
-    }
-
-    void CallbackButton::onRemove(){
-        m_state = State::Normal;
-        setBackgroundColor(m_normalColor);
     }
 
 } // namespace ofc::ui::dom

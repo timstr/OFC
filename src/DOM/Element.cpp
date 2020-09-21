@@ -296,10 +296,6 @@ namespace ofc::ui::dom {
         }
     }
 
-    void Element::onRemove(){
-    
-    }
-
     void Element::close(){
         orphan();
     }

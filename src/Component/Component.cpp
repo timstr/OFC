@@ -210,11 +210,11 @@ namespace ofc::ui {
     }
 
     AnyComponent::AnyComponent(const Value<String>& p)
-        : m_component(std::make_unique<TextComponent>(p)) {
+        : m_component(std::make_unique<Text>(p)) {
     }
 
     AnyComponent::AnyComponent(String s)
-        : m_component(std::make_unique<TextComponent>(std::move(s))) {
+        : m_component(std::make_unique<Text>(std::move(s))) {
     }
 
     AnyComponent::AnyComponent(const char* s)

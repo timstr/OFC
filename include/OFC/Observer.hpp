@@ -407,6 +407,7 @@ namespace ofc {
         };
     }
 
+    // TODO: rename members
     template<typename T>
     class Valuelike final {
     public:

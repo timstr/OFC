@@ -46,7 +46,7 @@ namespace ofc::ui::dom {
         return win->currentTextEntry() == this;
     }
 
-    bool TextEntry::onLeftClick(int){
+    bool TextEntry::onLeftClick(int, ModifierKeys mod){
         const auto s = text();
 
         if (s.getSize() > 0){
@@ -65,7 +65,7 @@ namespace ofc::ui::dom {
             assert(min != static_cast<std::size_t>(-1));
 
             m_cursorHead = min;
-            if (!shift()){
+            if (!mod.shift()){
                 m_cursorTail = m_cursorHead;
             }
         }
@@ -86,7 +86,7 @@ namespace ofc::ui::dom {
         return true;
     }
 
-    void TextEntry::handleBackspace(){
+    void TextEntry::handleBackspace(ModifierKeys mod){
         const auto s = text();
 
 
@@ -101,7 +101,7 @@ namespace ofc::ui::dom {
         }
 
         if (m_cursorHead > 0){
-            if (ctrl()){
+            if (mod.ctrl()){
                 skipLeft();
             } else {
                 m_cursorHead -= 1;
@@ -115,7 +115,7 @@ namespace ofc::ui::dom {
         }
     }
 
-    void TextEntry::handleDelete(){
+    void TextEntry::handleDelete(ModifierKeys mod){
         const auto s = text();
 
         // If there is a selection, just erase that
@@ -130,7 +130,7 @@ namespace ofc::ui::dom {
         }
 
         if (m_cursorHead < s.getSize()){
-            if (ctrl()){
+            if (mod.ctrl()){
                 skipRight();
             } else {
                 m_cursorHead += 1;
@@ -142,43 +142,43 @@ namespace ofc::ui::dom {
         }
     }
 
-    void TextEntry::handleLeft(){
+    void TextEntry::handleLeft(ModifierKeys mod){
         if (m_cursorHead > 0){
-            if (ctrl()){
+            if (mod.ctrl()){
                 skipLeft();
             } else {
                 m_cursorHead -= 1;
             }
-            if (!shift()){
+            if (!mod.shift()){
                 m_cursorTail = m_cursorHead;
             }
         }
     }
 
-    void TextEntry::handleRight(){
+    void TextEntry::handleRight(ModifierKeys mod){
         if (m_cursorHead < text().getSize()){
             const auto s = text();
-            if (ctrl()){
+            if (mod.ctrl()){
                 skipRight();
             } else {
                 m_cursorHead += 1;
             }
-            if (!shift()){
+            if (!mod.shift()){
                 m_cursorTail = m_cursorHead;
             }
         }
     }
 
-    void TextEntry::handleHome(){
+    void TextEntry::handleHome(ModifierKeys mod){
         m_cursorHead = 0;
-        if (!shift()){
+        if (!mod.shift()){
             m_cursorTail = m_cursorHead;
         }
     }
 
-    void TextEntry::handleEnd(){
+    void TextEntry::handleEnd(ModifierKeys mod){
         m_cursorHead = text().getSize();
-        if (!shift()){
+        if (!mod.shift()){
             m_cursorTail = m_cursorHead;
         }
     }
@@ -244,7 +244,7 @@ namespace ofc::ui::dom {
         }
     }
 
-    bool TextEntry::onKeyDown(Key key){
+    bool TextEntry::onKeyDown(Key key, ModifierKeys){
         if (key == Key::Enter){
             startTyping();
             return true;
@@ -359,14 +359,6 @@ namespace ofc::ui::dom {
             std::min(m_cursorHead, m_cursorTail),
             std::max(m_cursorHead, m_cursorTail)
         };
-    }
-
-    bool TextEntry::shift() const {
-        return keyDown(Key::LShift) || keyDown(Key::RShift);
-    }
-
-    bool TextEntry::ctrl() const {
-        return keyDown(Key::LControl) || keyDown(Key::RControl);
     }
 
     void TextEntry::skipLeft(){

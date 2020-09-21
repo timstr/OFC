@@ -56,17 +56,6 @@ namespace ofc::ui::dom {
             throw std::runtime_error("Attempted to remove a nonexistent child window");
         }
 
-        std::function<void(Element*)> callOnRemove = [&](Element* elem){
-            elem->onRemove();
-            if (const auto& cont = elem->toContainer()){
-                for (const auto& ch : cont->children()){
-                    callOnRemove(ch);
-                }
-            }
-        };
-        callOnRemove(it->child.get());
-
-
         onRemoveChild(it->child.get());
         if (auto win = getParentWindow()){
             win->softRemove(it->child.get());

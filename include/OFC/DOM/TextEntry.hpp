@@ -26,9 +26,9 @@ namespace ofc::ui::dom {
 
     private:
 
-        bool onLeftClick(int clicks) override;
+        bool onLeftClick(int clicks, ModifierKeys) override;
 
-        bool onKeyDown(Key) override;
+        bool onKeyDown(Key, ModifierKeys) override;
 
         void onLoseFocus() override;
 
@@ -36,17 +36,17 @@ namespace ofc::ui::dom {
 
         void onChange() override;
 
-        void handleBackspace();
+        void handleBackspace(ModifierKeys);
         
-        void handleDelete();
+        void handleDelete(ModifierKeys);
         
-        void handleLeft();
+        void handleLeft(ModifierKeys);
         
-        void handleRight();
+        void handleRight(ModifierKeys);
         
-        void handleHome();
+        void handleHome(ModifierKeys);
         
-        void handleEnd();
+        void handleEnd(ModifierKeys);
 
         void handleInsert();
 
@@ -68,10 +68,6 @@ namespace ofc::ui::dom {
         void handleChange();
 
         std::pair<std::size_t, std::size_t> selection() const;
-
-        bool shift() const;
-
-        bool ctrl() const;
 
         void skipLeft();
 

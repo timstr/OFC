@@ -2,13 +2,13 @@
 
 namespace ofc::ui {
 
-    TextComponent::TextComponent(Valuelike<String> s)
-        : FontConsumer(&TextComponent::updateFont)
-        , m_stringObserver(this, &TextComponent::updateString, std::move(s)) {
+    Text::Text(Valuelike<String> s)
+        : FontConsumer(&Text::updateFont)
+        , m_stringObserver(this, &Text::updateString, std::move(s)) {
 
     }
 
-    std::unique_ptr<dom::Text> TextComponent::createElement() {
+    std::unique_ptr<dom::Text> Text::createElement() {
         return std::make_unique<dom::Text>(
             m_stringObserver.getValueOnce(),
             *getFont().getValueOnce(),
@@ -16,11 +16,11 @@ namespace ofc::ui {
         );
     }
 
-    void TextComponent::updateString(const String& s) {
+    void Text::updateString(const String& s) {
         element()->setText(s);
     }
 
-    void TextComponent::updateFont(const sf::Font* f) {
+    void Text::updateFont(const sf::Font* f) {
         assert(f);
         element()->setFont(*f);
     }

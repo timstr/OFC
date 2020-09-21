@@ -292,7 +292,7 @@ namespace ofc::ui {
 
         }
 
-        // Creates a TextComponent
+        // Creates a Text component
         AnyComponent(const Value<String>&);
         AnyComponent(String);
         AnyComponent(const char*); // TODO: support for other string literals

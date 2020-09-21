@@ -514,7 +514,7 @@ namespace ofc::ui {
         public:
             void startDrag() {
                 auto self = static_cast<DerivedAction*>(this);
-                auto e = self->element().toDraggable();
+                auto d = self->element().toDraggable();
                 assert(d);
                 auto vd = dynamic_cast<ValueDraggable*>(d);
                 assert(vd);
@@ -579,19 +579,19 @@ namespace ofc::ui {
         public:
             using Action = MixedAction<AllTags...>;
         
-            decltype(auto) onDrag(std::function<void(vec2)> f) {
-                m_onDrag = [f = std::move(f)](vec2 d, Action /* unused */){
-                    f(d);
+            decltype(auto) onDrag(std::function<std::optional<vec2>(vec2)> f) {
+                m_onDrag = [f = std::move(f)](vec2 d, Action /* unused */) {
+                    return f(d);
                 };
                 return self();
             }
-            decltype(auto) onGainFocus(std::function<void(vec2, Action)> f) {
+            decltype(auto) onDrag(std::function<std::optional<vec2>(vec2, Action)> f) {
                 m_onDrag = std::move(f);
                 return self();
             }
 
         private:
-            std::function<void(vec2, Action)> m_onDrag;
+            std::function<std::optional<vec2>(vec2, Action)> m_onDrag;
 
             friend ElementMixin;
         };
@@ -610,7 +610,10 @@ namespace ofc::ui {
             void onDrag() override final {
                 auto& f = component().m_onDrag;
                 if (f) {
-                    f(pos(), Action{this});
+                    auto v = f(pos(), Action{this});
+                    if (v.has_value()){
+                        setPos(*v);
+                    }
                 }
             }
         };
@@ -630,18 +633,24 @@ namespace ofc::ui {
             using Action = MixedAction<AllTags...>;
         
             decltype(auto) onScroll(std::function<bool(vec2)> f) {
-                m_onScroll = [f = std::move(f)](vec2 d, Action /* unused */){
+                m_onScroll = [f = std::move(f)](vec2 d, ModifierKeys /* mod */, Action /* unused */){
                     return f(d);
                 };
                 return self();
             }
-            decltype(auto) onScroll(std::function<bool(vec2, Action)> f) {
+            decltype(auto) onScroll(std::function<bool(vec2, ModifierKeys)> f) {
+                m_onScroll = [f = std::move(f)](vec2 d, ModifierKeys mod, Action /* unused */){
+                    return f(d, mod);
+                };
+                return self();
+            }
+            decltype(auto) onScroll(std::function<bool(vec2, ModifierKeys, Action)> f) {
                 m_onScroll = std::move(f);
                 return self();
             }
 
         private:
-            std::function<bool(vec2, Action)> m_onScroll;
+            std::function<bool(vec2, ModifierKeys, Action)> m_onScroll;
 
             friend ElementMixin;
         };
@@ -657,10 +666,10 @@ namespace ofc::ui {
                 static_assert(std::is_base_of_v<dom::Control, BaseElement>, "Base class must derive from ui::dom::Control");
             }
 
-            bool onScroll(vec2 delta) override final {
+            bool onScroll(vec2 delta, ModifierKeys mod) override final {
                 auto& f = component().m_onScroll;
                 if (f) {
-                    return f(delta, Action{this});
+                    return f(delta, mod, Action{this});
                 }
                 return false;
             }
@@ -819,14 +828,20 @@ namespace ofc::ui {
             : private ComponentBaseHelper<Clickable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
-        
+            
             decltype(auto) onLeftClick(std::function<bool(int)> f) {
-                m_onLeftClick = [f = std::move(f)](int i, Action /* unused */){
+                m_onLeftClick = [f = std::move(f)](int i, ModifierKeys /* mod */, Action /* unused */){
                     return f(i);
                 };
                 return self();
             }
-            decltype(auto) onLeftClick(std::function<bool(int, Action)> f) {
+            decltype(auto) onLeftClick(std::function<bool(int, ModifierKeys)> f) {
+                m_onLeftClick = [f = std::move(f)](int i, ModifierKeys mod, Action /* unused */){
+                    return f(i, mod);
+                };
+                return self();
+            }
+            decltype(auto) onLeftClick(std::function<bool(int, ModifierKeys, Action)> f) {
                 m_onLeftClick = std::move(f);
                 return self();
             }
@@ -841,12 +856,18 @@ namespace ofc::ui {
                 return self();
             }
             decltype(auto) onMiddleClick(std::function<bool(int)> f) {
-                m_onMiddleClick = [f = std::move(f)](int i, Action /* unused */){
+                m_onMiddleClick = [f = std::move(f)](int i, ModifierKeys /* mod */, Action /* unused */){
                     return f(i);
                 };
                 return self();
             }
-            decltype(auto) onMiddleClick(std::function<bool(int, Action)> f) {
+            decltype(auto) onMiddleClick(std::function<bool(int, ModifierKeys)> f) {
+                m_onMiddleClick = [f = std::move(f)](int i, ModifierKeys mod, Action /* unused */){
+                    return f(i, mod);
+                };
+                return self();
+            }
+            decltype(auto) onMiddleClick(std::function<bool(int, ModifierKeys, Action)> f) {
                 m_onMiddleClick = std::move(f);
                 return self();
             }
@@ -861,12 +882,18 @@ namespace ofc::ui {
                 return self();
             }
             decltype(auto) onRightClick(std::function<bool(int)> f) {
-                m_onRightClick = [f = std::move(f)](int i, Action /* unused */){
+                m_onRightClick = [f = std::move(f)](int i, ModifierKeys /* mod */, Action /* unused */){
                     return f(i);
                 };
                 return self();
             }
-            decltype(auto) onRightClick(std::function<bool(int, Action)> f) {
+            decltype(auto) onRightClick(std::function<bool(int, ModifierKeys)> f) {
+                m_onRightClick = [f = std::move(f)](int i, ModifierKeys mod, Action /* unused */){
+                    return f(i, mod);
+                };
+                return self();
+            }
+            decltype(auto) onRightClick(std::function<bool(int, ModifierKeys, Action)> f) {
                 m_onRightClick = std::move(f);
                 return self();
             }
@@ -882,11 +909,11 @@ namespace ofc::ui {
             }
 
         private:
-            std::function<bool(int, Action)> m_onLeftClick;
+            std::function<bool(int, ModifierKeys, Action)> m_onLeftClick;
             std::function<void(Action)> m_onLeftRelease;
-            std::function<bool(int, Action)> m_onMiddleClick;
+            std::function<bool(int, ModifierKeys, Action)> m_onMiddleClick;
             std::function<void(Action)> m_onMiddleRelease;
-            std::function<bool(int, Action)> m_onRightClick;
+            std::function<bool(int, ModifierKeys, Action)> m_onRightClick;
             std::function<void(Action)> m_onRightRelease;
 
             friend ElementMixin;
@@ -903,11 +930,11 @@ namespace ofc::ui {
 
                 static_assert(std::is_base_of_v<dom::Control, BaseElement>, "Base class must derive from ui::dom::Control");
             }
-
-            bool onLeftClick(int i) override final {
+            
+            bool onLeftClick(int i, ModifierKeys mod) override final {
                 auto& f = component().m_onLeftClick;
                 if (f) {
-                    return f(i, Action{this});
+                    return f(i, mod, Action{this});
                 }
                 return false;
             }
@@ -919,10 +946,10 @@ namespace ofc::ui {
                 }
             }
 
-            bool onMiddleClick(int i) override final {
+            bool onMiddleClick(int i, ModifierKeys mod) override final {
                 auto& f = component().m_onMiddleClick;
                 if (f) {
-                    return f(i, Action{this});
+                    return f(i, mod, Action{this});
                 }
                 return false;
             }
@@ -934,10 +961,10 @@ namespace ofc::ui {
                 }
             }
 
-            bool onRightClick(int i) override final {
+            bool onRightClick(int i, ModifierKeys mod) override final {
                 auto& f = component().m_onRightClick;
                 if (f) {
-                    return f(i, Action{this});
+                    return f(i, mod, Action{this});
                 }
                 return false;
             }
@@ -965,12 +992,18 @@ namespace ofc::ui {
             using Action = MixedAction<AllTags...>;
         
             decltype(auto) onKeyDown(std::function<bool(Key)> f) {
-                m_onKeyDown = [f = std::move(f)](Key k, Action /* unused */){
+                m_onKeyDown = [f = std::move(f)](Key k, ModifierKeys /* mod */, Action /* unused */){
                     return f(k);
                 };
                 return self();
             }
-            decltype(auto) onKeyDown(std::function<bool(Key, Action)> f) {
+            decltype(auto) onKeyDown(std::function<bool(Key, ModifierKeys)> f) {
+                m_onKeyDown = [f = std::move(f)](Key k, ModifierKeys mod, Action /* unused */){
+                    return f(k, mod);
+                };
+                return self();
+            }
+            decltype(auto) onKeyDown(std::function<bool(Key, ModifierKeys, Action)> f) {
                 m_onKeyDown = std::move(f);
                 return self();
             }
@@ -986,7 +1019,7 @@ namespace ofc::ui {
             }
 
         private:
-            std::function<bool(Key, Action)> m_onKeyDown;
+            std::function<bool(Key, ModifierKeys, Action)> m_onKeyDown;
             std::function<bool(Key, Action)> m_onKeyUp;
 
             friend ElementMixin;
@@ -1003,10 +1036,10 @@ namespace ofc::ui {
                 static_assert(std::is_base_of_v<dom::Control, BaseElement>, "Base class must derive from ui::dom::Control");
             }
 
-            bool onKeyDown(Key key) override final {
+            bool onKeyDown(Key key, ModifierKeys mod) override final {
                 auto& f = component().m_onKeyDown;
                 if (f) {
-                    return f(key, Action{this});
+                    return f(key, mod, Action{this});
                 }
                 return false;
             }

@@ -49,7 +49,10 @@ namespace ofc::ui {
         }
 
         std::vector<const Component*> getChildren() const noexcept override final {
-            return { m_component.get() };
+            if (const auto c = m_component.get()){
+                return {c};
+            }
+            return {};
         }
 
         void serializeStateImpl(Serializer& s) const override final {

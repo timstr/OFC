@@ -30,10 +30,10 @@ namespace ofc::ui::dom {
         Text& getCaption() noexcept;
         const Text& getCaption() const noexcept;
 
-        bool onLeftClick(int) override;
+        bool onLeftClick(int, ModifierKeys) override;
         void onLeftRelease() override;
 
-        bool onKeyDown(ui::Key) override;
+        bool onKeyDown(ui::Key, ModifierKeys) override;
 
         void onMouseEnter(Draggable*) override;
         void onMouseLeave(Draggable*) override;
@@ -48,8 +48,6 @@ namespace ofc::ui::dom {
         State m_state;
 
         void fadeColor(Color from, Color to);
-
-        void onRemove() override;
     };
 
 } // namespace ofc::ui::dom

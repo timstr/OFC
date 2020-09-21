@@ -56,6 +56,7 @@ namespace ofc::ui {
         // take a screenshot
         sf::Image screenshot() const;
 
+        // TODO: replace require keys with some way of specifying alt/ctrl/shift/system as in ModifierKeys
         // Command stays active until the returned object is destroyed.
         // Note: KeyboardCommand is an RAII type, moving it will keep the command active
         KeyboardCommand addKeyboardCommand(Key trigger, std::function<void()> callback);
@@ -87,15 +88,15 @@ namespace ofc::ui {
         // keys and mouse buttons
         void releaseAllButtons();
         
-        void handleMouseDown(sf::Mouse::Button btn, vec2 pos);
+        void handleMouseDown(sf::Mouse::Button btn, vec2 pos, ModifierKeys mod);
         void handleMouseUp(sf::Mouse::Button btn);
 
-        void handleKeyDown(sf::Keyboard::Key key);
+        void handleKeyDown(sf::Keyboard::Key key, ModifierKeys mod);
         void handleKeyUp(sf::Keyboard::Key key);
 
         void handleType(sf::Int32 unicode);
 
-        void handleScroll(vec2 pos, vec2 scroll);
+        void handleScroll(vec2 pos, vec2 scroll, ModifierKeys mod);
 
         void handleDrag();
 
@@ -103,11 +104,13 @@ namespace ofc::ui {
 
         bool handleCommand(Key);
 
-        bool handleTextEntryKeyDown(Key);
+        bool handleTextEntryKeyDown(Key, ModifierKeys);
 
         void transferResponseTo(dom::Control*);
 
         bool dropDraggable(dom::Draggable* d, vec2 pos);
+
+        ModifierKeys modifierKeysFromKeyboard() const noexcept;
 
         // Ensures that event listeners remain attached to
         // the element if it is temporarily removed and

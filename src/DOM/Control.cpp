@@ -4,15 +4,15 @@
 
 namespace ofc::ui::dom {
     
-    bool Control::onLeftClick(int){
+    bool Control::onLeftClick(int, ModifierKeys){
         return false;
     }
 
-    bool Control::onMiddleClick(int){
+    bool Control::onMiddleClick(int, ModifierKeys){
         return false;
     }
 
-    bool Control::onRightClick(int){
+    bool Control::onRightClick(int, ModifierKeys){
         return false;
     }
 
@@ -52,7 +52,7 @@ namespace ofc::ui::dom {
         return false;
     }
 
-    bool Control::onKeyDown(Key){
+    bool Control::onKeyDown(Key, ModifierKeys){
         return false;
     }
 
@@ -75,7 +75,7 @@ namespace ofc::ui::dom {
         return false;
     }
 
-    bool Control::onScroll(vec2){
+    bool Control::onScroll(vec2, ModifierKeys){
         return false;
     }
 

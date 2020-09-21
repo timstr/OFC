@@ -7,9 +7,9 @@
 
 namespace ofc::ui {
 
-    class TextComponent : public SimpleComponent<dom::Text>, public FontConsumer<TextComponent> {
+    class Text: public SimpleComponent<dom::Text>, public FontConsumer<Text> {
     public:
-        TextComponent(Valuelike<String> s);
+        Text(Valuelike<String> s);
 
     private:
         Observer<String> m_stringObserver;
