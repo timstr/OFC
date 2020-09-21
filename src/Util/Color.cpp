@@ -1,12 +1,12 @@
-#include <GUI/Util/Color.hpp>
+#include <OFC/Util/Color.hpp>
 
-#include <GUI/Serialization/Serialization.hpp>
+#include <OFC/Serialization.hpp>
 
 #include <cassert>
 #include <cmath>
 #include <algorithm>
 
-namespace ui {
+namespace ofc {
 
     std::array<float, 3> convertHSLToRGB(const std::array<float, 3>& values) noexcept {
         const auto& [h, s, l] = values;
@@ -321,4 +321,4 @@ namespace ui {
         );
     }
 
-} // namespace ui
+} // namespace ofc

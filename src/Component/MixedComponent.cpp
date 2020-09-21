@@ -1,8 +1,8 @@
 #pragma once
 
-#include <GUI/Component/MixedComponent.hpp>
+#include <OFC/Component/MixedComponent.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
     namespace mix {
         
@@ -20,4 +20,4 @@ namespace ui {
 
     } // namespace mix
 
-} // namespace ui
+} // namespace ofc::ui

@@ -1,8 +1,8 @@
-#include <GUI/DOM/Draggable.hpp> 
+#include <OFC/DOM/Draggable.hpp> 
 
-#include <GUI/Window.hpp>
+#include <OFC/Window.hpp>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     void Draggable::startDrag(){
         if (auto win = getParentWindow()){
@@ -40,4 +40,4 @@ namespace ui::dom {
         return this;
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

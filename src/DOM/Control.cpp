@@ -1,8 +1,8 @@
-#include <GUI/DOM/Control.hpp>
+#include <OFC/DOM/Control.hpp>
 
-#include <GUI/Window.hpp>
+#include <OFC/Window.hpp>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
     
     bool Control::onLeftClick(int){
         return false;
@@ -110,4 +110,4 @@ namespace ui::dom {
         return this;
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

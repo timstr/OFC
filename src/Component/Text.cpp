@@ -1,8 +1,8 @@
-#include <GUI/Component/Text.hpp>
+#include <OFC/Component/Text.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
-    TextComponent::TextComponent(PropertyOrValue<String> s)
+    TextComponent::TextComponent(Valuelike<String> s)
         : FontConsumer(&TextComponent::updateFont)
         , m_stringObserver(this, &TextComponent::updateString, std::move(s)) {
 
@@ -25,4 +25,4 @@ namespace ui {
         element()->setFont(*f);
     }
     
-} // namespace ui
+} // namespace ofc::ui

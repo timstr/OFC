@@ -1,8 +1,8 @@
-#include <GUI/DOM/FlowContainer.hpp>
+#include <OFC/DOM/FlowContainer.hpp>
 
 #include <cmath>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     FlowContainer::FlowContainer()
         : m_padding(5.0f) {
@@ -121,4 +121,4 @@ namespace ui::dom {
         ), m_layout.end());
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

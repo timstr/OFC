@@ -1,8 +1,8 @@
-#include <GUI/DOM/Helpers/CallbackTextEntry.hpp>
+#include <OFC/DOM/Helpers/CallbackTextEntry.hpp>
 
 #include <cassert>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     CallbackTextEntry::CallbackTextEntry(
             const sf::Font& font,
@@ -35,4 +35,4 @@ namespace ui::dom {
         return true;
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

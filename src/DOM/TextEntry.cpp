@@ -1,14 +1,14 @@
-#include <GUI/Dom/TextEntry.hpp>
+#include <OFC/Dom/TextEntry.hpp>
 
-#include <GUI/Window.hpp>
-#include <GUI/ProgramContext.hpp>
-#include <GUI/Util/Pi.hpp>
+#include <OFC/Window.hpp>
+#include <OFC/ProgramContext.hpp>
+#include <OFC/Util/Pi.hpp>
 
 #include <cassert>
 #include <cctype>
 #include <cmath>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     // TODO: allow multiline? create a TextField class?
 
@@ -415,4 +415,4 @@ namespace ui::dom {
         doSkip(false);
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-project(tims-gui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library using SFML")
+project(ofc)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -15,68 +15,68 @@ if (NOT SFML_FOUND)
     message(FATAL_ERROR "Could not find SFML. Please install SFML.")
 endif()
 
-set(tims-gui_headers
-    include/GUI/GUI.hpp
-    include/GUI/ProgramContext.hpp
-    include/GUI/Window.hpp
+set(ofc_headers
+    include/OFC/UI.hpp
+    include/OFC/ProgramContext.hpp
+    include/OFC/Window.hpp
+    include/OFC/Observer.hpp
+    include/OFC/Serialization.hpp
 
-    include/GUI/Component/All.hpp
-    include/GUI/Component/Buttons.hpp
-    include/GUI/Component/Component.hpp
-    include/GUI/Component/Component.tpp
-    include/GUI/Component/Containers.hpp
-    include/GUI/Component/Context.hpp
-    include/GUI/Component/FontContext.hpp
-    include/GUI/Component/ForEach.hpp
-    include/GUI/Component/If.hpp
-    include/GUI/Component/List.hpp
-    include/GUI/Component/MixedComponent.hpp
-    include/GUI/Component/Property.hpp
-    include/GUI/Component/Property.tpp
-    include/GUI/Component/PureComponent.hpp
-    include/GUI/Component/Root.hpp
-    include/GUI/Component/StatefulComponent.hpp
-    include/GUI/Component/Switch.hpp
-    include/GUI/Component/Text.hpp
-    include/GUI/Component/When.hpp
+    include/OFC/Component/All.hpp
+    include/OFC/Component/Buttons.hpp
+    include/OFC/Component/Component.hpp
+    include/OFC/Component/Component.tpp
+    include/OFC/Component/Containers.hpp
+    include/OFC/Component/Context.hpp
+    include/OFC/Component/FontContext.hpp
+    include/OFC/Component/ForEach.hpp
+    include/OFC/Component/If.hpp
+    include/OFC/Component/List.hpp
+    include/OFC/Component/MixedComponent.hpp
+    include/OFC/Component/PureComponent.hpp
+    include/OFC/Component/Root.hpp
+    include/OFC/Component/StatefulComponent.hpp
+    include/OFC/Component/Switch.hpp
+    include/OFC/Component/Text.hpp
+    include/OFC/Component/When.hpp
 
-    include/GUI/Serialization/Serialization.hpp
+    include/OFC/DOM/BoxElement.hpp
+    include/OFC/DOM/Container.hpp
+    include/OFC/DOM/Control.hpp
+    include/OFC/DOM/Draggable.hpp
+    include/OFC/DOM/Element.hpp
+    include/OFC/DOM/FlowContainer.hpp
+    include/OFC/DOM/FreeContainer.hpp
+    include/OFC/DOM/GridContainer.hpp
+    include/OFC/DOM/Image.hpp
+    include/OFC/DOM/ListContainer.hpp
+    include/OFC/DOM/Text.hpp
+    include/OFC/DOM/TextEntry.hpp
 
-    include/GUI/DOM/BoxElement.hpp
-    include/GUI/DOM/Container.hpp
-    include/GUI/DOM/Control.hpp
-    include/GUI/DOM/Draggable.hpp
-    include/GUI/DOM/Element.hpp
-    include/GUI/DOM/FlowContainer.hpp
-    include/GUI/DOM/FreeContainer.hpp
-    include/GUI/DOM/GridContainer.hpp
-    include/GUI/DOM/Image.hpp
-    include/GUI/DOM/ListContainer.hpp
-    include/GUI/DOM/Text.hpp
-    include/GUI/DOM/TextEntry.hpp
+    include/OFC/DOM/Helpers/CallbackButton.hpp
+    include/OFC/DOM/Helpers/CallbackTextEntry.hpp
+    include/OFC/DOM/Helpers/NumberTextEntry.hpp
+    include/OFC/DOM/Helpers/PullDownMenu.hpp
+    include/OFC/DOM/Helpers/ScrollPanel.hpp
+    include/OFC/DOM/Helpers/Slider.hpp
+    include/OFC/DOM/Helpers/ToggleButton.hpp
 
-    include/GUI/DOM/Helpers/CallbackButton.hpp
-    include/GUI/DOM/Helpers/CallbackTextEntry.hpp
-    include/GUI/DOM/Helpers/NumberTextEntry.hpp
-    include/GUI/DOM/Helpers/PullDownMenu.hpp
-    include/GUI/DOM/Helpers/ScrollPanel.hpp
-    include/GUI/DOM/Helpers/Slider.hpp
-    include/GUI/DOM/Helpers/ToggleButton.hpp
-
-    include/GUI/Util/Color.hpp
-    include/GUI/Util/Key.hpp
-    include/GUI/Util/Pi.hpp
-    include/GUI/Util/RoundedRectangle.hpp
-    include/GUI/Util/String.hpp
-    include/GUI/Util/TemplateMetaProgramming.hpp
-    include/GUI/Util/UniqueAny.hpp
-    include/GUI/Util/Vec2.hpp
+    include/OFC/Util/Color.hpp
+    include/OFC/Util/Key.hpp
+    include/OFC/Util/Pi.hpp
+    include/OFC/Util/RoundedRectangle.hpp
+    include/OFC/Util/String.hpp
+    include/OFC/Util/TemplateMetaProgramming.hpp
+    include/OFC/Util/UniqueAny.hpp
+    include/OFC/Util/Vec2.hpp
 )
 
-set(tims-gui_srcs
-    src/GUI.cpp
+set(ofc_srcs
+    src/UI.cpp
     src/ProgramContext.cpp
+    src/Observer.cpp
     src/Window.cpp
+    src/Serialization.cpp
 
     src/Component/Buttons.cpp
     src/Component/Component.cpp
@@ -85,12 +85,9 @@ set(tims-gui_srcs
     src/Component/If.cpp
     src/Component/List.cpp
     src/Component/MixedComponent.cpp
-    src/Component/Property.cpp
     src/Component/PureComponent.cpp
     src/Component/Root.cpp
     src/Component/Text.cpp
-
-    src/Serialization/Serialization.cpp
 
     src/DOM/BoxElement.cpp
     src/DOM/Container.cpp
@@ -118,17 +115,17 @@ set(tims-gui_srcs
     src/Util/UniqueAny.cpp
 )
 
-add_library(tims-gui STATIC ${tims-gui_headers} ${tims-gui_srcs})
+add_library(ofc STATIC ${ofc_headers} ${ofc_srcs})
 
 if (UNIX)
-    target_link_libraries(tims-gui
+    target_link_libraries(ofc
         PUBLIC sfml-system
         PUBLIC sfml-window
         PUBLIC sfml-graphics
         PUBLIC sfml-audio
     )
 else()
-    target_link_libraries(tims-gui
+    target_link_libraries(ofc
         PUBLIC sfml-system
         PUBLIC sfml-window
         PUBLIC sfml-graphics
@@ -137,26 +134,26 @@ else()
     )
 endif()
 
-target_include_directories(tims-gui PUBLIC "include")
+target_include_directories(ofc PUBLIC "include")
 
-set(TIMS_GUI_GENERATE_EXAMPLE OFF CACHE BOOL "When set to ON, the example gui target will be generated")
+set(OFC_GENERATE_EXAMPLE OFF CACHE BOOL "When set to ON, the example target will be generated")
 
-if(TIMS_GUI_GENERATE_EXAMPLE)
+if(OFC_GENERATE_EXAMPLE)
     set(FONTS_PATH "${CMAKE_SOURCE_DIR}/example/fonts")
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/example/fontspath.hpp.in"
         "${CMAKE_CURRENT_SOURCE_DIR}/example/fontspath.hpp"
     )
 
-    add_executable(tims-gui-example example/tims_gui_example.cpp example/fontspath.hpp)
+    add_executable(ofc_example example/ofc_example.cpp example/fontspath.hpp)
 
-    target_link_libraries(tims-gui-example
-        PUBLIC tims-gui
+    target_link_libraries(ofc_example
+        PUBLIC ofc
     )
 endif()
 
 if(MSVC)
-    target_compile_options(tims-gui PUBLIC
+    target_compile_options(ofc PUBLIC
         # increase warning level
         "/W4"
 

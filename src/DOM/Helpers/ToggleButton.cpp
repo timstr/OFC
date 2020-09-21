@@ -1,6 +1,6 @@
-#include <GUI/DOM/Helpers/ToggleButton.hpp> 
+#include <OFC/DOM/Helpers/ToggleButton.hpp> 
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     ToggleButton::ToggleButton(bool value, const sf::Font& font, std::function<void(bool)> onChange, std::pair<String, String> labels)
         : CallbackButton(value ? labels.second : labels.first, font, [this](){
@@ -17,4 +17,4 @@ namespace ui::dom {
         
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

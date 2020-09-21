@@ -1,6 +1,6 @@
-#include <GUI/Component/PureComponent.hpp>
+#include <OFC/Component/PureComponent.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
     void PureComponent::onMount(const dom::Element* beforeElement) {
         m_component = render();
@@ -15,4 +15,4 @@ namespace ui {
         return { m_component.get() };
     }
 
-} // namespace ui
+} // namespace ofc::ui

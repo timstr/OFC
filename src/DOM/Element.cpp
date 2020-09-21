@@ -1,11 +1,11 @@
-#include <GUI/DOM/Element.hpp> 
-#include <GUI/DOM/Container.hpp>
-#include <GUI/ProgramContext.hpp>
-#include <GUI/Window.hpp>
+#include <OFC/DOM/Element.hpp> 
+#include <OFC/DOM/Container.hpp>
+#include <OFC/ProgramContext.hpp>
+#include <OFC/Window.hpp>
 
 #include <cassert>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
     
     namespace {
         bool different(float a, float b){
@@ -424,4 +424,4 @@ namespace ui::dom {
         fn(this);
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

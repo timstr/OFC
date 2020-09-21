@@ -1,9 +1,9 @@
-#include <GUI/DOM/GridContainer.hpp>
+#include <OFC/DOM/GridContainer.hpp>
 
 #include <numeric>
 #include <cassert>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     GridContainer::GridContainer() : 
         m_rows(1),
@@ -288,4 +288,4 @@ namespace ui::dom {
         }
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

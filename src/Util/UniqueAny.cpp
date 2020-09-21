@@ -1,6 +1,6 @@
-#include <GUI/Util/UniqueAny.hpp>
+#include <OFC/Util/UniqueAny.hpp>
 
-namespace ui {
+namespace ofc {
 
     UniqueAny::UniqueAny() noexcept
         : m_value{nullptr, nullptr}
@@ -26,4 +26,4 @@ namespace ui {
         return m_type;
     }
 
-} // namespace ui
+} // namespace ofc

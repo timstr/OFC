@@ -1,6 +1,6 @@
-#include <GUI/DOM/ListContainer.hpp>
+#include <OFC/DOM/ListContainer.hpp>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     VerticalList::VerticalList(VerticalDirection direction)
         : ListContainer(direction == TopToBottom) {
@@ -12,4 +12,4 @@ namespace ui::dom {
 
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

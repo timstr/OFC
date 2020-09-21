@@ -1,6 +1,6 @@
-#include <GUI/DOM/Image.hpp>
+#include <OFC/DOM/Image.hpp>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     Image::Image(const std::string& path, bool autoSize){
         if (!loadFromFile(path, autoSize)){
@@ -112,4 +112,4 @@ namespace ui::dom {
         rw.draw(m_sprite);
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

@@ -1,8 +1,8 @@
-#include <GUI/Component/If.hpp>
+#include <OFC/Component/If.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
-    If::If(PropertyOrValue<bool> c)
+    If::If(Valuelike<bool> c)
         : m_condition(this, &If::updateCondition, std::move(c)) {
 
     }
@@ -44,4 +44,4 @@ namespace ui {
         }
     }
     
-} // namespace ui
+} // namespace ofc::ui

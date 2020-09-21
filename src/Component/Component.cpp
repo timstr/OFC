@@ -1,13 +1,14 @@
-#include <GUI/Component/Component.hpp>
+#include <OFC/Component/Component.hpp>
 
-#include <GUI/Component/Text.hpp>
+#include <OFC/Component/Text.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
     Component::Component() noexcept
         : m_isMounted(false)
         , m_parent(nullptr) {
 
+        setActive(false);
     }
 
     Component::Component(Component&& c) noexcept 
@@ -24,6 +25,7 @@ namespace ui {
         // Conversely, all components MUST unmount all their child components while
         // being unmounted.
         assert(!m_isMounted);
+        assert(!isActive());
     }
 
     ComponentParent* Component::parent() noexcept {
@@ -44,11 +46,13 @@ namespace ui {
         m_parent = parent;
         onMount(beforeSibling);
         m_isMounted = true;
+        setActive(true);
     }
 
     void Component::unmount() {
         assert(m_isMounted);
         assert(m_parent);
+        setActive(false);
         m_isMounted = false;
         onUnmount();
         m_parent = nullptr;
@@ -205,7 +209,7 @@ namespace ui {
         return *this;
     }
 
-    AnyComponent::AnyComponent(const Property<String>& p)
+    AnyComponent::AnyComponent(const Value<String>& p)
         : m_component(std::make_unique<TextComponent>(p)) {
     }
 
@@ -409,4 +413,4 @@ namespace ui {
         return { m_child.get() };
     }
 
-} // namespace ui
+} // namespace ofc::ui

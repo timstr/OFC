@@ -1,8 +1,8 @@
-#include <GUI/Component/Root.hpp>
+#include <OFC/Component/Root.hpp>
 
-#include <GUI/DOM/Element.hpp>
+#include <OFC/DOM/Element.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
     std::unique_ptr<dom::Container> Root::mount() {
         assert(m_component);
@@ -33,4 +33,4 @@ namespace ui {
         return {m_component.get()};
     }
     
-} // namespace ui
+} // namespace ofc::ui

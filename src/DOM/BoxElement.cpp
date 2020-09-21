@@ -1,6 +1,6 @@
-#include <GUI/DOM/BoxElement.hpp> 
+#include <OFC/DOM/BoxElement.hpp> 
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     BoxElement::BoxElement(){
         m_rect.setSize(size());
@@ -14,7 +14,7 @@ namespace ui::dom {
     void BoxElement::setBorderColor(const Color& color){
         m_rect.setOutlineColor(color);
     }
-    void BoxElement::setBackgroundColor(const ui::Color& color){
+    void BoxElement::setBackgroundColor(const Color& color){
         m_rect.setFillColor(color);
     }
 
@@ -53,4 +53,4 @@ namespace ui::dom {
         });
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

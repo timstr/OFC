@@ -1,13 +1,13 @@
-#include <GUI/Window.hpp>
+#include <OFC/Window.hpp>
 
-#include <GUI/ProgramContext.hpp>
-#include <GUI/Component/Component.hpp>
+#include <OFC/ProgramContext.hpp>
+#include <OFC/Component/Component.hpp>
 
-#include <GUI/DOM/Draggable.hpp>
+#include <OFC/DOM/Draggable.hpp>
 
 #include <cassert>
 
-namespace ui {
+namespace ofc::ui {
 
     // Generic function for propagating an event through handler callbacks
     // Calls `handlerFn` on the element with the given arguments. If the
@@ -1047,4 +1047,4 @@ namespace ui {
         }
     }
 
-} // namespace ui
+} // namespace ofc::ui

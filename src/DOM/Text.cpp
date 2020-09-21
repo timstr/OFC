@@ -1,8 +1,8 @@
-#include <GUI/DOM/Text.hpp> 
+#include <OFC/DOM/Text.hpp> 
 
 #include <cassert>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     Text::Text(const String& str, const sf::Font& font, const Color& color, unsigned char_size, uint32_t style){
         m_text.setFont(font);
@@ -84,4 +84,4 @@ namespace ui::dom {
         return this;
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

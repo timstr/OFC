@@ -1,6 +1,6 @@
-#include <GUI/Component/List.hpp>
+#include <OFC/Component/List.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
     void List::onMount(const dom::Element* beforeSibling) {
         for (auto& c : m_components) {
@@ -23,4 +23,4 @@ namespace ui {
         return ret;
     }
     
-} // namespace ui
+} // namespace ofc::ui

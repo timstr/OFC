@@ -1,6 +1,6 @@
-#include <GUI/DOM/Helpers/CallbackButton.hpp>
+#include <OFC/DOM/Helpers/CallbackButton.hpp>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     CallbackButton::CallbackButton(const String& label, const sf::Font& font, std::function<void()> onClick)
         : m_callback(std::move(onClick))
@@ -115,4 +115,4 @@ namespace ui::dom {
         setBackgroundColor(m_normalColor);
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

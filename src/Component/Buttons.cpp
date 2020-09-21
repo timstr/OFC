@@ -1,8 +1,8 @@
-#include <GUI/Component/Buttons.hpp>
+#include <OFC/Component/Buttons.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
-    Button::Button(PropertyOrValue<String> s)
+    Button::Button(Valuelike<String> s)
         : FontConsumer(&Button::updateFont)
         , m_caption(this, &Button::updateCaption, std::move(s)) {
 
@@ -30,4 +30,4 @@ namespace ui {
         element()->getCaption().setFont(*f);
     }
     
-} // namespace ui
+} // namespace ofc::ui

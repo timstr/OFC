@@ -1,12 +1,12 @@
-#include <GUI/ProgramContext.hpp>
+#include <OFC/ProgramContext.hpp>
 
-#include <GUI/Window.hpp>
-#include <GUI/Component/Component.hpp>
+#include <OFC/Window.hpp>
+#include <OFC/Component/Component.hpp>
 
 #include <algorithm>
 #include <cassert>
 
-namespace ui {
+namespace ofc::ui {
 
     ProgramContext& ProgramContext::get(){
         static ProgramContext the_instance;
@@ -37,7 +37,7 @@ namespace ui {
                     win->processEvents();
                 }
             } while (m_cachedTime < doneTime);
-            detail::updateAllProperties();
+            ::ofc::detail::updateAllValues();
             for (auto& win : m_windows){
                 win->tick();
                 win->redraw();
@@ -53,4 +53,4 @@ namespace ui {
          return sf::seconds(0.25f);
     }
 
-} // namespace ui
+} // namespace ofc::ui

@@ -1,9 +1,9 @@
-#include <GUI/Component/FontContext.hpp>
+#include <OFC/Component/FontContext.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
-    UseFont::UseFont(PropertyOrValue<const sf::Font*> pvf)
+    UseFont::UseFont(Valuelike<const sf::Font*> pvf)
         : ContextProvider(std::move(pvf)) {
     }
     
-} // namespace ui
+} // namespace ofc::ui

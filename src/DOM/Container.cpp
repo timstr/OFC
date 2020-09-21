@@ -1,11 +1,11 @@
-#include <GUI/DOM/Container.hpp>
+#include <OFC/DOM/Container.hpp>
 
-#include <GUI/Window.hpp>
+#include <OFC/Window.hpp>
 
 #include <algorithm>
 #include <cassert>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     // TODO: put all the search code into a single helper function
 
@@ -380,4 +380,4 @@ namespace ui::dom {
     }
     
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

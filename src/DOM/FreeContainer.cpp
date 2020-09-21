@@ -1,9 +1,9 @@
-#include <GUI/DOM/FreeContainer.hpp>
+#include <OFC/DOM/FreeContainer.hpp>
 
 #include <cassert>
 #include <cmath>
 
-namespace ui::dom {
+namespace ofc::ui::dom {
 
     void FreeContainer::adopt(std::unique_ptr<Element> e){
         assert(e);
@@ -100,4 +100,4 @@ namespace ui::dom {
         m_styles.erase(it);
     }
 
-} // namespace ui::dom
+} // namespace ofc::ui::dom

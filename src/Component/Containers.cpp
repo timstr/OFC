@@ -1,6 +1,6 @@
-#include <GUI/Component/Containers.hpp>
+#include <OFC/Component/Containers.hpp>
 
-namespace ui {
+namespace ofc::ui {
 
     void Center::onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) {
         auto s = scope;
@@ -44,4 +44,4 @@ namespace ui {
 
     } // namespace detail
 
-} // namespace ui
+} // namespace ofc::ui

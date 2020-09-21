@@ -1,8 +1,8 @@
-#include <GUI/Util/RoundedRectangle.hpp>
+#include <OFC/Util/RoundedRectangle.hpp>
 
 #include <cmath>
 
-namespace ui {
+namespace ofc::ui {
 
     RoundedRectangle::RoundedRectangle(sf::Vector2f _size, float _radius)
         : m_radius(_radius),
@@ -88,4 +88,4 @@ namespace ui {
         }
     }
 
-} // namespace ui
+} // namespace ofc::ui
