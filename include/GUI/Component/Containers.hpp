@@ -172,7 +172,7 @@ namespace ui {
 
 
     // TODO: add text flow direction
-    // TODO: make text flow across lines
+    // TODO: make text flow across lines (by breaking up individual text components into one text component per word)
     // TODO: add newline and indentation
 
     template<typename Derived>

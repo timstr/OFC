@@ -4,14 +4,20 @@
 
 namespace ui {
 
-    enum HorizontalDirection : std::uint8_t {
-        RightToLeft,
-        LeftToRight
+    enum class HorizontalDirection : std::uint8_t {
+        LeftToRight,
+        RightToLeft
     };
 
-    enum VerticalDirection : std::uint8_t {
+    enum class VerticalDirection : std::uint8_t {
         TopToBottom,
         BottomToTop
     };
+
+    inline constexpr auto LeftToRight = HorizontalDirection::LeftToRight;
+    inline constexpr auto RightToLeft = HorizontalDirection::RightToLeft;
+
+    inline constexpr auto TopToBottom = VerticalDirection::TopToBottom;
+    inline constexpr auto BottomToTop = VerticalDirection::BottomToTop;
 
 } // namespace ui

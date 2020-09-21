@@ -563,34 +563,6 @@ namespace ui {
         cancelUpdate(e);
         
         removeTransitions(e);
-
-        // TODO: the following feels like a hack.
-
-        /*auto parentControl = e->getParentControl();
-
-        const auto cleanup = [&](const Element* elem){
-            if (elem == m_focus_elem){
-                m_focus_elem = parentControl;
-            }
-            if (elem == m_hover_elem){
-                m_hover_elem = parentControl;
-            }
-            if (elem == m_text_entry){
-                stopTyping();
-            }
-            cancelUpdate(elem);
-        };
-
-        std::function<void(const Element*)> cleanupAll = [&](const Element* elem){
-            if (auto cont = elem->toContainer()){
-                for (auto child : cont->children()){
-                    cleanupAll(child);
-                }
-            }
-            cleanup(elem);
-        };
-
-        cleanupAll(e);*/
     }
 
     void Window::undoSoftRemove(dom::Element* e){

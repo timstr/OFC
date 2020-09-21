@@ -8,7 +8,9 @@
 #include <string>
 #include <string_view>
 
-// TODO: use std::span?
+// TODO: use relevant C++20 features like
+// - std::span
+// - <bit> header, e.g. for endianness
 
 #include <GUI/Util/TemplateMetaProgramming.hpp>
 

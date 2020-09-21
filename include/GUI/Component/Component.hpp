@@ -16,8 +16,6 @@
 
 namespace ui {
 
-    // TODO: put template definitions into .tpp file
-
     class ComponentParent;
 
     class InternalComponent;

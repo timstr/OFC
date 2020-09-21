@@ -157,10 +157,10 @@ private:
 // TODO: animations
 // the way to enable animations should be as part of StatefulComponent:
 // - animations can modify some part of a component's state
+// - This could completely supercede the existing transitions api
 // - how to do???
 
-// TODO
-
+// TODO: rename everything
 /*
 Observables and Functional Components - OFC
 
@@ -183,6 +183,15 @@ ofc::Observer ==(rename to)==> one of:
  - ofc::Watcher
  - ofc::Reacter
 */
+
+// TODO: make a large graph-like data structure and create a UI component for it to test how well this whole library actually works
+
+// TODO: (re)implement helpers like:
+// - pulldown menu (see above)
+// - slider
+// - text fields
+// - checkbox
+// - 
 
 int main(){
 

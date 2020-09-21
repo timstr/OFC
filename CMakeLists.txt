@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 
 project(tims-gui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library using SFML")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 if (UNIX)
     find_package(SFML 2.4 COMPONENTS system window graphics audio REQUIRED)
