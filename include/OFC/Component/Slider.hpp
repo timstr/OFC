@@ -6,6 +6,12 @@
 
 namespace ofc::ui {
 
+    // TODO: shift-drag for precise (1/10th) changes
+    // TODO: left/right to decrement/increment
+    // TODO: left/right with ctrl for fast changes
+    // TODO: left/right with shift for slow changes
+    // TODO: home/end for min/max
+
     template<typename NumberType>
     class Slider : public PureComponent {
     public:
@@ -14,6 +20,7 @@ namespace ofc::ui {
             , m_maximum(std::move(maximum))
             , m_value(std::move(value)) {
         
+            static_assert(std::is_arithmetic_v<NumberType>);
         }
 
         Slider& onChange(std::function<void(NumberType)> f) {
@@ -55,7 +62,11 @@ namespace ofc::ui {
                 return vec2{std::clamp(v.x, 0.0f, w), 0.0f};
             };
 
-            // auto handleKeyDown = [this]()
+            auto handleKeyDown = [this](Key k, ModifierKeys mod){
+                if (k == Key::Left){
+                
+                }
+            }
 
             return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, KeyPressable>{}
                 .sizeForce(vec2{100.0f, 20.0f})
@@ -65,7 +76,7 @@ namespace ofc::ui {
                 .borderRadius(10.0f)
                 .containing(
                     Text(std::move(valueAsString)),
-                    MixedComponent<Boxy, Resizable, Positionable, Clickable, Draggable>{}
+                    MixedComponent<Boxy, Resizable, Positionable, Clickable, KeyPressable, Draggable>{}
                         .sizeForce(vec2{20.0f, 20.0f})
                         .backgroundColor(0xffffff80)
                         .borderColor(0x888888ff)
