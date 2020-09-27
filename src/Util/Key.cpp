@@ -3,19 +3,19 @@
 namespace ofc::ui {
 
     bool ModifierKeys::alt() const noexcept {
-        return m_values | 1;
+        return m_values & 1;
     }
 
     bool ModifierKeys::ctrl() const noexcept {
-        return m_values | 2;
+        return m_values & 2;
     }
 
     bool ModifierKeys::shift() const noexcept {
-        return m_values | 4;
+        return m_values & 4;
     }
 
     bool ModifierKeys::system() const noexcept {
-        return m_values | 8;
+        return m_values & 8;
     }
 
     ModifierKeys::ModifierKeys(bool alt, bool ctrl, bool shift, bool system) noexcept

@@ -1,19 +1,20 @@
 #pragma once
 
-#include <OFC/Component/PureComponent.hpp>
+#include <OFC/Component/StatefulComponent.hpp>
 #include <OFC/Component/MixedComponent.hpp>
 #include <OFC/Component/Text.hpp>
 
+#include <optional>
+
 namespace ofc::ui {
 
-    // TODO: shift-drag for precise (1/10th) changes
-    // TODO: left/right to decrement/increment
-    // TODO: left/right with ctrl for fast changes
-    // TODO: left/right with shift for slow changes
-    // TODO: home/end for min/max
+    template<typename NumberType>
+    struct SliderState {
+        std::optional<float> startPosition;
+    };
 
     template<typename NumberType>
-    class Slider : public PureComponent {
+    class Slider : public StatefulComponent<SliderState<NumberType>, Ephemeral> {
     public:
         Slider(Valuelike<NumberType> minimum, Valuelike<NumberType> maximum, Valuelike<NumberType> value)
             : m_minimum(std::move(minimum))
@@ -54,19 +55,62 @@ namespace ofc::ui {
                 const auto max = m_maximum.getValueOnce();
                 // TODO: (width - height)
                 const auto w = 80.0f;
-                const auto x = std::clamp(v.x / w, 0.0f, 1.0f);
+                const auto& s = this->state();
+                const auto x = s.startPosition.has_value() ?
+                    (0.9f * (*s.startPosition) + 0.1f * v.x) :
+                    v.x;
+                const auto t = std::clamp(x / w, 0.0f, 1.0f);
                 const auto val = static_cast<NumberType>(
-                    x * static_cast<float>(max - min) + static_cast<float>(min)
+                    t * static_cast<float>(max - min) + static_cast<float>(min)
                 );
                 m_onChange(val);
-                return vec2{std::clamp(v.x, 0.0f, w), 0.0f};
+                return vec2{std::clamp(x, 0.0f, w), 0.0f};
             };
 
             auto handleKeyDown = [this](Key k, ModifierKeys mod){
-                if (k == Key::Left){
-                
+                if (k == Key::Home){
+                    m_onChange(m_minimum.getValueOnce());
+                    return true;
                 }
-            }
+                if (k == Key::End){
+                    m_onChange(m_maximum.getValueOnce());
+                    return true;
+                }
+
+                if (k == Key::Left || k == Key::Right){
+                    // normal speed: power of ten that is closest to moving one pixel,
+                    // or simply 1 if Number is integral and that speed would be less than 1
+                    // coarse speed: 10x normal
+                    // fine speed: 0.1x normal (minimum of 1 if integral)
+                    const auto multiplier = mod.ctrl() ? 10.0 : (mod.shift() ? 0.1 : 1.0);
+                
+                        // TODO: (width - height)
+                    const auto spacePerPixel =
+                        static_cast<float>(m_maximum.getValueOnce() - m_minimum.getValueOnce())
+                        / 80.0f;
+                    const auto mag = std::log10(spacePerPixel);
+                    const auto baseStep = std::pow(10.0f, std::round(mag)) * multiplier;
+            
+                    NumberType step;
+                    if constexpr (std::is_integral_v<NumberType> && baseStep < 1.0f){
+                        step = static_cast<NumberType>(1);
+                    } else {
+                        step = static_cast<NumberType>(baseStep);
+                    }
+
+
+                    auto v = m_value.getValueOnce();
+                    if (k == Key::Left){
+                        v -= step;
+                    } else if (k == Key::Right){
+                        v += step;
+                    }
+                    v = std::clamp(v, m_minimum.getValueOnce(), m_maximum.getValueOnce());
+                    m_onChange(v);
+                    return true;
+                }
+                return false;
+            };
 
             return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, KeyPressable>{}
                 .sizeForce(vec2{100.0f, 20.0f})
@@ -84,11 +128,17 @@ namespace ofc::ui {
                         .borderRadius(10.0f)
                         .top(0.0f)
                         .left(std::move(leftPosition))
-                        .onLeftClick([](int, ModifierKeys, auto action){
+                        .onKeyDown(handleKeyDown)
+                        .onLeftClick([this](int, ModifierKeys mod, auto action){
+                            if (mod.shift()){
+                                auto lPos = action.element().left();
+                                stateMut().startPosition = lPos;
+                            }
                             action.startDrag();
                             return true;
                         })
-                        .onLeftRelease([](auto action){
+                        .onLeftRelease([this](auto action){
+                            stateMut().startPosition.reset();
                             action.stopDrag();
                             return true;
                         })
