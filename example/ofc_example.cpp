@@ -13,7 +13,7 @@ const sf::Font& getFont() {
     static sf::Font font;
     static bool loaded;
     if (!loaded) {
-        font.loadFromFile(fonts_path + "/JosefinSans-Bold.ttf");
+        font.loadFromFile(fonts_path + "/mononoki-Regular.ttf");
         loaded = true;
     }
     return font;
