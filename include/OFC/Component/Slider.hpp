@@ -29,10 +29,28 @@ namespace ofc::ui {
             return *this;
         }
 
+        Slider* width(Valuelike<float> w){
+            m_width = std::move(w);
+            return *this;
+        }
+
+        Slider* height(Valuelike<float> h){
+            m_height = std::move(h);
+            return *this;
+        }
+
+        Slider* size(Valuelike<vec2> s){
+            m_width = s.map([](vec2 v){ return v.x; });
+            m_height = s.map([](vec2 v){ return v.y; });
+            return *this;
+        }
+
     private:
         Valuelike<NumberType> m_minimum;
         Valuelike<NumberType> m_maximum;
         Valuelike<NumberType> m_value;
+        Valuelike<float> m_width {100.0f};
+        Valuelike<float> m_height {20.0f};
         std::function<void(NumberType)> m_onChange;
 
         AnyComponent render() const override {
@@ -40,21 +58,19 @@ namespace ofc::ui {
                 return std::to_string(x);
             });
 
-            auto leftPosition = combine(m_minimum.view(), m_maximum.view(), m_value.view())
-                .map([](NumberType min, NumberType max, NumberType v){
+            auto leftPosition = combine(m_minimum.view(), m_maximum.view(), m_value.view(), m_width.view(), m_height.view())
+                .map([](NumberType min, NumberType max, NumberType v, float w, float h){
                     assert(max >= min);
                     if (max == min){
-                        return 80.0f / 2.0f; // TODO: (width - height)
+                        return (w - h) / 2.0f;
                     }
-                    // TODO: (width - height)
-                    return 80.0f * std::clamp(static_cast<float>(v - min) / static_cast<float>(max - min), 0.0f, 1.0f);
+                    return (w - h) * std::clamp(static_cast<float>(v - min) / static_cast<float>(max - min), 0.0f, 1.0f);
                 });
 
             auto onDrag = [this](vec2 v){
                 const auto min = m_minimum.getValueOnce();
                 const auto max = m_maximum.getValueOnce();
-                // TODO: (width - height)
-                const auto w = 80.0f;
+                const auto w = m_width.getValueOnce() - m_height.getValueOnce();
                 const auto& s = this->state();
                 const auto x = s.startPosition.has_value() ?
                     (0.9f * (*s.startPosition) + 0.1f * v.x) :
@@ -84,10 +100,8 @@ namespace ofc::ui {
                     // fine speed: 0.1x normal (minimum of 1 if integral)
                     const auto multiplier = mod.ctrl() ? 10.0 : (mod.shift() ? 0.1 : 1.0);
                 
-                        // TODO: (width - height)
-                    const auto spacePerPixel =
-                        static_cast<float>(m_maximum.getValueOnce() - m_minimum.getValueOnce())
-                        / 80.0f;
+                    const auto w = m_width.getValueOnce() - m_height.getValueOnce();
+                    const auto spacePerPixel = static_cast<float>(m_maximum.getValueOnce() - m_minimum.getValueOnce()) / w;
                     const auto mag = std::log10(spacePerPixel);
                     const auto baseStep = std::pow(10.0f, std::round(mag)) * multiplier;
             
@@ -113,22 +127,22 @@ namespace ofc::ui {
             };
 
             return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, KeyPressable>{}
-                .sizeForce(vec2{100.0f, 20.0f})
+                .sizeForce(combine(m_width.view(), m_height.view()).map([](float w, float h){ return vec2{w, h}; }))
                 .backgroundColor(0xddddddff)
                 .borderColor(0x888888ff)
                 .borderThickness(2.0f)
-                .borderRadius(10.0f)
+                .borderRadius(m_height.view())
+                .onKeyDown(handleKeyDown)
                 .containing(
                     Text(std::move(valueAsString)),
-                    MixedComponent<Boxy, Resizable, Positionable, Clickable, KeyPressable, Draggable>{}
-                        .sizeForce(vec2{20.0f, 20.0f})
+                    MixedComponent<Boxy, Resizable, Positionable, Clickable, Draggable>{}
+                        .sizeForce(m_height.map([](float h){ return vec2{h, h}; }))
                         .backgroundColor(0xffffff80)
                         .borderColor(0x888888ff)
                         .borderThickness(2.0f)
-                        .borderRadius(10.0f)
+                        .borderRadius(m_height.view())
                         .top(0.0f)
                         .left(std::move(leftPosition))
-                        .onKeyDown(handleKeyDown)
                         .onLeftClick([this](int, ModifierKeys mod, auto action){
                             if (mod.shift()){
                                 auto lPos = action.element().left();
