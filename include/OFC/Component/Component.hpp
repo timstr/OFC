@@ -9,9 +9,8 @@
 
 #include <OFC/Serialization.hpp>
 
-#include <memory>
-#include <typeinfo>
 #include <any>
+#include <memory>
 #include <typeinfo>
 
 namespace ofc::ui {

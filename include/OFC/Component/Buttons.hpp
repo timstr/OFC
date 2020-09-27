@@ -7,6 +7,9 @@
 
 namespace ofc::ui {
 
+    // TODO: redo this as a PureComponent
+    // TODO: get rid of CallbackButton >:)
+
     class Button : public SimpleComponent<dom::CallbackButton>, public FontConsumer<Button> {
     public:
         Button(Valuelike<String> s);

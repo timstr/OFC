@@ -529,9 +529,6 @@ namespace ofc {
             return hasProperty() || hasFixedValue();
         }
 
-        ValueBase<T>* getProperty() noexcept {
-            return const_cast<ValueBase<T>*>(const_cast<const Valuelike<T>*>(this)->getProperty());
-        }
         const ValueBase<T>* getProperty() const noexcept {
             assert(!hasProperty() || !hasFixedValue());
             assert(!hasProperty() || (hasTargetProperty() != hasOwnProperty()));

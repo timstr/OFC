@@ -2,6 +2,7 @@
 
 #include <OFC/Observer.hpp>
 #include <OFC/Component/Buttons.hpp>
+#include <OFC/Component/CheckBox.hpp>
 #include <OFC/Component/Containers.hpp>
 #include <OFC/Component/Context.hpp>
 #include <OFC/Component/FontContext.hpp>

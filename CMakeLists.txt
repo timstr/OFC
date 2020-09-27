@@ -24,6 +24,7 @@ set(ofc_headers
 
     include/OFC/Component/All.hpp
     include/OFC/Component/Buttons.hpp
+    include/OFC/Component/CheckBox.hpp
     include/OFC/Component/Component.hpp
     include/OFC/Component/Component.tpp
     include/OFC/Component/Containers.hpp
@@ -40,6 +41,7 @@ set(ofc_headers
     include/OFC/Component/Slider.hpp
     include/OFC/Component/Switch.hpp
     include/OFC/Component/Text.hpp
+    include/OFC/Component/TextField.hpp
     include/OFC/Component/When.hpp
 
     include/OFC/DOM/BoxElement.hpp
@@ -79,16 +81,15 @@ set(ofc_srcs
     src/Serialization.cpp
 
     src/Component/Buttons.cpp
+    src/Component/CheckBox.cpp
     src/Component/Component.cpp
     src/Component/Containers.cpp
     src/Component/FontContext.cpp
     src/Component/If.cpp
     src/Component/List.cpp
     src/Component/MixedComponent.cpp
-    src/Component/PullDown.cpp
     src/Component/PureComponent.cpp
     src/Component/Root.cpp
-    src/Component/Slider.cpp
     src/Component/Text.cpp
 
     src/DOM/BoxElement.cpp

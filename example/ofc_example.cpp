@@ -19,75 +19,6 @@ const sf::Font& getFont() {
     return font;
 }
 
-struct PulldownMenuState {
-    ofc::Value<std::size_t> currentIndex {0};
-    ofc::Value<bool> expanded {false};
-};
-
-class PulldownMenu : public ofc::ui::StatefulComponent<PulldownMenuState, ofc::ui::Ephemeral> {
-public:
-    PulldownMenu(ofc::Valuelike<std::vector<ofc::String>> items)
-        :  m_items(std::move(items)) {
-
-    }
-
-    PulldownMenu& onChange(std::function<void(const ofc::String&, std::size_t)> f) {
-        m_onChange = std::move(f);
-        return *this;
-    }
-
-    PulldownMenu& onChange(std::function<void(const ofc::String&)> f) {
-        m_onChange = [f = std::move(f)](const ofc::String& s, std::size_t /* index */){
-            f(s);
-        };
-        return *this;
-    }
-
-private:
-    ofc::Valuelike<std::vector<ofc::String>> m_items;
-    std::function<void(const ofc::String&, std::size_t)> m_onChange;
-
-    ofc::ui::AnyComponent render() const override {
-        using namespace ofc;
-        using namespace ofc::ui;
-
-        const auto toggleExpanded = [this]{
-            const auto e = state().expanded.getOnce();
-            stateMut().expanded.set(!e);
-        };
-
-        const auto indexItems = [](std::size_t i, const ListOfEdits<ofc::String>& e) {
-            assert(i < e.newValue().size());
-            return e.newValue()[i];
-        };
-
-        const auto makeItem = [this](const String& str, const Value<std::size_t>& idx) -> AnyComponent {
-            return Button(str).onClick([this, str, &idx](){
-                if (m_onChange){
-                    m_onChange(str, idx.getOnce());
-                }
-                stateMut().currentIndex.set(idx.getOnce());
-                stateMut().expanded.set(false);
-            });
-        };
-
-        const auto& s = state();
-
-        return VerticalList{}.containing(List(
-            Button(
-                combine(s.currentIndex, m_items.view()).map(indexItems)
-            ).onClick(toggleExpanded),
-            If(s.expanded)
-                .then(FreeContainer{}.containing(VerticalList{}.containing(
-                    ForEach(m_items.view()).Do(makeItem)
-                ))
-            )
-        ));
-    }
-
-
-};
-
 template<typename T>
 ofc::String make_string(const T& t) {
     return std::to_string(t);
@@ -166,7 +97,6 @@ private:
 
 // TODO: (re)implement helpers like:
 // - pulldown menu (see above)
-// - slider
 // - text fields
 // - checkbox
 // - 
@@ -201,6 +131,8 @@ int main(){
     });
 
     auto someNumber = Value{5.0f};
+    auto someBoolean = Value{true};
+    auto someItems = Value{std::vector<std::pair<int, String>>{{1, "One"}, {2, "Two"}, {3, "Three"}}};
 
     AnyComponent comp = UseFont(&getFont()).with(
         MixedContainerComponent<FlowContainerBase, Boxy, Resizable>{}
@@ -225,7 +157,9 @@ int main(){
                 " ",
                 Button("-").onClick([&](){ numItems.set(std::max(std::size_t{1}, numItems.getOnce()) - 1); }),
                 " ",
-                Slider<float>{0.0f, 10.0f, someNumber}.onChange([&](float x){ someNumber.set(x); })
+                Slider<float>{0.0f, 10.0f, someNumber}.onChange([&](float x){ someNumber.set(x); }),
+                CheckBox(someBoolean).onChange([&](bool b){ someBoolean.set(b); }),
+                PulldownMenu(someItems)
             )
     );
 
