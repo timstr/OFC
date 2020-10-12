@@ -52,7 +52,7 @@ namespace ofc::ui {
 
         dom::Element* getFirstElement() const noexcept;
 
-        const Component* getNextComponent() const noexcept;
+        const Component* getNextMountedComponent() const noexcept;
 
         bool appearsBefore(const Component* other) const noexcept;
 

@@ -73,7 +73,7 @@ namespace ofc::ui {
             for (const auto& e : edits.getEdits()) {
                 if (e.insertion()) {
                     auto pi = std::make_unique<Value<std::size_t>>(i);
-                    auto nextComp = (it == m_components.end()) ? getNextComponent() : it->first.get();
+                    auto nextComp = (it == m_components.end()) ? getNextMountedComponent() : it->first.get();
                     auto nextElement = nextComp ? nextComp->getFirstElement() : nullptr;
                     it = m_components.emplace(
                         it,

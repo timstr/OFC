@@ -73,7 +73,7 @@ namespace ofc::ui {
         return nullptr;
     }
 
-    const Component* Component::getNextComponent() const noexcept {
+    const Component* Component::getNextMountedComponent() const noexcept {
         if (!isMounted()){
             return nullptr;
         }
@@ -248,7 +248,7 @@ namespace ofc::ui {
     void AnyComponent::tryMount(InternalComponent* self, const dom::Element* beforeElement) {
         if (m_component && !m_component->isMounted()){
             if (beforeElement == nullptr) {
-                auto nextComp = self->getNextComponent();
+                auto nextComp = self->getNextMountedComponent();
                 beforeElement = nextComp ? nextComp->getFirstElement() : nullptr;
             }
             m_component->mount(self, beforeElement);
