@@ -14,7 +14,7 @@ namespace ofc::ui {
         }
     }
 
-    std::vector<const Component*> List::getChildren() const noexcept {
+    std::vector<const Component*> List::getPossibleChildren() const noexcept {
         auto ret = std::vector<const Component*>();
         ret.reserve(m_components.size());
         for (const auto& c : m_components) {

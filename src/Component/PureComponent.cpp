@@ -11,11 +11,8 @@ namespace ofc::ui {
         m_component.tryUnmount();
     }
 
-    std::vector<const Component*> PureComponent::getChildren() const noexcept {
-        if (const auto c = m_component.get()){
-            return {c};
-        }
-        return {};
+    std::vector<const Component*> PureComponent::getPossibleChildren() const noexcept {
+        return { m_component.get() };
     }
 
 } // namespace ofc::ui

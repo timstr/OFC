@@ -39,7 +39,7 @@ namespace ofc::ui {
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* whichDescendent) override final;
 
-        std::vector<const Component*> getChildren() const noexcept override final;
+        std::vector<const Component*> getPossibleChildren() const noexcept override final;
     };
 
 } // namespace ofc::ui

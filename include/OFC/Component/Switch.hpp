@@ -45,18 +45,13 @@ namespace ofc::ui {
             m_defaultComponent.tryUnmount();
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
             auto ret = std::vector<const Component*>{};
+            ret.reserve(m_cases.size() + 1);
             for (auto& it : m_cases) {
-                const auto& c = it.second;
-                if (c.isMounted()){
-                    ret.push_back(c.get());
-                };
+                ret.push_back(it.second.get());
             }
-            if (m_defaultComponent.isMounted()) {
-                ret.push_back(m_defaultComponent.get());
-            }
-            assert(ret.size() <= 1);
+            ret.push_back(m_defaultComponent.get());
             return ret;
         }
 

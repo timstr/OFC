@@ -30,8 +30,8 @@ namespace ofc::ui {
         m_elseComponent.tryUnmount();
     }
 
-    std::vector<const Component*> If::getChildren() const noexcept {
-        return {m_condition.getValueOnce() ? m_thenComponent.get() : m_elseComponent.get()};
+    std::vector<const Component*> If::getPossibleChildren() const noexcept {
+        return { m_thenComponent.get(), m_elseComponent.get() };
     }
 
     void If::updateCondition(bool b) {

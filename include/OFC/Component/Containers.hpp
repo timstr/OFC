@@ -154,8 +154,8 @@ namespace ofc::ui {
             c->release(whichElement);
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
-            return {m_childComponent.get()};
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
+            return { m_childComponent.get() };
         }
     };
 
@@ -226,8 +226,8 @@ namespace ofc::ui {
             c->release(whichElement);
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
-            return {m_childComponent.get()};
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
+            return { m_childComponent.get() };
         }
     };
 
@@ -287,8 +287,8 @@ namespace ofc::ui {
             c->release(whichElement);
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
-            return {m_childComponent.get()};
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
+            return { m_childComponent.get() };
         }
     };
 
@@ -348,8 +348,8 @@ namespace ofc::ui {
             c->release(whichElement);
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
-            return {m_childComponent.get()};
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
+            return { m_childComponent.get() };
         }
     };
 
@@ -470,7 +470,7 @@ namespace ofc::ui {
             refreshContents();
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
             return { m_childComponent.get() };
         }
     };
@@ -665,7 +665,7 @@ namespace ofc::ui {
                 assert(false);
             }
 
-            std::vector<const Component*> getChildren() const noexcept override final {
+            std::vector<const Component*> getPossibleChildren() const noexcept override final {
                 return { m_childComponent.get() };
             }
         };

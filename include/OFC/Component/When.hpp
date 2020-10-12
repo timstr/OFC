@@ -57,15 +57,9 @@ namespace ofc::ui {
             m_otherwiseComponent.tryUnmount();
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
             assert(!m_doComponent.isMounted() || !m_otherwiseComponent.isMounted());
-            if (m_doComponent) {
-                return { m_doComponent.get() };
-            } else if (m_otherwiseComponent) {
-                return { m_otherwiseComponent.get() };
-            } else {
-                return {};
-            }
+            return { m_doComponent.get(), m_otherwiseComponent.get() };
         }
 
         void updateValue(T* p) {

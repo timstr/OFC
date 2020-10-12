@@ -24,7 +24,7 @@ namespace ofc::ui {
 
         void onUnmount() override final;
 
-        std::vector<const Component*> getChildren() const noexcept override final;
+        std::vector<const Component*> getPossibleChildren() const noexcept override final;
     };
 
 } // namespace ofc::ui 

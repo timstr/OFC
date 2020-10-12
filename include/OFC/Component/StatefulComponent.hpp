@@ -48,11 +48,8 @@ namespace ofc::ui {
             m_component.tryUnmount();
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
-            if (const auto c = m_component.get()){
-                return {c};
-            }
-            return {};
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
+            return { m_component.get() };
         }
 
         void serializeStateImpl(Serializer& s) const override final {

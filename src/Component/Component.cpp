@@ -74,6 +74,9 @@ namespace ofc::ui {
     }
 
     const Component* Component::getNextComponent() const noexcept {
+        if (!isMounted()){
+            return nullptr;
+        }
         assert(m_parent);
         auto siblings = m_parent->getChildren();
         assert(std::count(siblings.begin(), siblings.end(), this) == 1);
@@ -269,6 +272,18 @@ namespace ofc::ui {
 
     
 
+    std::vector<const Component*> ComponentParent::getChildren() const noexcept {
+        auto pc = getPossibleChildren();
+        auto ret = std::vector<const Component*>{};
+        ret.reserve(pc.size());
+        for (const auto& c : pc){
+            if (c && c->isMounted()){
+                ret.push_back(c);
+            }
+        }
+        return ret;
+    }
+
     void* ComponentParent::findContextProvider(const std::type_info&) noexcept {
         return nullptr;
     }
@@ -409,7 +424,7 @@ namespace ofc::ui {
         m_child.tryUnmount();
     }
 
-    std::vector<const Component*> SimpleForwardingComponent::getChildren() const noexcept {
+    std::vector<const Component*> SimpleForwardingComponent::getPossibleChildren() const noexcept {
         return { m_child.get() };
     }
 

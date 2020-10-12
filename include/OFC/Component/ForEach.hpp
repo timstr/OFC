@@ -57,7 +57,7 @@ namespace ofc::ui {
             m_components.clear();
         }
 
-        std::vector<const Component*> getChildren() const noexcept override final {
+        std::vector<const Component*> getPossibleChildren() const noexcept override final {
             auto ret = std::vector<const Component*>();
             ret.reserve(m_components.size());
             for (const auto& c : m_components) {

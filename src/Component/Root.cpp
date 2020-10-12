@@ -29,8 +29,8 @@ namespace ofc::ui {
         // Nothing to do
     }
 
-    std::vector<const Component*> Root::getChildren() const noexcept {
-        return {m_component.get()};
+    std::vector<const Component*> Root::getPossibleChildren() const noexcept {
+        return { m_component.get() };
     }
     
 } // namespace ofc::ui
