@@ -149,31 +149,50 @@ namespace ofc::ui::dom {
 
         private:
             vec2 update() override {
-                auto pos = 0.0f;
-                auto oppositeSize = 0.0f; 
-                for (std::size_t i = 0, iEnd = m_cells.size(); i != iEnd; ++i){
-                    const auto ii = m_direction ? i : iEnd - 1 - i;
-                    auto c = m_cells[i];
-                    assert(c);
-                    assert(hasDescendent(c));
-                    if constexpr (std::is_same_v<Tag, VerticalTag>){
-                        c->setPos({m_padding, pos + m_padding});
-                        pos += c->height() + 2.0f * m_padding;
-                        oppositeSize = std::max(oppositeSize, c->width());
-                    } else {
-                        c->setPos({pos + m_padding, m_padding});
-                        pos += c->width() + 2.0f * m_padding;
-                        oppositeSize = std::max(oppositeSize, c->height());
+                const auto placeItems = [&](std::optional<float> maxSize){
+                    auto pos = 0.0f;
+                    auto oppositeSize = 0.0f; 
+                    for (std::size_t i = 0, iEnd = m_cells.size(); i != iEnd; ++i){
+                        const auto ii = m_direction ? i : iEnd - 1 - i;
+                        auto c = m_cells[ii];
+                        assert(c);
+                        assert(hasDescendent(c));
+
+                        if (maxSize.has_value()){
+                            const auto s = std::as_const(*c).size();
+                            if constexpr (std::is_same_v<Tag, VerticalTag>){
+                                setAvailableSize(c, vec2{*maxSize, s.y});
+                            } else {
+                                setAvailableSize(c, vec2{s.x, *maxSize});
+                            }
+                        } else {
+                            unsetAvailableSize(c);
+                        }
+                        const auto sizeNeeded = getRequiredSize(c);
+                        
+                        if constexpr (std::is_same_v<Tag, VerticalTag>){
+                            c->setPos({m_padding, pos + m_padding});
+                            pos += sizeNeeded.y + 2.0f * m_padding;
+                            oppositeSize = std::max(oppositeSize, sizeNeeded.x);
+                        } else {
+                            c->setPos({pos + m_padding, m_padding});
+                            pos += sizeNeeded.x + 2.0f * m_padding;
+                            oppositeSize = std::max(oppositeSize, sizeNeeded.y);
+                        }
                     }
-                }
-                oppositeSize += 2.0f * m_padding;
-                if constexpr (std::is_same_v<Tag, VerticalTag>){
-                    setSize({oppositeSize, pos});
-                    return {oppositeSize, pos};
-                } else {
-                    setSize({pos, oppositeSize});
-                    return {pos, oppositeSize};
-                }
+                    oppositeSize += 2.0f * m_padding;
+                    if constexpr (std::is_same_v<Tag, VerticalTag>){
+                        return vec2{oppositeSize, pos};
+                    } else {
+                        return vec2{pos, oppositeSize};
+                    }
+                };
+                
+                auto totalSize = placeItems(std::nullopt);
+
+                totalSize = placeItems(std::is_same_v<Tag, VerticalTag> ? totalSize.x : totalSize.y);
+
+                return totalSize;
             }
 
             void onRemoveChild(const Element* e) override {

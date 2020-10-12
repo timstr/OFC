@@ -24,6 +24,8 @@ ofc::String make_string(const T& t) {
     return std::to_string(t);
 }
 
+// TODO: actually use C++20 using /std:latest
+
 // TODO: persistent additional state
 // Supposing some model is being used to generate the UI (such as a flo::Network containing various properties),
 // there may be additional state stored in the components using that model which is not intrinsically part of the
@@ -96,9 +98,7 @@ private:
 // TODO: make a large graph-like data structure and create a UI component for it to test how well this whole library actually works
 
 // TODO: (re)implement helpers like:
-// - pulldown menu (see above)
 // - text fields
-// - checkbox
 // - 
 
 int main(){
