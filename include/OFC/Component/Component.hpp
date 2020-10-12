@@ -295,7 +295,18 @@ namespace ofc::ui {
 
         // Creates a Text component
         AnyComponent(const Value<String>&);
+        
+        // Creates a Text component
+        template<typename... Args>
+        AnyComponent(DerivedValue<String, Args...>&& dv)
+            : m_component(std::make_unique<Text>(std::move(dv))) {
+        
+        }
+        
+        // Creates a Text component
         AnyComponent(String);
+        
+        // Creates a Text component
         AnyComponent(const char*); // TODO: support for other string literals
 
         // Returns whether the object is holding a component or not

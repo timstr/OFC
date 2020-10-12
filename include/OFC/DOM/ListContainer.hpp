@@ -63,7 +63,7 @@ namespace ofc::ui::dom {
                     m_cells.insert(it, theElement.get());
                     adopt(std::move(theElement));
                 } else {
-                    push_front(std::move(theElement));
+                    push_back(std::move(theElement));
                 }
             }
 
@@ -75,7 +75,7 @@ namespace ofc::ui::dom {
                     m_cells.insert(it, theElement.get());
                     adopt(std::move(theElement));
                 } else {
-                    push_back(std::move(theElement));
+                    push_front(std::move(theElement));
                 }
             }
 
