@@ -18,7 +18,7 @@ namespace ofc::ui {
     }
 
     void If::onMount(const dom::Element* beforeElement) {
-        if (m_condition.getValueOnce()) {
+        if (m_condition.getValuelike().getOnce()) {
             m_thenComponent.tryMount(this, beforeElement);
         } else {
             m_elseComponent.tryMount(this, beforeElement);

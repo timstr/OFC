@@ -44,7 +44,7 @@ namespace ofc::ui {
 
         void onMount(const dom::Element* beforeSibling) override final {
             assert(m_fn);
-            if (auto p = m_value.getValueOnce()) {
+            if (auto p = m_value.getOnce()) {
                 m_doComponent = m_fn(*p);
                 m_doComponent.tryMount(this, beforeSibling);
             } else {

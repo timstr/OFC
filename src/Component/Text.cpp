@@ -10,8 +10,8 @@ namespace ofc::ui {
 
     std::unique_ptr<dom::Text> Text::createElement() {
         return std::make_unique<dom::Text>(
-            m_stringObserver.getValueOnce(),
-            *getFont().getValueOnce(),
+            m_stringObserver.getValuelike().getOnce(),
+            *getFont().getValuelike().getOnce(),
             sf::Color::Black
         );
     }

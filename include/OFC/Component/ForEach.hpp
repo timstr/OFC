@@ -34,7 +34,7 @@ namespace ofc::ui {
         void onMount(const dom::Element* beforeSibling) override final {
             assert(m_fn);
             assert(m_components.empty());
-            const auto& vals = m_observer.getValueOnce();
+            const auto& vals = m_observer.getValuelike().getOnce();
             m_components.reserve(vals.size());
             auto i = std::size_t{0};
             for (const auto& v : vals) {

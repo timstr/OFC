@@ -68,9 +68,9 @@ namespace ofc::ui {
                 });
 
             auto onDrag = [this](vec2 v){
-                const auto min = m_minimum.getValueOnce();
-                const auto max = m_maximum.getValueOnce();
-                const auto w = m_width.getValueOnce() - m_height.getValueOnce();
+                const auto min = m_minimum.getOnce();
+                const auto max = m_maximum.getOnce();
+                const auto w = m_width.getOnce() - m_height.getOnce();
                 const auto& s = this->state();
                 const auto x = s.startPosition.has_value() ?
                     (0.9f * (*s.startPosition) + 0.1f * v.x) :
@@ -85,11 +85,11 @@ namespace ofc::ui {
 
             auto handleKeyDown = [this](Key k, ModifierKeys mod){
                 if (k == Key::Home){
-                    m_onChange(m_minimum.getValueOnce());
+                    m_onChange(m_minimum.getOnce());
                     return true;
                 }
                 if (k == Key::End){
-                    m_onChange(m_maximum.getValueOnce());
+                    m_onChange(m_maximum.getOnce());
                     return true;
                 }
 
@@ -100,8 +100,8 @@ namespace ofc::ui {
                     // fine speed: 0.1x normal (minimum of 1 if integral)
                     const auto multiplier = mod.ctrl() ? 10.0 : (mod.shift() ? 0.1 : 1.0);
                 
-                    const auto w = m_width.getValueOnce() - m_height.getValueOnce();
-                    const auto spacePerPixel = static_cast<float>(m_maximum.getValueOnce() - m_minimum.getValueOnce()) / w;
+                    const auto w = m_width.getOnce() - m_height.getOnce();
+                    const auto spacePerPixel = static_cast<float>(m_maximum.getOnce() - m_minimum.getOnce()) / w;
                     const auto mag = std::log10(spacePerPixel);
                     const auto baseStep = std::pow(10.0f, std::round(mag)) * multiplier;
             
@@ -113,13 +113,13 @@ namespace ofc::ui {
                     }
 
 
-                    auto v = m_value.getValueOnce();
+                    auto v = m_value.getOnce();
                     if (k == Key::Left){
                         v -= step;
                     } else if (k == Key::Right){
                         v += step;
                     }
-                    v = std::clamp(v, m_minimum.getValueOnce(), m_maximum.getValueOnce());
+                    v = std::clamp(v, m_minimum.getOnce(), m_maximum.getOnce());
                     m_onChange(v);
                     return true;
                 }

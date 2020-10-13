@@ -15,8 +15,8 @@ namespace ofc::ui {
 
     std::unique_ptr<dom::CallbackButton> Button::createElement() {
         return std::make_unique<dom::CallbackButton>(
-            m_caption.getValueOnce(),
-            *getFont().getValueOnce(),
+            m_caption.getValuelike().getOnce(),
+            *getFont().getValuelike().getOnce(),
             m_onClick
         );
     }

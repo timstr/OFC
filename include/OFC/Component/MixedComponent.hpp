@@ -221,8 +221,9 @@ namespace ofc::ui {
         private:
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
-                if (o.hasValue()) {
-                    (this->*f)(o.getValueOnce());
+                const auto& vl = o.getValuelike();
+                if (vl.hasSomething()) {
+                    (this->*f)(vl.getOnce());
                 }
             }
         };
@@ -299,25 +300,30 @@ namespace ofc::ui {
 
             decltype(auto) widthForce(Valuelike<float> p) {
                 m_widthObserver.assign(std::move(p));
-                m_minWidthObserver.assign(m_widthObserver.getPropertyOrValue().view());
-                m_maxWidthObserver.assign(m_widthObserver.getPropertyOrValue().view());
+                const auto& vl = m_widthObserver.getValuelike();
+                m_minWidthObserver.assign(vl.view());
+                m_maxWidthObserver.assign(vl.view());
                 return self();
             }
 
             decltype(auto) heightForce(Valuelike<float> p) {
                 m_heightObserver.assign(std::move(p));
-                m_minHeightObserver.assign(m_heightObserver.getPropertyOrValue().view());
-                m_maxHeightObserver.assign(m_heightObserver.getPropertyOrValue().view());
+                const auto& vl = m_heightObserver.getValuelike();
+                m_minHeightObserver.assign(vl.view());
+                m_maxHeightObserver.assign(vl.view());
                 return self();
             }
 
             decltype(auto) sizeForce(Valuelike<vec2> p) {
                 m_widthObserver.assign(p.map([](vec2 v){ return v.x; }));
-                m_minWidthObserver.assign(m_widthObserver.getPropertyOrValue().view());
-                m_maxWidthObserver.assign(m_widthObserver.getPropertyOrValue().view());
+                const auto& wvl = m_widthObserver.getValuelike();
+                m_minWidthObserver.assign(wvl.view());
+                m_maxWidthObserver.assign(wvl.view());
+
                 m_heightObserver.assign(p.map([](vec2 v){ return v.y; }));
-                m_minHeightObserver.assign(m_heightObserver.getPropertyOrValue().view());
-                m_maxHeightObserver.assign(m_heightObserver.getPropertyOrValue().view());
+                const auto& hvl = m_heightObserver.getValuelike();
+                m_minHeightObserver.assign(hvl.view());
+                m_maxHeightObserver.assign(hvl.view());
                 return self();
             }
 
@@ -367,11 +373,13 @@ namespace ofc::ui {
             
                 // NOTE: Element::setWidth and Element::setHeight have hidden default
                 // parameters, preventing maybeCall from working
-                if (component.m_widthObserver.hasValue()){
-                    setWidth(component.m_widthObserver.getValueOnce());
+                const auto& wvl = component.m_widthObserver.getValuelike();
+                if (wvl.hasSomething()){
+                    setWidth(wvl.getOnce());
                 }
-                if (component.m_heightObserver.hasValue()){
-                    setHeight(component.m_heightObserver.getValueOnce());
+                const auto& hvl = component.m_heightObserver.getValuelike();
+                if (hvl.hasSomething()){
+                    setHeight(hvl.getOnce());
                 }
                 maybeCall(component.m_minWidthObserver, &ElementMixin::setMinWidth);
                 maybeCall(component.m_minHeightObserver, &ElementMixin::setMinHeight);
@@ -382,8 +390,9 @@ namespace ofc::ui {
         private:
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
-                if (o.hasValue()) {
-                    (this->*f)(o.getValueOnce());
+                const auto& vl = o.getValuelike();
+                if (vl.hasSomething()) {
+                    (this->*f)(vl.getOnce());
                 }
             }
 
@@ -456,8 +465,9 @@ namespace ofc::ui {
         private:
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
-                if (o.hasValue()) {
-                    (this->*f)(o.getValueOnce());
+                const auto& vl = o.getValuelike();
+                if (vl.hasSomething()) {
+                    (this->*f)(vl.getOnce());
                 }
             }
         };

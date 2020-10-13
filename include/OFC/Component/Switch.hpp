@@ -30,7 +30,7 @@ namespace ofc::ui {
         AnyComponent m_defaultComponent;
 
         void onMount(const dom::Element* beforeSibling) override final {
-            const auto& v = m_observer.getValueOnce();
+            const auto& v = m_observer.getOnce();
             if (auto it = m_cases.find(v); it != m_cases.end()) {
                 it->second.tryMount(this, beforeSibling);
             } else {

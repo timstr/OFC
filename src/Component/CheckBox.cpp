@@ -23,7 +23,7 @@ namespace ofc::ui {
             .borderThickness(2.0f)
             .borderRadius(5.0f)
             .onLeftClick([this](int){
-                m_onChange(!m_value.getValueOnce());
+                m_onChange(!m_value.getOnce());
                 return true;
             })
             .containing(
