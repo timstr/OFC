@@ -89,7 +89,7 @@ namespace ofc::ui {
             const auto& s = state();
 
             return VerticalList{}.containing(List(
-                MixedContainerComponent<FlowContainerBase, Boxy, Resizable, Clickable>{}
+                MixedContainerComponent<FlowContainerBase, Boxy, Resizable, Clickable, Focusable>{}
                     .minSize(vec2{50.0f, 20.0f})
                     .backgroundColor(0xddddddff)
                     .borderColor(0x888888ff)
@@ -99,6 +99,9 @@ namespace ofc::ui {
                         const auto e = state().expanded.getOnce();
                         stateMut().expanded.set(!e);
                         return true;
+                    })
+                    .onLoseFocus([this]{
+                        stateMut().expanded.set(false);
                     })
                     .containing(combine(s.expanded, s.currentIndex, m_items.view()).map(getCurrentName)),
                 If(s.expanded).then(
