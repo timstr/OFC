@@ -57,11 +57,9 @@ set(ofc_headers
     include/OFC/DOM/Text.hpp
     include/OFC/DOM/TextEntry.hpp
 
-    include/OFC/DOM/Helpers/CallbackButton.hpp
     include/OFC/DOM/Helpers/CallbackTextEntry.hpp
     include/OFC/DOM/Helpers/NumberTextEntry.hpp
     include/OFC/DOM/Helpers/ScrollPanel.hpp
-    include/OFC/DOM/Helpers/ToggleButton.hpp
 
     include/OFC/Util/Color.hpp
     include/OFC/Util/Key.hpp
@@ -105,11 +103,9 @@ set(ofc_srcs
     src/DOM/Text.cpp
     src/DOM/TextEntry.cpp
 
-    src/DOM/Helpers/CallbackButton.cpp
     src/DOM/Helpers/CallbackTextEntry.cpp
     src/DOM/Helpers/NumberTextEntry.cpp
     src/DOM/Helpers/ScrollPanel.cpp
-    src/DOM/Helpers/ToggleButton.cpp
 
     src/Util/Color.cpp
     src/Util/Key.cpp

@@ -1,10 +1,12 @@
 #include <OFC/Component/Buttons.hpp>
 
+#include <OFC/Component/MixedComponent.hpp>
+#include <OFC/Component/Text.hpp>
+
 namespace ofc::ui {
 
     Button::Button(Valuelike<String> s)
-        : FontConsumer(&Button::updateFont)
-        , m_caption(this, &Button::updateCaption, std::move(s)) {
+        : m_caption(std::move(s)) {
 
     }
 
@@ -13,21 +15,55 @@ namespace ofc::ui {
         return *this;
     }
 
-    std::unique_ptr<dom::CallbackButton> Button::createElement() {
-        return std::make_unique<dom::CallbackButton>(
-            m_caption.getValuelike().getOnce(),
-            *getFont().getValuelike().getOnce(),
-            m_onClick
-        );
-    }
-
-    void Button::updateCaption(const String& s) {
-        element()->getCaption().setText(s);
-    }
-
-    void Button::updateFont(const sf::Font* f) {
-        assert(f);
-        element()->getCaption().setFont(*f);
+    AnyComponent Button::render() const {
+        return MixedContainerComponent<FlowContainerBase, Boxy, Clickable, Resizable>{}
+            .minSize(vec2{50.0f, 20.0f})
+            .backgroundColor(0xddddddff)
+            .borderColor(0x888888ff)
+            .borderThickness(2.0f)
+            .borderRadius(5.0f)
+            .onLeftClick([this](int){
+                if (m_onClick){
+                    m_onClick();
+                }
+                return true;
+            })
+            .containing(Text(m_caption.view()));
     }
     
+    Toggle::Toggle(Valuelike<String> falseLabel, Valuelike<String> trueLabel, Valuelike<bool> value)
+        : m_falseLabel(std::move(falseLabel))
+        , m_trueLabel(std::move(trueLabel))
+        , m_value(std::move(value)) {
+
+    }
+
+    Toggle& Toggle::onChange(std::function<void(bool)> f) {
+        m_onChange = std::move(f);
+        return *this;
+    }
+
+    AnyComponent Toggle::render() const {
+        auto getCurrentLabel = [](const String& fl, const String& tl, bool v){
+            return v ? tl : fl;
+        };
+
+        auto currentLabel = combine(m_falseLabel.view(), m_trueLabel.view(), m_value.view())
+            .map(std::move(getCurrentLabel));
+
+        return MixedContainerComponent<FlowContainerBase, Boxy, Clickable, Resizable>{}
+            .minSize(vec2{50.0f, 20.0f})
+            .backgroundColor(0xddddddff)
+            .borderColor(0x888888ff)
+            .borderThickness(2.0f)
+            .borderRadius(5.0f)
+            .onLeftClick([this](int){
+                if (m_onChange){
+                    m_onChange(!m_value.getOnce());
+                }
+                return true;
+            })
+            .containing(std::move(currentLabel));
+    }
+
 } // namespace ofc::ui

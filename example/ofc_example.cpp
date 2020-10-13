@@ -24,6 +24,15 @@ ofc::String make_string(const T& t) {
     return std::to_string(t);
 }
 
+// TODO: add a component for automatically registering/unregistering global commands
+// Commands are added and removed from window when the component is mounted and unmounted, respectively
+// Example:
+// UseCommands()
+//     .command(Key::C, ModifierKeys::Ctrl, [&](){ doCopy(); })
+//     .command(Key::X, ModifierKeys::Ctrl, [&](){ doCut(); })
+//     .command(Key::V, ModifierKeys::Ctrl, [&](){ doPase(); })
+//     .with(MyCoolComponent{...})
+
 // TODO: actually use C++20 using /std:latest
 
 // TODO: persistent additional state
@@ -133,6 +142,8 @@ int main(){
     auto someNumber = Value{5.0f};
     auto someBoolean = Value{true};
     auto someItems = Value{std::vector<std::pair<int, String>>{{1, "One"}, {2, "Two"}, {3, "Three"}}};
+    auto currentItem = Value{static_cast<std::size_t>(-1)};
+    auto toggleState = Value{false};
 
     AnyComponent comp = UseFont(&getFont()).with(
         MixedContainerComponent<FlowContainerBase, Boxy, Resizable>{}
@@ -159,7 +170,8 @@ int main(){
                 " ",
                 Slider<float>{0.0f, 10.0f, someNumber}.onChange([&](float x){ someNumber.set(x); }),
                 CheckBox(someBoolean).onChange([&](bool b){ someBoolean.set(b); }),
-                PulldownMenu(someItems)
+                PulldownMenu(someItems, currentItem).onChange([&](int, std::size_t i){ currentItem.set(i); }),
+                Toggle("Off", "On", toggleState).onChange([&](bool b){ toggleState.set(b); })
             )
     );
 
