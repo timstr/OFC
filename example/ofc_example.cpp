@@ -144,11 +144,14 @@ int main(){
     auto someItems = Value{std::vector<std::pair<int, String>>{{1, "One"}, {2, "Two"}, {3, "Three"}}};
     auto currentItem = Value{static_cast<std::size_t>(-1)};
     auto toggleState = Value{false};
+    auto theString = Value{String{"Enter text here..."}};
+    auto theDouble = Value{0.001};
+    auto theInt = Value{99};
 
     AnyComponent comp = UseFont(&getFont()).with(
         MixedContainerComponent<FlowContainerBase, Boxy, Resizable>{}
             .minSize(vec2{500.0f, 500.0f})
-            .backgroundColor(0x000040FF)
+            .backgroundColor(0x8080FFFF)
             .containing(
                 MixedContainerComponent<ColumnGridBase, Boxy, Resizable>{RightToLeft, TopToBottom}
                     .backgroundColor(0xFF0044FF)
@@ -171,7 +174,11 @@ int main(){
                 Slider<float>{0.0f, 10.0f, someNumber}.onChange([&](float x){ someNumber.set(x); }),
                 CheckBox(someBoolean).onChange([&](bool b){ someBoolean.set(b); }),
                 PulldownMenu(someItems, currentItem).onChange([&](int, std::size_t i){ currentItem.set(i); }),
-                Toggle("Off", "On", toggleState).onChange([&](bool b){ toggleState.set(b); })
+                Toggle("Off", "On", toggleState).onChange([&](bool b){ toggleState.set(b); }),
+                TextField{theString}.onSubmit([&](const String& s){ theString.set(s); }),
+                Text(theString.map([](const String& s){ return "The string is \"" + s + "\""; })),
+                NumberTextField{theInt}.onSubmit([&](int i){ theInt.set(i); }),
+                Text(theInt.map([](int i) -> String { return "The int is \"" + std::to_string(i) + "\""; }))
             )
     );
 

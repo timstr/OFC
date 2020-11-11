@@ -393,7 +393,10 @@ namespace ofc::ui {
 
     void Window::handleType(sf::Int32 unicode){
         if (m_text_entry && !isSoftlyRemoved(m_text_entry)){
-            m_text_entry->type(unicode);
+            // Ignore any (extended) ASCII unprintable characters
+            if ((unicode >= 32 && unicode < 127) || unicode > 161){
+                m_text_entry->type(unicode);
+            }
         }
     }
 

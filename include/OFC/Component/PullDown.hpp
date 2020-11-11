@@ -6,8 +6,6 @@
 
 namespace ofc::ui {
 
-
-
     struct PulldownMenuState {
         Value<bool> expanded {false};
     };

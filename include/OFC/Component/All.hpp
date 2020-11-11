@@ -17,4 +17,5 @@
 #include <OFC/Component/Slider.hpp>
 #include <OFC/Component/Switch.hpp>
 #include <OFC/Component/Text.hpp>
+#include <OFC/Component/TextField.hpp>
 #include <OFC/Component/When.hpp>

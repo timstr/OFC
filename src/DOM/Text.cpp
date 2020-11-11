@@ -28,7 +28,7 @@ namespace ofc::ui::dom {
         return *m_text.getFont();
     }
 
-    std::size_t Text::characterSize() const {
+    unsigned Text::characterSize() const {
         return m_text.getCharacterSize();
     }
 

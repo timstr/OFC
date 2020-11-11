@@ -25,7 +25,7 @@ namespace ofc::ui::dom {
         void setText(const String&);
 
         const Font& font() const;
-        std::size_t characterSize() const;
+        unsigned characterSize() const;
         uint32_t style() const;
         Color fillColor() const;
         Color outlineColor() const;

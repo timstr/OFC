@@ -23,7 +23,7 @@ namespace ofc::ui::dom {
         setBorderColor(0x888888FF);
         setBorderThickness(2.0f);
 
-        setMinSize({50.0f, static_cast<float>(height)});
+        setMinSize({50.0f, static_cast<float>(height) * 1.5f});
     }
 
     void TextEntry::startTyping(){
@@ -247,6 +247,8 @@ namespace ofc::ui::dom {
     bool TextEntry::onKeyDown(Key key, ModifierKeys){
         if (key == Key::Enter){
             startTyping();
+            m_cursorTail = 0;
+            m_cursorHead = text().getSize();
             return true;
         } else if (key == Key::Escape){
             stopTyping();
@@ -279,7 +281,7 @@ namespace ofc::ui::dom {
                 const auto pos1 = std::max(posHead, posTail);
 
                 rect.setPosition({pos0, 0.0f});
-                rect.setSize({pos1 - pos0, static_cast<float>(characterSize())});
+                rect.setSize({pos1 - pos0, 1.5f * static_cast<float>(characterSize())});
                 rect.setFillColor(sf::Color{0x0000FF40});
                 rw.draw(rect);
             }
@@ -295,7 +297,7 @@ namespace ofc::ui::dom {
                 }
             }
 
-            rect.setSize({width, static_cast<float>(characterSize())});
+            rect.setSize({width, 1.5f * static_cast<float>(characterSize())});
             const auto t = ProgramContext::get().getProgramTime().asSeconds();
             const auto v = 0.5f + 0.5f * std::cos(t * pi<float> * 4.0f);
             rect.setFillColor(interpolate(0x0, 0xFF, v));
@@ -308,6 +310,7 @@ namespace ofc::ui::dom {
         const auto l = text().getSize();
         m_cursorHead = std::clamp(m_cursorHead, size_t{0}, l);
         m_cursorTail = std::clamp(m_cursorTail, size_t{0}, l);
+        setMinSize({50.0f, static_cast<float>(characterSize()) * 1.5f});
         onType();
     }
 
@@ -351,7 +354,7 @@ namespace ofc::ui::dom {
         // TODO: this ruins styling
         setBackgroundColor(validate() ? 0xFFFFFFFF : 0xFF8888FF);
         onChange();
-        setMinSize({50.0f, static_cast<float>(characterSize())});
+        setMinSize({50.0f, 1.5f * static_cast<float>(characterSize())});
     }
 
     std::pair<std::size_t, std::size_t> TextEntry::selection() const {

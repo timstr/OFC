@@ -89,6 +89,7 @@ set(ofc_srcs
     src/Component/PureComponent.cpp
     src/Component/Root.cpp
     src/Component/Text.cpp
+    src/Component/TextField.cpp
 
     src/DOM/BoxElement.cpp
     src/DOM/Container.cpp

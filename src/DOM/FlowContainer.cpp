@@ -16,42 +16,89 @@ namespace ofc::ui::dom {
         m_padding = std::max(0.0f, v);
     }
     
-    void FlowContainer::write(const String& text, const sf::Font& font, const Color& color, unsigned charsize, TextStyle style){
+    std::vector<FlowContainer::Item> FlowContainer::write(const String& text, const sf::Font& font, const Color& color, unsigned charsize, std::uint32_t style){
         String word;
 
-        auto writeWord = [&, this](){
+        auto writeWord = [&, this]() -> const Text* {
             if (word.getSize() > 0){
-                this->add<Text>(word, font, color, charsize, style);
+                auto& t = this->add<Text>(word, font, color, charsize, style);
                 word.clear();
+                return &t;
             }
+            return nullptr;
+        };
+        
+        auto items = std::vector<Item>{};
+
+        const auto record = [&](auto p){
+            if constexpr (std::is_pointer_v<decltype(p)>){
+                if (p == nullptr){
+                    return;
+                }
+            }
+            items.push_back(p);
         };
 
         for (const auto& ch : text){
             if (ch == U'\n'){
-                writeWord();
-                writeLineBreak();
+                record(writeWord());
+                record(writeLineBreak());
             } else if (ch == U'\t'){
-                writeWord();
-                writeTab();
+                record(writeWord());
+                record(writeTab());
             } else if (ch == U' '){
-                writeWord();
+                record(writeWord());
             } else {
                 word += ch;
             }
         }
-        writeWord();
+        record(writeWord());
+
+        return items;
     }
 
-    void FlowContainer::writeLineBreak(){
-        m_layout.push_back(WhiteSpace{WhiteSpace::LineBreak});
+    const FlowContainer::WhiteSpace* FlowContainer::writeLineBreak(){
+        auto w = std::make_unique<WhiteSpace>(WhiteSpace::LineBreak);
+        auto p = w.get();
+        m_layout.push_back(std::move(w));
+        return p;
     }
 
-    void FlowContainer::writePageBreak(float height){
-        m_layout.push_back(WhiteSpace{WhiteSpace::PageBreak, height});
+    const FlowContainer::WhiteSpace* FlowContainer::writePageBreak(float height){
+        auto w = std::make_unique<WhiteSpace>(WhiteSpace::PageBreak, height);
+        auto p = w.get();
+        m_layout.push_back(std::move(w));
+        return p;
     }
 
-    void FlowContainer::writeTab(float width){
-        m_layout.push_back(WhiteSpace{WhiteSpace::Tab, width});
+    const FlowContainer::WhiteSpace* FlowContainer::writeTab(float width){
+        auto w = std::make_unique<WhiteSpace>(WhiteSpace::Tab, width);
+        auto p = w.get();
+        m_layout.push_back(std::move(w));
+        return p;
+    }
+
+    void FlowContainer::remove(const Item& item) {
+        if (auto epp = std::get_if<const Element*>(&item)){
+            release(*epp);
+        } else if (auto wspp = std::get_if<const WhiteSpace*>(&item)){
+            remove(*wspp);
+        }
+    }
+
+    void FlowContainer::remove(const WhiteSpace* wsp) {
+        const auto match = [&](const LayoutObject& lo){
+            if (auto wsupp = std::get_if<std::unique_ptr<WhiteSpace>>(&lo)) {
+                return wsupp->get() == wsp;
+            }
+            return false;
+        };
+
+        assert(count_if(begin(m_layout), end(m_layout), match) == 1);
+        auto it = find_if(begin(m_layout), end(m_layout), match);
+        assert(it != end(m_layout));
+        m_layout.erase(it);
+        requireUpdate();
     }
 
     void FlowContainer::adopt(std::unique_ptr<Element> e, LayoutStyle style, const Element* beforeSibling){
@@ -80,9 +127,22 @@ namespace ofc::ui::dom {
         float x = m_padding;
         float y = m_padding;
         float nextY = 0.0f;
-        for (auto lo : m_layout){
-            if (auto pws = std::get_if<WhiteSpace>(&lo)) {
-                // TODO: handle whitespace
+        for (const auto& lo : m_layout){
+            if (auto ppws = std::get_if<std::unique_ptr<WhiteSpace>>(&lo)) {
+                const auto& pws = *ppws;
+                if (pws->type == WhiteSpace::LineBreak) {
+                    if (std::abs(y - nextY) < 1e-3f){
+                        nextY = y + 15.0f;
+                    }
+                    y = nextY;
+                } else if (pws->type == WhiteSpace::Tab) {
+                    assert(pws->size > 1.0f);
+                    x = pws->size * std::ceil(x / pws->size);
+                } else if (pws->type == WhiteSpace::PageBreak) {
+                    // TODO: handle page break (depends on floating elements)
+                } else {
+                    assert(false);
+                }
             } else if (auto pel = std::get_if<ElementLayout>(&lo)) {
                 auto e = pel->element;
                 assert(e);
@@ -119,6 +179,12 @@ namespace ofc::ui::dom {
                 return false;
             }
         ), m_layout.end());
+    }
+
+    FlowContainer::WhiteSpace::WhiteSpace(Type theType, float theSize) noexcept
+        : type(theType)
+        , size(theSize) {
+
     }
 
 } // namespace ofc::ui::dom
