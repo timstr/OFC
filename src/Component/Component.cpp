@@ -212,19 +212,6 @@ namespace ofc::ui {
         return *this;
     }
 
-    AnyComponent::AnyComponent(const Value<String>& p)
-        : m_component(std::make_unique<Text>(p)) {
-    }
-
-    AnyComponent::AnyComponent(String s)
-        : m_component(std::make_unique<Text>(std::move(s))) {
-    }
-
-    AnyComponent::AnyComponent(const char* s)
-        : AnyComponent(String(s)) {
-
-    }
-
     Component* AnyComponent::get() noexcept {
         return m_component.get();
     }
@@ -371,7 +358,7 @@ namespace ofc::ui {
         }
     }
 
-    Restorable::Restorable(Restorable&& o)
+    Restorable::Restorable(Restorable&& o) noexcept
         : m_component(std::move(o.m_component))
         , m_context(std::exchange(o.m_context, nullptr)) {
 

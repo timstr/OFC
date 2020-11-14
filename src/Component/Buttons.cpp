@@ -63,7 +63,7 @@ namespace ofc::ui {
                 }
                 return true;
             })
-            .containing(std::move(currentLabel));
+            .containing(Text(std::move(currentLabel)));
     }
 
 } // namespace ofc::ui

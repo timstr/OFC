@@ -19,7 +19,10 @@ namespace ofc::ui::dom {
     void Text::setText(const String& str){
         m_text.setString(str);
         const auto bb = m_text.getLocalBounds();
-        setSize({bb.width + bb.left, static_cast<float>(m_text.getCharacterSize())}, true);
+        const auto cs = static_cast<float>(m_text.getCharacterSize());
+        const auto margin = std::round(cs * 0.25f);
+        m_text.setPosition({margin, margin});
+        setSize({bb.width + 2.0f * margin, cs + 2.0f * margin}, true);
         onChange();
     }
 

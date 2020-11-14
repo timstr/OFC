@@ -61,7 +61,7 @@ namespace ofc::ui {
                         stateMut().expanded.set(false);
                         return true;
                     })
-                    .containing(item.second);
+                    .containing(Text(item.second));
             };
 
             const auto& s = state();
@@ -81,7 +81,7 @@ namespace ofc::ui {
                     .onLoseFocus([this]{
                         stateMut().expanded.set(false);
                     })
-                    .containing(combine(s.expanded, m_currentIndex.view(), m_items.view()).map(getCurrentName)),
+                    .containing(Text(combine(s.expanded, m_currentIndex.view(), m_items.view()).map(getCurrentName))),
                 If(s.expanded).then(
                     FreeContainer{}.containing(VerticalList{}.containing(
                         ForEach(m_items.view()).Do(makeItem)

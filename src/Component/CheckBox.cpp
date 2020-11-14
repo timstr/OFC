@@ -2,6 +2,7 @@
 
 #include <OFC/Component/If.hpp>
 #include <OFC/Component/MixedComponent.hpp>
+#include <OFC/Component/Text.hpp>
 
 namespace ofc::ui {
     
@@ -27,7 +28,7 @@ namespace ofc::ui {
                 return true;
             })
             .containing(
-                Center(If(m_value.view()).then("X"))
+                Center(If(m_value.view()).then(Text("X")))
             );
     }
 

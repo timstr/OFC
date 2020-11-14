@@ -254,7 +254,7 @@ namespace ofc {
         template<typename F>
         auto map(F&& f) const & {
             using R = std::invoke_result_t<std::decay_t<F>, DiffArgType<T>>;
-                
+            
             return DerivedValue<R, T> {
                 std::forward<F>(f),
                 Valuelike<T>(static_cast<const ValueBase<T>&>(*this))
@@ -560,6 +560,7 @@ namespace ofc {
             m_immediate.reset();
         }
 
+        // TODO: this sometimes doesn't do the right thing if this has an own value
         template<typename F>
         auto map(F&& f) const {
             using R = std::invoke_result_t<std::decay_t<F>, DiffArgType<T>>;
@@ -631,9 +632,9 @@ namespace ofc {
     class Observer : public ObserverBase {
     public:
         template<typename ObserverOwnerType>
-        Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>), Valuelike<T> pv)
+        Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>), Valuelike<T> vl)
             : ObserverBase(self)
-            , m_valuelike(std::move(pv))
+            , m_valuelike(std::move(vl))
             , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
 
             if (auto p = m_valuelike.getValue()) {

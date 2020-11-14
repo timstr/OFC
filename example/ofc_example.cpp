@@ -94,7 +94,7 @@ private:
             .backgroundColor(0xFF0000FF)
             .size(vec2{500.0f, 500.0f})
             .borderRadius(5.0f)
-            .containing("Hello, world!");
+            .containing(Text("Hello, world!"));
     }
 };
 
@@ -117,14 +117,14 @@ int main(){
 
     // AnyComponent comp = UseFont(&getFont()).with(CoolComponent{});
 
-    auto Box = [](AnyComponent c) -> AnyComponent {
+    auto Box = [](const String& s) -> AnyComponent {
         return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, Clickable>{}
             .sizeForce(vec2{30.0f, 30.0f})
             .backgroundColor(0x66FF66FF)
             .borderColor(0x440000FF)
             .borderThickness(2.5f)
             .containing(
-                Center{std::move(c)}
+                Center{Text(s)}
             );
     };
 
@@ -166,19 +166,19 @@ int main(){
                         Column(Box("I"), Box("J")),
                         Column(ForEach(items).Do([&](const String& s) -> AnyComponent { return Box(s); }))
                     ),
-                " ",
+                Text(" "),
                 Button("+").onClick([&](){ numItems.set(numItems.getOnce() + 1); }),
-                " ",
+                Text(" "),
                 Button("-").onClick([&](){ numItems.set(std::max(std::size_t{1}, numItems.getOnce()) - 1); }),
-                " ",
+                Text(" "),
                 Slider<float>{0.0f, 10.0f, someNumber}.onChange([&](float x){ someNumber.set(x); }),
                 CheckBox(someBoolean).onChange([&](bool b){ someBoolean.set(b); }),
                 PulldownMenu(someItems, currentItem).onChange([&](int, std::size_t i){ currentItem.set(i); }),
                 Toggle("Off", "On", toggleState).onChange([&](bool b){ toggleState.set(b); }),
                 TextField{theString}.onSubmit([&](const String& s){ theString.set(s); }),
-                Text(theString.map([](const String& s){ return "The string is \"" + s + "\""; })),
+                Span(theString.map([](const String& s){ return "The string is \"" + s + "\""; })),
                 NumberTextField{theInt}.onSubmit([&](int i){ theInt.set(i); }),
-                Text(theInt.map([](int i) -> String { return "The int is \"" + std::to_string(i) + "\""; }))
+                Span(theInt.map([](int i) -> String { return "The int is \"" + std::to_string(i) + "\""; }))
             )
     );
 
