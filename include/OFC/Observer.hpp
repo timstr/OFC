@@ -560,9 +560,8 @@ namespace ofc {
             m_immediate.reset();
         }
 
-        // TODO: this sometimes doesn't do the right thing if this has an own value
         template<typename F>
-        auto map(F&& f) const {
+        auto map(F&& f) const & {
             using R = std::invoke_result_t<std::decay_t<F>, DiffArgType<T>>;
 
             if (isImmediate()) {
@@ -574,6 +573,11 @@ namespace ofc {
             } else {
                 return Valuelike<R>{};
             }
+        }
+
+        template<typename F>
+        auto map(F&& f) && {
+            return combine(std::move(*this)).map(std::forward<F>(f));
         }
 
     private:

@@ -59,8 +59,7 @@ namespace ofc::ui {
 
     Span::Span(Valuelike<String> s)
         : FontConsumer(&Span::updateFont)
-        // TODO: make it so that calling s.map(...) does the right thing here
-        , m_wordsObserver(this, &Span::updateWords, combine(std::move(s)).map(detail::splitIntoWords)) {
+        , m_wordsObserver(this, &Span::updateWords, std::move(s).map(detail::splitIntoWords)) {
 
     }
 
