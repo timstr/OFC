@@ -4,6 +4,9 @@
 #include <random>
 #include <sstream>
 
+#error
+// TODO: I hate this file
+// just make font file path relative and copy it to the build directory at compile time using CMake
 #include "fontspath.hpp"
 
 std::random_device randdev;
