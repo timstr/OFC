@@ -332,9 +332,9 @@ namespace ofc {
         }
 
 
-        using ValueBase::getOnce;
-        using ValueBase::getOnceMut;
-        using ValueBase::set;
+        using ValueBase<T>::getOnce;
+        using ValueBase<T>::getOnceMut;
+        using ValueBase<T>::set;
 
     private:
     };
@@ -842,7 +842,7 @@ namespace ofc {
                 if constexpr (I == Index) {
                     return m_observer.getValuelike().getOnce();
                 } else {
-                    return Base::getOnce<I>();
+                    return Base::template getOnce<I>();
                 }
             }
 
@@ -929,7 +929,7 @@ namespace ofc {
                 (void)d;
 
                 using R = std::tuple_element_t<Current, std::tuple<U, Rest...>>;
-                const auto& v = Base::getOnce<Current>();
+                const auto& v = Base::template getOnce<Current>();
                 return Difference<R>::compute(v, v);
             }
         }

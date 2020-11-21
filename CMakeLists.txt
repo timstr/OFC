@@ -25,6 +25,7 @@ set(ofc_headers
     include/OFC/Component/All.hpp
     include/OFC/Component/Buttons.hpp
     include/OFC/Component/CheckBox.hpp
+    include/OFC/Component/Commands.hpp
     include/OFC/Component/Component.hpp
     include/OFC/Component/Component.tpp
     include/OFC/Component/Containers.hpp
@@ -80,6 +81,7 @@ set(ofc_srcs
 
     src/Component/Buttons.cpp
     src/Component/CheckBox.cpp
+    src/Component/Commands.cpp
     src/Component/Component.cpp
     src/Component/Containers.cpp
     src/Component/FontContext.cpp

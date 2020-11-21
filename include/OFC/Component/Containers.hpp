@@ -115,7 +115,7 @@ namespace ofc::ui {
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
             using namespace detail;
             using Style = dom::FreeContainer::PositionStyle;
-            auto c = container();
+            auto c = this->container();
             assert(c);
             // TODO: insert element before `beforeElement`
             auto sx = Style::None;
@@ -149,7 +149,7 @@ namespace ofc::ui {
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
-            auto c = container();
+            auto c = this->container();
             assert(c);
             c->release(whichElement);
         }
@@ -205,7 +205,7 @@ namespace ofc::ui {
 
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
             using namespace detail;
-            auto c = container();
+            auto c = this->container();
             assert(c);
             auto style = dom::LayoutStyle::Inline;
             if (scope.has<flowStyle_Block>()) {
@@ -221,7 +221,7 @@ namespace ofc::ui {
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
-            auto c = container();
+            auto c = this->container();
             assert(c);
             c->release(whichElement);
         }
@@ -268,7 +268,7 @@ namespace ofc::ui {
         }
 
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
-            auto c = container();
+            auto c = this->container();
             assert(c);
             auto b = scope.beforeElement();
             if (b && b->getParentContainer() != c) {
@@ -282,7 +282,7 @@ namespace ofc::ui {
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
-            auto c = container();
+            auto c = this->container();
             assert(c);
             c->release(whichElement);
         }
@@ -329,7 +329,7 @@ namespace ofc::ui {
         }
 
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
-            auto c = container();
+            auto c = this->container();
             assert(c);
             auto b = scope.beforeElement();
             if (b && b->getParentContainer() != c) {
@@ -343,7 +343,7 @@ namespace ofc::ui {
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
-            auto c = container();
+            auto c = this->container();
             assert(c);
             c->release(whichElement);
         }
@@ -377,7 +377,7 @@ namespace ofc::ui {
 
         decltype(auto) containing(AnyComponent c) {
             m_childComponent = std::move(c);
-            return self();
+            return this->self();
         }
 
         template<
@@ -386,7 +386,7 @@ namespace ofc::ui {
         >
         decltype(auto) containing(ComponentTypes&&... c) {
             m_childComponent = List(std::forward<ComponentTypes>(c)...);
-            return self();
+            return this->self();
         }
 
     private:
@@ -406,7 +406,7 @@ namespace ofc::ui {
         }
 
         void refreshContents() {
-            auto c = container();
+            auto c = this->container();
             assert(c);
 
             // Empty the grid and take ownership of all children
@@ -449,7 +449,7 @@ namespace ofc::ui {
                 find(begin(m_mountedElements), end(m_mountedElements), scope.beforeElement()) :
                 end(m_mountedElements);
             m_mountedElements.insert(it, element.get());
-            auto c = container();
+            auto c = this->container();
             assert(c);
             // NOTE: element is inserted into dummy grid position to make
             // logic of refreshContents simpler
@@ -459,12 +459,12 @@ namespace ofc::ui {
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
-            assert(container());
+            assert(this->container());
             assert(count(begin(m_mountedElements), end(m_mountedElements), whichElement) == 1);
             auto it = find(begin(m_mountedElements), end(m_mountedElements), whichElement);
             assert(it != end(m_mountedElements));
             m_mountedElements.erase(it);
-            assert(whichElement->getParentContainer() == container());
+            assert(whichElement->getParentContainer() == this->container());
             whichElement->orphan();
             refreshContents();
         }
@@ -481,13 +481,25 @@ namespace ofc::ui {
 
     namespace detail {
 
+        class grid_row {
+        public:
+            grid_row(const Row* theRow) noexcept;
+            const Row* const row;
+        };
+
+        class grid_column {
+        public:
+            grid_column(const Column* theColumn) noexcept;
+            const Column* const column;
+        };
+
         template<typename Derived, typename SliceType>
         class SliceGridBase : public ContainerComponentTemplate<dom::GridContainer, Derived> {
         public:
 
             decltype(auto) containing(AnyComponent c) {
                 m_childComponent = std::move(c);
-                return self();
+                return this->self();
             }
 
             template<
@@ -496,7 +508,7 @@ namespace ofc::ui {
             >
             decltype(auto) containing(ComponentTypes&&... c) {
                 m_childComponent = List(std::forward<ComponentTypes>(c)...);
-                return self();
+                return this->self();
             }
 
         protected:
@@ -522,7 +534,7 @@ namespace ofc::ui {
             }
 
             void refreshContents() {
-                const auto grid = container();
+                const auto grid = this->container();
 
                 // Clear the grid and take ownership of all elements
                 std::vector<std::pair<const Component*, std::vector<std::unique_ptr<dom::Element>>>> sliceElements;
@@ -576,13 +588,13 @@ namespace ofc::ui {
 
                 const auto s = [&]() -> const Component* {
                     if constexpr (std::is_same_v<SliceType, Column>) {
-                        const auto tag = scope.get<detail::grid_column>();
+                        const auto tag = scope.template get<detail::grid_column>();
                         if (!tag) {
                             throw std::runtime_error("An component was added to a ColumnGrid that was not inside a Column");
                         }
                         return tag->column;;
                     } else {
-                        const auto tag = scope.get<detail::grid_row>();
+                        const auto tag = scope.template get<detail::grid_row>();
                         if (!tag) {
                             throw std::runtime_error("An component was added to a RowGrid that was not inside a Row");
                         }
@@ -627,7 +639,7 @@ namespace ofc::ui {
                 theElements.insert(eit, element.get());
 
                 // insert the element at a dummy position to keep the refresh logic simple
-                const auto grid = container();
+                const auto grid = this->container();
                 grid->appendColumn();
                 grid->putCell(grid->columns() - 1, 0, std::move(element));
 
@@ -674,6 +686,9 @@ namespace ofc::ui {
 
     template<typename Derived>
     class ColumnGridBase : public detail::SliceGridBase<Derived, Column> {
+    private:
+        using SliceGridBase = detail::SliceGridBase<Derived, Column>;
+
     public:
         ColumnGridBase(HorizontalDirection outerDirection, VerticalDirection innerDirection)
             : SliceGridBase(outerDirection == LeftToRight, innerDirection == TopToBottom) {
@@ -684,6 +699,9 @@ namespace ofc::ui {
 
     template<typename Derived>
     class RowGridBase : public detail::SliceGridBase<Derived, Row> {
+    private:
+        using SliceGridBase = detail::SliceGridBase<Derived, Column>;
+
     public:
         RowGridBase(VerticalDirection outerDirection, HorizontalDirection innerDirection)
             : SliceGridBase(outerDirection == TopToBottom, innerDirection == LeftToRight) {
@@ -793,20 +811,6 @@ namespace ofc::ui {
     public:
         using ScopeTagComponent::ScopeTagComponent;
     };
-
-    namespace detail {
-        class grid_row {
-        public:
-            grid_row(const Row* theRow) noexcept;
-            const Row* const row;
-        };
-
-        class grid_column {
-        public:
-            grid_column(const Column* theColumn) noexcept;
-            const Column* const column;
-        };
-    }
 
     // TODO: "weight" for row and column (see dom::GridContainer)
 

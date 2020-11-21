@@ -164,7 +164,7 @@ template<> struct flag_type<Flag::FLAGNAME> { \
                 x_bptr[6] = b_ptr[6];
                 x_bptr[7] = b_ptr[7];
             } else {
-                static_assert(std::false_type<T>::value);
+                static_assert(std::false_type<F>::value);
             }
 
             std::advance(it, numBytes);

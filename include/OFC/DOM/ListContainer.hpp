@@ -32,7 +32,7 @@ namespace ofc::ui::dom {
                 return m_cells[i];
             }
 
-            void insert(std::size_t index, std::unique_ptr<Element>) {
+            void insert(std::size_t index, std::unique_ptr<Element> e) {
                 assert(e);
                 assert(index <= m_cells.size());
                 m_cells.insert(m_cells.begin() + index, e.get());

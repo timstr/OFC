@@ -146,13 +146,13 @@ namespace ofc::ui {
                         .onLeftClick([this](int, ModifierKeys mod, auto action){
                             if (mod.shift()){
                                 auto lPos = action.element().left();
-                                stateMut().startPosition = lPos;
+                                this->stateMut().startPosition = lPos;
                             }
                             action.startDrag();
                             return true;
                         })
                         .onLeftRelease([this](auto action){
-                            stateMut().startPosition.reset();
+                            this->stateMut().startPosition.reset();
                             action.stopDrag();
                             return true;
                         })

@@ -100,6 +100,7 @@ namespace ofc::ui::dom {
         friend class Element;
 
         friend class ::ofc::ui::Window;
+        friend class ::ofc::ui::Root;
     };
 
     // Template definitions

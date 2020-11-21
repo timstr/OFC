@@ -10,7 +10,10 @@ namespace ofc::ui {
     };
 
     template<typename Derived>
-    class FontConsumer : ContextConsumer<Derived, UseFont> {
+    class FontConsumer : public ContextConsumer<Derived, UseFont> {
+    private:
+        using ContextConsumer = ContextConsumer<Derived, UseFont>;
+
     public:
         FontConsumer(void (Derived::* onUpdate)(const sf::Font*))
             : ContextConsumer(onUpdate) {
@@ -18,13 +21,13 @@ namespace ofc::ui {
         }
 
         Derived& font(Valuelike<const sf::Font*> pv) {
-            getObserver().assign(std::move(pv));
+            this->getObserver().assign(std::move(pv));
             return *this;
         }
 
     protected:
         Observer<const sf::Font*>& getFont() {
-            return getObserver();
+            return this->getObserver();
         }
     };
 

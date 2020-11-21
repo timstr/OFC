@@ -8,7 +8,8 @@ namespace ofc::ui {
     public:
         template<typename ContainerComponentType>
         Root(ContainerComponentType& c)
-            : m_component(std::make_unique<ContainerComponentType>(std::move(c))) {
+            : m_component(std::make_unique<ContainerComponentType>(std::move(c)))
+            , m_tempWindow{nullptr} {
 
             static_assert(
                 std::is_base_of_v<ContainerComponent, ContainerComponentType>,
@@ -24,7 +25,7 @@ namespace ofc::ui {
         * that their corresponding DOM elements remain alive for as long as they
         * are mounted.
         */
-        std::unique_ptr<dom::Container> mount();
+        std::unique_ptr<dom::Container> mount(Window* window);
 
         /**
         * Removes all child components and their elements from the mounted container
@@ -34,6 +35,7 @@ namespace ofc::ui {
     private:
         std::unique_ptr<ContainerComponent> m_component;
         std::unique_ptr<dom::Container> m_tempContainer;
+        Window* m_tempWindow;
 
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
 

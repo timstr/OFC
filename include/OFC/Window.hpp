@@ -60,7 +60,7 @@ namespace ofc::ui {
         // Command stays active until the returned object is destroyed.
         // Note: KeyboardCommand is an RAII type, moving it will keep the command active
         KeyboardCommand addKeyboardCommand(Key trigger, std::function<void()> callback);
-        KeyboardCommand addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback);
+        KeyboardCommand addKeyboardCommand(Key trigger, std::vector<ModifierKeys::KeyCode> requiredKeys, std::function<void()> callback);
 
         // close the window, destroying it in the process
         // DO NOT use the object after calling close()
@@ -227,7 +227,7 @@ namespace ofc::ui {
             KeyboardCommandSignal& operator=(const KeyboardCommandSignal&) = delete;
 
             Key trigger;
-            std::vector<Key> requiredKeys;
+            ModifierKeys requiredKeys;
             std::function<void()> callback;
             KeyboardCommand* connection;
         };

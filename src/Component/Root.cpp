@@ -4,11 +4,15 @@
 
 namespace ofc::ui {
 
-    std::unique_ptr<dom::Container> Root::mount() {
+    std::unique_ptr<dom::Container> Root::mount(Window* window) {
+        assert(window);
         assert(m_component);
         assert(!m_tempContainer);
+        assert(!m_tempWindow);
+        m_tempWindow = window;
         m_component->mount(this, nullptr);
         assert(m_tempContainer);
+        assert(!m_tempWindow);
         return std::move(m_tempContainer);
     }
 
@@ -19,8 +23,10 @@ namespace ofc::ui {
 
     void Root::onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& /* scope */) {
         assert(!m_tempContainer);
+        assert(m_tempWindow);
         auto c = element->toContainer();
         assert(c);
+        c->m_parentWindow = std::exchange(m_tempWindow, nullptr);
         element.release();
         m_tempContainer = std::unique_ptr<dom::Container>(c);
     }

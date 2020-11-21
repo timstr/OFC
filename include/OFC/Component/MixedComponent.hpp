@@ -152,31 +152,31 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<Boxy, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<Boxy, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<Boxy, ContainerComponentType, AllTags...> {
         public:
             ComponentBase()
-                : m_backgroundColorObserver(selfPtr(), memFn(&ComponentBase::onUpdateBackgroundColor))
-                , m_borderColorObserver(selfPtr(), memFn(&ComponentBase::onUpdateBorderColor))
-                , m_borderThicknessObserver(selfPtr(), memFn(&ComponentBase::onUpdateBorderThickness))
-                , m_borderRadiusObserver(selfPtr(), memFn(&ComponentBase::onUpdateBorderRadius)) {
+                : m_backgroundColorObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateBackgroundColor))
+                , m_borderColorObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateBorderColor))
+                , m_borderThicknessObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateBorderThickness))
+                , m_borderRadiusObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateBorderRadius)) {
 
             }
 
             decltype(auto) backgroundColor(Valuelike<Color> p) {
                 m_backgroundColorObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
             decltype(auto) borderColor(Valuelike<Color> p) {
                 m_borderColorObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
             decltype(auto) borderThickness(Valuelike<float> p) {
                 m_borderThicknessObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
             decltype(auto) borderRadius(Valuelike<float> p) {
                 m_borderRadiusObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
         private:
@@ -186,19 +186,19 @@ namespace ofc::ui {
             Observer<float> m_borderRadiusObserver;
         
             void onUpdateBackgroundColor(const Color& c) {
-                element().setBackgroundColor(c);
+                this->element().setBackgroundColor(c);
             }
 
             void onUpdateBorderColor(const Color& c) {
-                element().setBorderColor(c);
+                this->element().setBorderColor(c);
             }
 
             void onUpdateBorderThickness(float v) {
-                element().setBorderThickness(v);
+                this->element().setBorderThickness(v);
             }
 
             void onUpdateBorderRadius(float v) {
-                element().setBorderRadius(v);
+                this->element().setBorderRadius(v);
             }
 
             friend ElementMixin;
@@ -238,64 +238,64 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<Resizable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<Resizable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<Resizable, ContainerComponentType, AllTags...> {
         public:
             ComponentBase()
-                : m_widthObserver(selfPtr(), memFn(&ComponentBase::onUpdateWidth))
-                , m_heightObserver(selfPtr(), memFn(&ComponentBase::onUpdateHeight))
-                , m_minWidthObserver(selfPtr(), memFn(&ComponentBase::onUpdateMinWidth))
-                , m_minHeightObserver(selfPtr(), memFn(&ComponentBase::onUpdateMinHeight))
-                , m_maxWidthObserver(selfPtr(), memFn(&ComponentBase::onUpdateMaxWidth))
-                , m_maxHeightObserver(selfPtr(), memFn(&ComponentBase::onUpdateMaxHeight)) {
+                : m_widthObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateWidth))
+                , m_heightObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateHeight))
+                , m_minWidthObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMinWidth))
+                , m_minHeightObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMinHeight))
+                , m_maxWidthObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMaxWidth))
+                , m_maxHeightObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMaxHeight)) {
 
             }
 
             decltype(auto) width(Valuelike<float> p) {
                 m_widthObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
             decltype(auto) height(Valuelike<float> p) {
                 m_heightObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
             decltype(auto) size(Valuelike<vec2> p) {
                 m_widthObserver.assign(p.map([](vec2 v){ return v.x; }));
                 m_heightObserver.assign(p.map([](vec2 v){ return v.y; }));
-                return self();
+                return this->self();
             }
 
             decltype(auto) minWidth(Valuelike<float> p) {
                 m_minWidthObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
             decltype(auto) minHeight(Valuelike<float> p) {
                 m_minHeightObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
             decltype(auto) minSize(Valuelike<vec2> p) {
                 m_minWidthObserver.assign(p.map([](vec2 v){ return v.x; }));
                 m_minHeightObserver.assign(p.map([](vec2 v){ return v.y; }));
-                return self();
+                return this->self();
             }
 
             decltype(auto) maxWidth(Valuelike<float> p) {
                 m_maxWidthObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
             decltype(auto) maxHeight(Valuelike<float> p) {
                 m_maxHeightObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
             decltype(auto) maxSize(Valuelike<vec2> p) {
                 m_maxWidthObserver.assign(p.map([](vec2 v){ return v.x; }));
                 m_maxHeightObserver.assign(p.map([](vec2 v){ return v.y; }));
-                return self();
+                return this->self();
             }
 
             decltype(auto) widthForce(Valuelike<float> p) {
@@ -303,7 +303,7 @@ namespace ofc::ui {
                 const auto& vl = m_widthObserver.getValuelike();
                 m_minWidthObserver.assign(vl.view());
                 m_maxWidthObserver.assign(vl.view());
-                return self();
+                return this->self();
             }
 
             decltype(auto) heightForce(Valuelike<float> p) {
@@ -311,7 +311,7 @@ namespace ofc::ui {
                 const auto& vl = m_heightObserver.getValuelike();
                 m_minHeightObserver.assign(vl.view());
                 m_maxHeightObserver.assign(vl.view());
-                return self();
+                return this->self();
             }
 
             decltype(auto) sizeForce(Valuelike<vec2> p) {
@@ -324,7 +324,7 @@ namespace ofc::ui {
                 const auto& hvl = m_heightObserver.getValuelike();
                 m_minHeightObserver.assign(hvl.view());
                 m_maxHeightObserver.assign(hvl.view());
-                return self();
+                return this->self();
             }
 
         private:
@@ -336,27 +336,27 @@ namespace ofc::ui {
             Observer<float> m_maxHeightObserver;
 
             void onUpdateWidth(float v) {
-                element().setWidth(v);
+                this->element().setWidth(v);
             }
 
             void onUpdateHeight(float v) {
-                element().setHeight(v);
+                this->element().setHeight(v);
             }
 
             void onUpdateMinWidth(float v) {
-                element().setMinWidth(v);
+                this->element().setMinWidth(v);
             }
 
             void onUpdateMinHeight(float v) {
-                element().setMinHeight(v);
+                this->element().setMinHeight(v);
             }
 
             void onUpdateMaxWidth(float v) {
-                element().setMaxWidth(v);
+                this->element().setMaxWidth(v);
             }
 
             void onUpdateMaxHeight(float v) {
-                element().setMaxHeight(v);
+                this->element().setMaxHeight(v);
             }
 
             friend ElementMixin;
@@ -375,11 +375,11 @@ namespace ofc::ui {
                 // parameters, preventing maybeCall from working
                 const auto& wvl = component.m_widthObserver.getValuelike();
                 if (wvl.hasSomething()){
-                    setWidth(wvl.getOnce());
+                    this->setWidth(wvl.getOnce());
                 }
                 const auto& hvl = component.m_heightObserver.getValuelike();
                 if (hvl.hasSomething()){
-                    setHeight(hvl.getOnce());
+                    this->setHeight(hvl.getOnce());
                 }
                 maybeCall(component.m_minWidthObserver, &ElementMixin::setMinWidth);
                 maybeCall(component.m_minHeightObserver, &ElementMixin::setMinHeight);
@@ -408,29 +408,29 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<Positionable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<Positionable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<Positionable, ContainerComponentType, AllTags...> {
         public:
 
             ComponentBase()
-                : m_leftObserver(selfPtr(), memFn(&ComponentBase::onUpdateLeft))
-                , m_topObserver(selfPtr(), memFn(&ComponentBase::onUpdateTop)) {
+                : m_leftObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateLeft))
+                , m_topObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateTop)) {
 
             }
 
             decltype(auto) position(Valuelike<vec2> p) {
                 m_leftObserver.assign(p.map([](vec2 v){ return v.x; }));
                 m_topObserver.assign(p.map([](vec2 v){ return v.y; }));
-                return self();
+                return this->self();
             }
 
             decltype(auto) left(Valuelike<float> p) {
                 m_leftObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
             decltype(auto) top(Valuelike<float> p) {
                 m_topObserver.assign(std::move(p));
-                return self();
+                return this->self();
             }
 
 
@@ -439,11 +439,11 @@ namespace ofc::ui {
             Observer<float> m_topObserver;
 
             void onUpdateLeft(float v) {
-                element().setLeft(v);
+                this->element().setLeft(v);
             }
 
             void onUpdateTop(float v) {
-                element().setTop(v);
+                this->element().setTop(v);
             }
 
             friend ElementMixin;
@@ -482,13 +482,13 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<HitTestable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<HitTestable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<HitTestable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
             decltype(auto) hitTest(std::function<bool(vec2)> f) {
                 m_hitTest = std::move(f);
-                return self();
+                return this->self();
             }
 
         private:
@@ -508,16 +508,18 @@ namespace ofc::ui {
             }
 
             bool hit(vec2 p) const override final {
-                auto& f = component().m_hitTest;
+                auto& f = this->component().m_hitTest;
                 if (f) {
                     return f(p);
                 }
-                return Element::hit(p);
+                return this->Element::hit(p);
             }
         };
 
         //------------------------
         // Specializations for Draggable
+
+        class ValueDraggable;
 
         template<typename DerivedAction>
         class ActionBase<Draggable, DerivedAction> {
@@ -585,7 +587,7 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<Draggable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<Draggable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<Draggable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -593,11 +595,11 @@ namespace ofc::ui {
                 m_onDrag = [f = std::move(f)](vec2 d, Action /* unused */) {
                     return f(d);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onDrag(std::function<std::optional<vec2>(vec2, Action)> f) {
                 m_onDrag = std::move(f);
-                return self();
+                return this->self();
             }
 
         private:
@@ -618,11 +620,11 @@ namespace ofc::ui {
             }
 
             void onDrag() override final {
-                auto& f = component().m_onDrag;
+                auto& f = this->component().m_onDrag;
                 if (f) {
-                    auto v = f(pos(), Action{this});
+                    auto v = f(this->pos(), Action{this});
                     if (v.has_value()){
-                        setPos(*v);
+                        this->setPos(*v);
                     }
                 }
             }
@@ -638,7 +640,7 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<Scrollable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<Scrollable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<Scrollable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -646,17 +648,17 @@ namespace ofc::ui {
                 m_onScroll = [f = std::move(f)](vec2 d, ModifierKeys /* mod */, Action /* unused */){
                     return f(d);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onScroll(std::function<bool(vec2, ModifierKeys)> f) {
                 m_onScroll = [f = std::move(f)](vec2 d, ModifierKeys mod, Action /* unused */){
                     return f(d, mod);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onScroll(std::function<bool(vec2, ModifierKeys, Action)> f) {
                 m_onScroll = std::move(f);
-                return self();
+                return this->self();
             }
 
         private:
@@ -677,7 +679,7 @@ namespace ofc::ui {
             }
 
             bool onScroll(vec2 delta, ModifierKeys mod) override final {
-                auto& f = component().m_onScroll;
+                auto& f = this->component().m_onScroll;
                 if (f) {
                     return f(delta, mod, Action{this});
                 }
@@ -695,38 +697,38 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<Hoverable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<Hoverable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<Hoverable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
             decltype(auto) onMouseEnter(std::function<void()> f) {
                 assert(!static_cast<bool>(m_onMouseEnter));
                 m_onMouseEnter = std::move(f);
-                return self();
+                return this->self();
             }
 
             template<typename T>
             decltype(auto) onMouseEnterWith(std::function<void(CRefOrValue<T>)> f) {
                 wrapAndAdd<T, void>(std::move(f), m_onMouseEnterWithHandlers);
-                return self();
+                return this->self();
             }
         
             decltype(auto) onMouseLeave(std::function<void()> f) {
                 assert(!static_cast<bool>(m_onMouseLeave));
                 m_onMouseLeave = std::move(f);
-                return self();
+                return this->self();
             }
 
             template<typename T>
             decltype(auto) onMouseLeaveWith(std::function<void(CRefOrValue<T>)> f) {
                 wrapAndAdd<T, void>(std::move(f), m_onMouseLeaveWithHandlers);
-                return self();
+                return this->self();
             }
 
             template<typename T>
             decltype(auto) onDrop(std::function<bool(CRefOrValue<T>)> f) {
                 wrapAndAdd<T, bool>(std::move(f), m_onDropHandlers);
-                return self();
+                return this->self();
             }
 
         private:
@@ -769,11 +771,11 @@ namespace ofc::ui {
 
             void onMouseEnter(dom::Draggable* d) override final {
                 if (d) {
-                    if (lookupAndCall<void>(d, component().m_onMouseEnterWithHandlers)) {
+                    if (lookupAndCall<void>(d, this->component().m_onMouseEnterWithHandlers)) {
                         return;
                     }
                 }
-                auto& f = component().m_onMouseEnter;
+                auto& f = this->component().m_onMouseEnter;
                 if (f) {
                     f();
                 }
@@ -781,18 +783,18 @@ namespace ofc::ui {
 
             void onMouseLeave(dom::Draggable* d) override final {
                 if (d) {
-                    if (lookupAndCall<void>(d, component().m_onMouseLeaveWithHandlers)) {
+                    if (lookupAndCall<void>(d, this->component().m_onMouseLeaveWithHandlers)) {
                         return;
                     }
                 }
-                auto& f = component().m_onMouseLeave;
+                auto& f = this->component().m_onMouseLeave;
                 if (f) {
                     f();
                 }
             }
 
             bool onDrop(dom::Draggable* d) override final {
-                return lookupAndCall<bool>(d, component().m_onDropHandlers);
+                return lookupAndCall<bool>(d, this->component().m_onDropHandlers);
             }
 
         private:
@@ -835,7 +837,7 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<Clickable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<Clickable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<Clickable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
             
@@ -843,79 +845,79 @@ namespace ofc::ui {
                 m_onLeftClick = [f = std::move(f)](int i, ModifierKeys /* mod */, Action /* unused */){
                     return f(i);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onLeftClick(std::function<bool(int, ModifierKeys)> f) {
                 m_onLeftClick = [f = std::move(f)](int i, ModifierKeys mod, Action /* unused */){
                     return f(i, mod);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onLeftClick(std::function<bool(int, ModifierKeys, Action)> f) {
                 m_onLeftClick = std::move(f);
-                return self();
+                return this->self();
             }
             decltype(auto) onLeftRelease(std::function<void()> f) {
                 m_onLeftRelease = [f = std::move(f)](Action /* unused */){
                     return f();
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onLeftRelease(std::function<void(Action)> f) {
                 m_onLeftRelease = std::move(f);
-                return self();
+                return this->self();
             }
             decltype(auto) onMiddleClick(std::function<bool(int)> f) {
                 m_onMiddleClick = [f = std::move(f)](int i, ModifierKeys /* mod */, Action /* unused */){
                     return f(i);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onMiddleClick(std::function<bool(int, ModifierKeys)> f) {
                 m_onMiddleClick = [f = std::move(f)](int i, ModifierKeys mod, Action /* unused */){
                     return f(i, mod);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onMiddleClick(std::function<bool(int, ModifierKeys, Action)> f) {
                 m_onMiddleClick = std::move(f);
-                return self();
+                return this->self();
             }
             decltype(auto) onMiddleRelease(std::function<void()> f) {
                 m_onMiddleRelease = [f = std::move(f)](Action /* unused */){
                     return f();
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onMiddleRelease(std::function<void(Action)> f) {
                 m_onMiddleRelease = std::move(f);
-                return self();
+                return this->self();
             }
             decltype(auto) onRightClick(std::function<bool(int)> f) {
                 m_onRightClick = [f = std::move(f)](int i, ModifierKeys /* mod */, Action /* unused */){
                     return f(i);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onRightClick(std::function<bool(int, ModifierKeys)> f) {
                 m_onRightClick = [f = std::move(f)](int i, ModifierKeys mod, Action /* unused */){
                     return f(i, mod);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onRightClick(std::function<bool(int, ModifierKeys, Action)> f) {
                 m_onRightClick = std::move(f);
-                return self();
+                return this->self();
             }
             decltype(auto) onRightRelease(std::function<void()> f) {
                 m_onRightRelease = [f = std::move(f)](Action /* unused */){
                     return f();
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onRightRelease(std::function<void(Action)> f) {
                 m_onRightRelease = std::move(f);
-                return self();
+                return this->self();
             }
 
         private:
@@ -942,7 +944,7 @@ namespace ofc::ui {
             }
             
             bool onLeftClick(int i, ModifierKeys mod) override final {
-                auto& f = component().m_onLeftClick;
+                auto& f = this->component().m_onLeftClick;
                 if (f) {
                     return f(i, mod, Action{this});
                 }
@@ -950,14 +952,14 @@ namespace ofc::ui {
             }
 
             void onLeftRelease() override final {
-                auto& f = component().m_onLeftRelease;
+                auto& f = this->component().m_onLeftRelease;
                 if (f) {
                     f(Action{this});
                 }
             }
 
             bool onMiddleClick(int i, ModifierKeys mod) override final {
-                auto& f = component().m_onMiddleClick;
+                auto& f = this->component().m_onMiddleClick;
                 if (f) {
                     return f(i, mod, Action{this});
                 }
@@ -965,14 +967,14 @@ namespace ofc::ui {
             }
 
             void onMiddleRelease() override final {
-                auto& f = component().m_onMiddleRelease;
+                auto& f = this->component().m_onMiddleRelease;
                 if (f) {
                     f(Action{this});
                 }
             }
 
             bool onRightClick(int i, ModifierKeys mod) override final {
-                auto& f = component().m_onRightClick;
+                auto& f = this->component().m_onRightClick;
                 if (f) {
                     return f(i, mod, Action{this});
                 }
@@ -980,7 +982,7 @@ namespace ofc::ui {
             }
 
             void onRightRelease() override final {
-                auto& f = component().m_onRightRelease;
+                auto& f = this->component().m_onRightRelease;
                 if (f){
                     f(Action{this});
                 }
@@ -997,7 +999,7 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<KeyPressable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<KeyPressable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<KeyPressable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -1005,27 +1007,27 @@ namespace ofc::ui {
                 m_onKeyDown = [f = std::move(f)](Key k, ModifierKeys /* mod */, Action /* unused */){
                     return f(k);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onKeyDown(std::function<bool(Key, ModifierKeys)> f) {
                 m_onKeyDown = [f = std::move(f)](Key k, ModifierKeys mod, Action /* unused */){
                     return f(k, mod);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onKeyDown(std::function<bool(Key, ModifierKeys, Action)> f) {
                 m_onKeyDown = std::move(f);
-                return self();
+                return this->self();
             }
             decltype(auto) onKeyUp(std::function<void(Key)> f) {
                 m_onKeyUp = [f = std::move(f)](Key k, Action /* unused */){
                     return f(k);
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onKeyUp(std::function<void(Key, Action)> f) {
                 m_onKeyUp = std::move(f);
-                return self();
+                return this->self();
             }
 
         private:
@@ -1047,7 +1049,7 @@ namespace ofc::ui {
             }
 
             bool onKeyDown(Key key, ModifierKeys mod) override final {
-                auto& f = component().m_onKeyDown;
+                auto& f = this->component().m_onKeyDown;
                 if (f) {
                     return f(key, mod, Action{this});
                 }
@@ -1055,7 +1057,7 @@ namespace ofc::ui {
             }
 
             void onKeyUp(Key key) override final {
-                auto& f = component().m_onKeyUp;
+                auto& f = this->component().m_onKeyUp;
                 if (f) {
                     f(key, Action{this});
                 }
@@ -1070,7 +1072,7 @@ namespace ofc::ui {
         public:
             void grabFocus() {
                 auto self = static_cast<DerivedAction*>(this);
-                auto e = self->element().toControl();
+                auto c = self->element().toControl();
                 assert(c);
                 c->grabFocus();
             }
@@ -1083,7 +1085,7 @@ namespace ofc::ui {
 
         template<template<typename> typename ContainerComponentType, typename... AllTags>
         class ComponentBase<Focusable, ContainerComponentType, AllTags...>
-            : private ComponentBaseHelper<Focusable, ContainerComponentType, AllTags...> {
+            : public ComponentBaseHelper<Focusable, ContainerComponentType, AllTags...> {
         public:
             using Action = MixedAction<AllTags...>;
         
@@ -1091,21 +1093,21 @@ namespace ofc::ui {
                 m_onGainFocus = [f = std::move(f)](Action /* unused */){
                     f();
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onGainFocus(std::function<void(Action)> f) {
                 m_onGainFocus = std::move(f);
-                return self();
+                return this->self();
             }
             decltype(auto) onLoseFocus(std::function<void()> f) {
                 m_onLoseFocus = [f = std::move(f)](Action /* unused */){
                     f();
                 };
-                return self();
+                return this->self();
             }
             decltype(auto) onLoseFocus(std::function<void(Key, Action)> f) {
                 m_onLoseFocus = std::move(f);
-                return self();
+                return this->self();
             }
 
         private:
@@ -1127,14 +1129,14 @@ namespace ofc::ui {
             }
 
             void onGainFocus() override final {
-                auto& f = component().m_onGainFocus;
+                auto& f = this->component().m_onGainFocus;
                 if (f) {
                     f(Action{this});
                 }
             }
 
             void onLoseFocus() override final {
-                auto& f = component().m_onLoseFocus;
+                auto& f = this->component().m_onLoseFocus;
                 if (f) {
                     return f(Action{this});
                 }
@@ -1284,7 +1286,7 @@ namespace ofc::ui {
             >;
 
             MixedDOMContainer* getDerivedElement() noexcept {
-                auto c = container();
+                auto c = this->container();
                 assert(!c || dynamic_cast<MixedDOMContainer*>(c));
                 return static_cast<MixedDOMContainer*>(c);
             }

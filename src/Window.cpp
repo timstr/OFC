@@ -69,9 +69,9 @@ namespace ofc::ui {
         m_sfwindow.create(sf::VideoMode(width, height), title, sf::Style::Default, settings);
         m_sfwindow.setVerticalSyncEnabled(true);
 
-        m_domRoot = m_root.mount();
+        m_domRoot = m_root.mount(this);
         assert(m_domRoot);
-        m_domRoot->m_parentWindow = this;
+        assert(m_domRoot->m_parentWindow == this);
         m_domRoot->requireDeepUpdate();
     }
 
@@ -149,7 +149,7 @@ namespace ofc::ui {
         return addKeyboardCommand(trigger, {}, std::move(callback));
     }
 
-    KeyboardCommand Window::addKeyboardCommand(Key trigger, std::vector<Key> requiredKeys, std::function<void()> callback){
+    KeyboardCommand Window::addKeyboardCommand(Key trigger, std::vector<ModifierKeys::KeyCode> requiredKeys, std::function<void()> callback){
         auto cmd = std::make_unique<KeyboardCommandSignal>();
         cmd->trigger = trigger;
         cmd->requiredKeys = std::move(requiredKeys);
@@ -348,9 +348,12 @@ namespace ofc::ui {
         }
     }
 
-    // TODO
     void Window::handleKeyDown(sf::Keyboard::Key key, ModifierKeys mod){
         if (handleTextEntryKeyDown(key, mod)){
+            return;
+        }
+
+        if (m_text_entry && !isSoftlyRemoved(m_text_entry)) {
             return;
         }
 
@@ -400,7 +403,6 @@ namespace ofc::ui {
         }
     }
 
-    // TODO
     void Window::handleScroll(vec2 pos, vec2 scroll, ModifierKeys mod){
         auto elem = findControlAt(pos);
         propagate(this, elem, &dom::Control::onScroll, scroll, mod);
@@ -452,8 +454,38 @@ namespace ofc::ui {
     }
 
     bool Window::handleCommand(Key key){
+        auto mod = modifierKeysFromKeyboard();
+
+        KeyboardCommandSignal* bestCmd = nullptr;
+        auto bestCmdHasExtraKeys = false;
+
+        for (const auto& cmd : m_commands) {
+            if (cmd->trigger == key) {
+                if (!mod.hasAllKeysOf(cmd->requiredKeys)) {
+                    continue;
+                }
+                const auto extraKeys = mod.hasDifferentKeysFrom(cmd->requiredKeys);
+                if (bestCmd) {
+                    if (bestCmdHasExtraKeys && !extraKeys) {
+                        bestCmd = cmd.get();
+                        bestCmdHasExtraKeys = false;
+                    }
+                } else {
+                    bestCmd = cmd.get();
+                    bestCmdHasExtraKeys = extraKeys;
+                }
+            }
+        }
+
+        if (bestCmd) {
+            bestCmd->callback();
+            return true;
+        }
+        return false;
+
+        // Junk below
         // search for longest matching set of keys in registered commands
-        size_t max = 0;
+        /*size_t max = 0;
         KeyboardCommandSignal* best_cmd = nullptr;
         for (const auto& cmd : m_commands) {
             if (cmd->trigger == key) {
@@ -473,7 +505,7 @@ namespace ofc::ui {
             best_cmd->callback();
             return true;
         }
-        return false;
+        return false;*/
     }
 
     bool Window::handleTextEntryKeyDown(Key key, ModifierKeys mod){
@@ -482,6 +514,9 @@ namespace ofc::ui {
         }
 
         switch (key){
+        case Key::Escape:
+                m_text_entry->stopTyping();
+                break;
             case Key::BackSpace:
                 m_text_entry->handleBackspace(mod);
                 break;
@@ -502,6 +537,7 @@ namespace ofc::ui {
                 break;
             case Key::Enter:
                 m_text_entry->handleReturn();
+                m_text_entry->stopTyping();
                 break;
             case Key::Insert:
                 m_text_entry->handleInsert();

@@ -104,10 +104,6 @@ private:
 
 // TODO: make a large graph-like data structure and create a UI component for it to test how well this whole library actually works
 
-// TODO: (re)implement helpers like:
-// - text fields
-// - 
-
 int main(){
 
     using namespace ofc;
@@ -172,7 +168,11 @@ int main(){
                 Slider<float>{0.0f, 10.0f, someNumber}.onChange([&](float x){ someNumber.set(x); }),
                 CheckBox(someBoolean).onChange([&](bool b){ someBoolean.set(b); }),
                 PulldownMenu(someItems, currentItem).onChange([&](int, std::size_t i){ currentItem.set(i); }),
-                Toggle("Off", "On", toggleState).onChange([&](bool b){ toggleState.set(b); }),
+                UseCommands{}
+                    .add(Key::Space, [&](){ toggleState.set(!toggleState.getOnce()); })
+                    .with(
+                        Toggle("Off", "On", toggleState).onChange([&](bool b){ toggleState.set(b); })
+                    ),
                 TextField{theString}.onSubmit([&](const String& s){ theString.set(s); }),
                 Span(theString.map([](const String& s){ return "The string is \"" + s + "\""; })),
                 NumberTextField{theInt}.onSubmit([&](int i){ theInt.set(i); }),
