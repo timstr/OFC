@@ -25,13 +25,6 @@ namespace ofc::ui::dom {
         float rowWeight(size_t y) const;
         float columnWeight(size_t x) const;
 
-        // TODO: the following functions will easily create confusion by prepending
-        // two size_t's to a parameter pack.
-        // Consider replacing them with something like struct Cell { size_t x, y; };
-
-        template<typename T, typename... Args>
-        T& putCell(size_t x, size_t y, Args&&... args);
-
         void putCell(size_t x, size_t y, std::unique_ptr<Element>);
         void clearCell(size_t x, size_t y);
 
@@ -54,16 +47,5 @@ namespace ofc::ui::dom {
 
         void onRemoveChild(const Element*) override;
     };
-
-    // Template definitions
-
-    template<typename T, typename... Args>
-    T& GridContainer::putCell(size_t x, size_t y, Args&&... args){
-        static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
-        auto uptr = std::make_unique<T>(std::forward<Args>(args)...);
-        T& ret = *uptr;
-        putCell(x, y, std::move(uptr));
-        return ret;
-    }
 
 } // namespace ofc::ui::dom

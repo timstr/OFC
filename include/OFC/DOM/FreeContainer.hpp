@@ -53,12 +53,6 @@ namespace ofc::ui::dom {
             OutsideBottom = OutsideEnd,
         };
 
-        template<typename T, typename... Args>
-        T& add(Args&&... args);
-
-        template<typename T, typename... Args>
-        T& add(PositionStyle xstyle, PositionStyle ystyle, Args&&... args);
-
         void adopt(std::unique_ptr<Element>);
         void adopt(PositionStyle xstyle, PositionStyle ystyle, std::unique_ptr<Element>);
 
@@ -82,21 +76,5 @@ namespace ofc::ui::dom {
 
 
     };
-
-    // Template definitions
-
-    template<typename T, typename... Args>
-    inline T& FreeContainer::add(Args&&... args){
-        T& ret = Container::add<T>(std::forward<Args>(args)...);
-        m_styles.try_emplace(&ret, ElementStyle{PositionStyle::None, PositionStyle::None});
-        return ret;
-    }
-
-    template<typename T, typename... Args>
-    inline T& FreeContainer::add(PositionStyle xstyle, PositionStyle ystyle, Args&&... args){
-        T& ret = Container::add<T>(std::forward<Args>(args)...);
-        m_styles.try_emplace(&ret, ElementStyle{xstyle, ystyle});
-        return ret;
-    }
 
 } // namespace ofc::ui::dom

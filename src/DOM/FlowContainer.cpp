@@ -16,47 +16,6 @@ namespace ofc::ui::dom {
         m_padding = std::max(0.0f, v);
     }
     
-    std::vector<FlowContainer::Item> FlowContainer::write(const String& text, const sf::Font& font, const Color& color, unsigned charsize, std::uint32_t style){
-        String word;
-
-        auto writeWord = [&, this]() -> const Text* {
-            if (word.getSize() > 0){
-                auto& t = this->add<Text>(word, font, color, charsize, style);
-                word.clear();
-                return &t;
-            }
-            return nullptr;
-        };
-        
-        auto items = std::vector<Item>{};
-
-        const auto record = [&](auto p){
-            if constexpr (std::is_pointer_v<decltype(p)>){
-                if (p == nullptr){
-                    return;
-                }
-            }
-            items.push_back(p);
-        };
-
-        for (const auto& ch : text){
-            if (ch == U'\n'){
-                record(writeWord());
-                record(writeLineBreak());
-            } else if (ch == U'\t'){
-                record(writeWord());
-                record(writeTab());
-            } else if (ch == U' '){
-                record(writeWord());
-            } else {
-                word += ch;
-            }
-        }
-        record(writeWord());
-
-        return items;
-    }
-
     const FlowContainer::WhiteSpace* FlowContainer::writeLineBreak(){
         auto w = std::make_unique<WhiteSpace>(WhiteSpace::LineBreak);
         auto p = w.get();

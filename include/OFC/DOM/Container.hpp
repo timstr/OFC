@@ -44,10 +44,6 @@ namespace ofc::ui::dom {
         void clear();
 
     protected:
-
-        template<typename T, typename... Args>
-        T& add(Args&&...);
-
         void adopt(std::unique_ptr<Element>);
 
         std::unique_ptr<Element> release(const Element*);
@@ -102,17 +98,5 @@ namespace ofc::ui::dom {
         friend class ::ofc::ui::Window;
         friend class ::ofc::ui::Root;
     };
-
-    // Template definitions
-
-    template<typename T, typename... Args>
-    inline T& Container::add(Args&&... args){
-        static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
-        auto c = std::make_unique<T>(std::forward<Args>(args)...);
-        T& ret = *c;
-        this->adopt(std::move(c));
-        this->requireDeepUpdate();
-        return ret;
-    }
 
 } // namespace ofc::ui::dom

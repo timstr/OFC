@@ -39,16 +39,6 @@ namespace ofc::ui::dom {
                 adopt(std::move(e));
             }
 
-            template<typename T, typename... Args>
-            T& insert(std::size_t index, Args&&... args) {
-                static_assert(std::is_base_of_v<Element, T>);
-                static_assert(std::is_constructible_v<Element, Args...>);
-                auto e = std::make_unique<T>(std::forward<Args>(args)...);
-                auto& er = *e;
-                this->insert(index, std::move(e));
-                return er;
-            }
-
             void erase(std::size_t index) {
                 assert(index < m_cells.size());
                 auto e = m_cells[index];
@@ -85,16 +75,6 @@ namespace ofc::ui::dom {
                 adopt(std::move(e));
             }
 
-            template<typename T, typename... Args>
-            T& push_front(Args&&... args) {
-                static_assert(std::is_base_of_v<Element, T>);
-                static_assert(std::is_constructible_v<Element, Args...>);
-                auto e = std::make_unique<T>(std::forward<Args>(args)...);
-                auto& er = *e;
-                this->push_front(std::move(e));
-                return er;
-            }
-
             void pop_front() {
                 assert(m_cells.size() > 0);
                 if (m_cells.size() == 0){
@@ -108,16 +88,6 @@ namespace ofc::ui::dom {
                 assert(e);
                 m_cells.push_back(e.get());
                 adopt(std::move(e));
-            }
-
-            template<typename T, typename... Args>
-            T& push_back(Args&&... args) {
-                static_assert(std::is_base_of_v<Element, T>);
-                static_assert(std::is_constructible_v<Element, Args...>);
-                auto e = std::make_unique<T>(std::forward<Args>(args)...);
-                auto& er = *e;
-                this->push_back(std::move(e));
-                return er;
             }
 
             void pop_back() {

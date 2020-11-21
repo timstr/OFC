@@ -38,9 +38,6 @@ namespace ofc::ui::dom {
         };
 
         using Item = std::variant<const Element*, const WhiteSpace*>;
-
-        // write a sequence of text
-        std::vector<Item> write(const String& text, const sf::Font& font, const Color& color = {}, unsigned charsize = 15, std::uint32_t style = TextStyle::Regular);
         
         // write a line break, causing inline elements to continue on a new line
         const WhiteSpace* writeLineBreak();
@@ -53,12 +50,6 @@ namespace ofc::ui::dom {
 
         void remove(const Item&);
         void remove(const WhiteSpace*);
-
-        template<typename T, typename... Args>
-        T& add(Args&&... args);
-
-        template<typename T, typename... Args>
-        T& add(LayoutStyle, Args&&... args);
 
         void adopt(std::unique_ptr<Element>, LayoutStyle style = LayoutStyle::Inline, const Element* beforeSibling = nullptr);
 
@@ -81,22 +72,5 @@ namespace ofc::ui::dom {
 
         std::vector<LayoutObject> m_layout;
     };
-
-    // TODO: move these to a .tpp file
-
-    template<typename T, typename... Args>
-    inline T& FlowContainer::add(Args&&... args){
-        return this->add<T>(LayoutStyle::Inline, std::forward<Args>(args)...);
-    }
-
-    template<typename T, typename... Args>
-    inline T& FlowContainer::add(LayoutStyle ls, Args&&... args){
-        static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
-        auto ep = std::make_unique<T>(std::forward<Args>(args)...);
-        auto ptr = ep.get();
-        m_layout.push_back(ElementLayout{ptr, ls});
-        Container::adopt(std::move(ep));
-        return *ptr;
-    }
 
 } // namespace ofc::ui::dom
