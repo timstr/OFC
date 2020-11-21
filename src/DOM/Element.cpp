@@ -254,23 +254,6 @@ namespace ofc::ui::dom {
     void Element::render(sf::RenderWindow&){
 
     }
-    
-    void Element::startTransition(double duration, std::function<void(double)> fn, std::function<void()> on_complete){
-        if (auto win = getParentWindow()){
-            win->addTransition(
-                this,
-                duration,
-                std::move(fn),
-                std::move(on_complete)
-            );
-        }
-    }
-
-    void Element::clearTransitions(){
-        if (auto win = getParentWindow()){
-            win->removeTransitions(this);
-        }
-    }
 
     std::unique_ptr<Element> Element::orphan(){
         if (!m_parent){

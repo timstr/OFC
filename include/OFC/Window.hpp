@@ -146,12 +146,6 @@ namespace ofc::ui {
         void stopTyping();
         dom::TextEntry* currentTextEntry();
 
-        void addTransition(dom::Element* e, double duration, std::function<void(double)> fn, std::function<void()> onComplete);
-        void removeTransitions(const dom::Element* e);
-
-        void applyTransitions();
-
-
         void enqueueForUpdate(dom::Element*);
         void updateAllElements();
         void updateOneElement(dom::Element*);
@@ -190,16 +184,6 @@ namespace ofc::ui {
         std::map<Key, dom::Control*> m_keypressed_elems;
 
         dom::Control* m_currentEventResponder;
-
-        struct Transition {
-            dom::Element* element;
-            double duration;
-            std::function<void(double)> fn;
-            std::function<void()> onComplete;
-            sf::Time timeStamp;
-        };
-
-        std::vector<Transition> m_transitions;
 
         std::vector<dom::Element*> m_updateQueue;
 

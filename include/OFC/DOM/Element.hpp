@@ -100,15 +100,6 @@ namespace ofc::ui::dom {
         // draws the window
         virtual void render(sf::RenderWindow&);
 
-        // start a transition
-        //  duration    - total time the transition will take, in seconds
-        //  fn          - called each tick of the animation, where the argument
-        //                is the progress, and varies from 0 to 1
-        //  on_complete - (optional) called when the animation ends
-        void startTransition(double duration, std::function<void(double)> fn, std::function<void()> on_complete = {});
-
-        void clearTransitions();
-
         // removes the element from its parent and returns a unique_ptr
         // containing the element.
         // Throws an exception if the element has no parent

@@ -239,7 +239,6 @@ namespace ofc::ui {
         purgeRemovalQueue();
         handleDrag();
         handleHover(getMousePosition());
-        applyTransitions();
     }
 
     dom::Control* Window::findControlAt(vec2 p, const dom::Element* exclude){
@@ -620,8 +619,6 @@ namespace ofc::ui {
         e->m_previousWindow = this;
         m_removalQueue.push_back(e);
         cancelUpdate(e);
-        
-        removeTransitions(e);
     }
 
     void Window::undoSoftRemove(dom::Element* e){
@@ -718,22 +715,6 @@ namespace ofc::ui {
             assert(count(begin(m_removalQueue), end(m_removalQueue), e) == 0);
         }
         e->m_previousWindow = nullptr;
-
-        removeTransitions(e);
-
-        assert(all_of(
-            begin(m_transitions),
-            end(m_transitions),
-            [&](const Transition& t) {
-                if (t.element == e) {
-                    return false;
-                }
-                if (auto c = e->toContainer(); c && c->hasDescendent(t.element)) {
-                    return false;
-                }
-                return true;
-            }
-        ));
     }
 
     void Window::purgeRemovalQueue(){
@@ -831,53 +812,6 @@ namespace ofc::ui {
 
     dom::TextEntry* Window::currentTextEntry(){
         return m_text_entry;
-    }
-
-    void Window::addTransition(dom::Element* e, double duration, std::function<void(double)> fn, std::function<void()> onComplete){
-        m_transitions.push_back({
-            e,
-            duration,
-            std::move(fn),
-            std::move(onComplete),
-            ProgramContext::get().getProgramTime()
-        });
-    }
-
-    void Window::removeTransitions(const dom::Element* e){
-        m_transitions.erase(std::remove_if(
-            m_transitions.begin(),
-            m_transitions.end(),
-            [&](const Transition& t){
-                if (t.element == e) {
-                    return true;
-                }
-                if (auto c = e->toContainer(); c->hasDescendent(t.element)) {
-                    return true;
-                }
-                return false;
-            }
-        ), m_transitions.end());
-    }
-
-    void Window::applyTransitions(){
-        std::vector<Transition> toComplete;
-        const auto now = ProgramContext::get().getProgramTime();
-        for (auto it = m_transitions.begin(); it != m_transitions.end();){
-            const auto t = (now - it->timeStamp).asSeconds() / it->duration;
-            if (t > 1.0){
-                toComplete.emplace_back(std::move(*it));
-                it = m_transitions.erase(it);
-            } else {
-                it->fn(t);
-                ++it;
-            }
-        }
-        for (auto& t : toComplete) {
-            t.fn(1.0);
-            if (t.onComplete){
-                t.onComplete();
-            }
-        }
     }
 
     void Window::enqueueForUpdate(dom::Element* elem){
