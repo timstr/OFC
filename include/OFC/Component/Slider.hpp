@@ -161,6 +161,4 @@ namespace ofc::ui {
         }
     };
 
-    // TODO: toggle button
-
 } // namespace ofc::ui

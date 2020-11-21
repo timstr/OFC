@@ -15,15 +15,6 @@ namespace ofc::ui {
 
     // TODO: change cursors when mouse is over control, text entry, draggable, etc
 
-    // TODO: add option to prevent elements from being considered for receiving input
-    // For example, some child element which serves only to decorate a Control
-
-    // TODO: SFML keypress events include information about modifiers keys that were
-    // pressed at the time of the last keypress, such as alt, shift, and control.
-    // It's probably more reliable to use these in onKeyDown than checking for
-    // whether these keys are held (redundantly, thanks to left/right duplicate keys)
-
-    
     class KeyboardCommand;
 
     class Window {
@@ -56,7 +47,6 @@ namespace ofc::ui {
         // take a screenshot
         sf::Image screenshot() const;
 
-        // TODO: replace require keys with some way of specifying alt/ctrl/shift/system as in ModifierKeys
         // Command stays active until the returned object is destroyed.
         // Note: KeyboardCommand is an RAII type, moving it will keep the command active
         KeyboardCommand addKeyboardCommand(Key trigger, std::function<void()> callback);

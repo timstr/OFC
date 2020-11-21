@@ -21,7 +21,7 @@ namespace ofc::ui {
     }
 
     bool ModifierKeys::hasAllKeysOf(const ModifierKeys& other) const noexcept {
-        return (m_values & other.m_values) == m_values;
+        return (m_values & other.m_values) == other.m_values;
     }
 
     bool ModifierKeys::hasDifferentKeysFrom(const ModifierKeys& other) const noexcept {

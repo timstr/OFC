@@ -22,15 +22,6 @@ ofc::String make_string(const T& t) {
     return std::to_string(t);
 }
 
-// TODO: add a component for automatically registering/unregistering global commands
-// Commands are added and removed from window when the component is mounted and unmounted, respectively
-// Example:
-// UseCommands()
-//     .command(Key::C, ModifierKeys::Ctrl, [&](){ doCopy(); })
-//     .command(Key::X, ModifierKeys::Ctrl, [&](){ doCut(); })
-//     .command(Key::V, ModifierKeys::Ctrl, [&](){ doPase(); })
-//     .with(MyCoolComponent{...})
-
 // TODO: actually use C++20 using /std:latest
 
 // TODO: persistent additional state
@@ -169,7 +160,7 @@ int main(){
                 CheckBox(someBoolean).onChange([&](bool b){ someBoolean.set(b); }),
                 PulldownMenu(someItems, currentItem).onChange([&](int, std::size_t i){ currentItem.set(i); }),
                 UseCommands{}
-                    .add(Key::Space, [&](){ toggleState.set(!toggleState.getOnce()); })
+                    .add(Key::Space, ModifierKeys::Ctrl, [&](){ toggleState.set(!toggleState.getOnce()); })
                     .with(
                         Toggle("Off", "On", toggleState).onChange([&](bool b){ toggleState.set(b); })
                     ),
