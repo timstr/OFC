@@ -138,17 +138,19 @@ target_include_directories(ofc PUBLIC "include")
 set(OFC_GENERATE_EXAMPLE OFF CACHE BOOL "When set to ON, the example target will be generated")
 
 if(OFC_GENERATE_EXAMPLE)
-    set(FONTS_PATH "${CMAKE_SOURCE_DIR}/example/fonts")
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/example/fontspath.hpp.in"
-        "${CMAKE_CURRENT_SOURCE_DIR}/example/fontspath.hpp"
-    )
-
-    add_executable(ofc_example example/ofc_example.cpp example/fontspath.hpp)
+    add_executable(ofc_example example/ofc_example.cpp)
 
     target_link_libraries(ofc_example
         PUBLIC ofc
     )
+
+    set_property(TARGET ofc_example PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:ofc_example>")
+
+    add_custom_command(TARGET ofc_example POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+			"${CMAKE_CURRENT_SOURCE_DIR}/example/fonts/"
+			"$<TARGET_FILE_DIR:ofc_example>/fonts"
+	)
 endif()
 
 if(MSVC)

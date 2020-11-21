@@ -459,13 +459,12 @@ namespace ofc::ui {
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
-            auto c = container();
-            assert(c);
+            assert(container());
             assert(count(begin(m_mountedElements), end(m_mountedElements), whichElement) == 1);
             auto it = find(begin(m_mountedElements), end(m_mountedElements), whichElement);
             assert(it != end(m_mountedElements));
             m_mountedElements.erase(it);
-            assert(whichElement->getParentContainer() == c);
+            assert(whichElement->getParentContainer() == container());
             whichElement->orphan();
             refreshContents();
         }

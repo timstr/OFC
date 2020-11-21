@@ -4,11 +4,6 @@
 #include <random>
 #include <sstream>
 
-#error
-// TODO: I hate this file
-// just make font file path relative and copy it to the build directory at compile time using CMake
-#include "fontspath.hpp"
-
 std::random_device randdev;
 std::mt19937 randeng { randdev() };
 
@@ -16,7 +11,7 @@ const sf::Font& getFont() {
     static sf::Font font;
     static bool loaded;
     if (!loaded) {
-        font.loadFromFile(fonts_path + "/mononoki-Regular.ttf");
+        font.loadFromFile("fonts/mononoki-Regular.ttf");
         loaded = true;
     }
     return font;
