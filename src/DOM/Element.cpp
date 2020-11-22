@@ -24,7 +24,6 @@ namespace ofc::ui::dom {
         , m_size({0.0f, 0.0f})
         , m_minsize({0.0f, 0.0f})
         , m_maxsize({really_big, really_big})
-        , m_visible(true)
         , m_needs_update(false)
         , m_isUpdating(false)
         , m_parent(nullptr)
@@ -232,16 +231,8 @@ namespace ofc::ui::dom {
             (p.y >= 0.0f && p.y < m_size.y);
     }
 
-    bool Element::visible() const noexcept {
-        return m_visible;
-    }
-
-    void Element::setVisible(bool visible) noexcept {
-        m_visible = visible;
-    }
-    
     Element* Element::findElementAt(vec2 p, const Element* exclude){
-        if (!visible() || this == exclude){
+        if (this == exclude){
             return nullptr;
         }
         return hit(p) ? this : nullptr;

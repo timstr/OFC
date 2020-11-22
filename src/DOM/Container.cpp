@@ -311,9 +311,6 @@ namespace ofc::ui::dom {
         }
         
         for (const auto& cd : m_children){
-            if (!cd.child->visible()){
-                continue;
-            }
             auto childView = clippedView;
             auto pos = cd.child->pos();
             childView.move(-pos);

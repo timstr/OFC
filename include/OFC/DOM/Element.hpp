@@ -86,10 +86,6 @@ namespace ofc::ui::dom {
         // the element (in local coordinates)
         virtual bool hit(vec2 p) const;
 
-        bool visible() const noexcept;
-
-        void setVisible(bool visible) noexcept;
-
         // find an element that is hit at the given position
         // (in local coordinates)
         virtual Element* findElementAt(vec2 p, const Element* exclude);
