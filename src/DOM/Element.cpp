@@ -110,10 +110,6 @@ namespace ofc::ui::dom {
         throw std::runtime_error("The Element must belong to a window");
     }
     
-    void Element::onMove(){
-
-    }
-    
     float Element::width(){
         forceUpdate();
         return m_size.x;

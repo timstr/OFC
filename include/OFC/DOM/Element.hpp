@@ -56,9 +56,6 @@ namespace ofc::ui::dom {
         // Throws an exception if the element does not belong to a window
         vec2 localMousePos();
 
-        // called whenever the element's position is changed
-        virtual void onMove();
-
         // get the element's size
         // NOTE: these may cause an update
         float width();

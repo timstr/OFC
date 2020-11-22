@@ -88,9 +88,6 @@ namespace ofc::ui::dom {
         void updatePreviousSizes(const Element* which = nullptr);
         std::optional<vec2> getPreviousSize(const Element* child) const;
 
-        // Finds any children that moved and calls onMove on each one
-        void updatePositions(const Element* which = nullptr);
-
         void setRequiredSize(const Element* child, vec2 size);
 
         friend class Element;

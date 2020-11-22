@@ -258,19 +258,6 @@ namespace ofc::ui::dom {
         return it->previousSize;
     }
 
-    void Container::updatePositions(const Element* e){
-        for (auto& cd : m_children){
-            if (e && e != cd.child.get()){
-                continue;
-            }
-            const auto pos = cd.child->m_position;
-            if (!cd.previousPos || (std::abs(cd.previousPos->x - pos.x) > 1e-6f || std::abs(cd.previousSize->y - pos.y) > 1e-6f)){
-                cd.previousPos = pos;
-                cd.child->onMove();
-            }
-        }
-    }
-
     void Container::setRequiredSize(const Element* child, vec2 size){
         auto it = std::find_if(
             m_children.begin(),

@@ -902,9 +902,6 @@ namespace ofc::ui {
                 // cache the element's previous sizes to allow efficient rerendering decisions
                 // (see getPreviousSize() above)
                 c->updatePreviousSizes();
-
-                // see if any children moved, call onMove on those that did
-                c->updatePositions();
             }
 
             elem->m_isUpdating = false;
@@ -923,7 +920,6 @@ namespace ofc::ui {
 
             if (auto p = elem->m_parent){
                 p->updatePreviousSizes(elem);
-                p->updatePositions(elem);
             }
 
             if (sizeChanged){
