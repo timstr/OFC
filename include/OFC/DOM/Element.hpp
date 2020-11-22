@@ -186,7 +186,6 @@ namespace ofc::ui::dom {
         mutable vec2 m_size;
         vec2 m_minsize;
         vec2 m_maxsize;
-        bool m_visible;
 
         bool m_needs_update;
         bool m_isUpdating;
@@ -203,15 +202,5 @@ namespace ofc::ui::dom {
         friend class ::ofc::ui::Window;
         friend class ::ofc::ui::Root;
     };
-
-    template<typename T>
-    std::unique_ptr<T> makeOrphan(T* element){
-        static_assert(std::is_base_of_v<Element, T>, "T must derive from Element");
-        auto up = element->orphan();
-        auto p = dynamic_cast<T*>(up.get());
-        assert(p);
-        up.release();
-        return std::unique_ptr<T>{p};
-    }
 
 } // namespace ofc::ui::dom
