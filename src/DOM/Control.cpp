@@ -100,12 +100,6 @@ namespace ofc::ui::dom {
         }
     }
 
-    void Control::transferEventResposeTo(Control* other){
-        if (auto win = getParentWindow()){
-            win->transferResponseTo(other);
-        }
-    }
-
     Control* Control::toControl() noexcept {
         return this;
     }
