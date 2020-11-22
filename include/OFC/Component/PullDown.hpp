@@ -45,8 +45,11 @@ namespace ofc::ui {
         AnyComponent render() const override {
             const auto getCurrentName = [](bool expanded, std::size_t i, const ListOfEdits<std::pair<T, String>>& e) {
                 const auto& v = e.newValue();
-                auto name = (i < v.size()) ? v[i].second : String("???");
-                return (expanded ? "v " : "> ") + name;
+                auto prefix = String(expanded ? "v " : "> ");
+                if (i < v.size()){
+                    return prefix + v[i].second;
+                }
+                return prefix + "???";
             };
 
             const auto makeItem = [this](const std::pair<T, String>& item, const Value<std::size_t>& idx) -> AnyComponent {

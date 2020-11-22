@@ -24,33 +24,72 @@ namespace ofc {
         const std::decay_t<T>&
     >;
 
+    // Summary<T> is used to describe the previous contents of a Value<T>.
+    // This is necessary for non-copyable types, and could be used for
+    // improving space efficiency on large data types (using e.g. a hash).
+    // Every summary type must support operator== and operator!= for comparison.
+    // For trivial types, the summary is the same type
+    template<typename T>
+    struct Summary {
+        static_assert(std::is_copy_constructible_v<T>);
+
+        using Type = std::decay_t<T>;
+
+        static Type compute(const T& t){
+            return t;
+        }
+    };
+
+    // For vectors, the summary is a vector of summaries
+    template<typename T>
+    struct Summary<std::vector<T>> {
+        using Type = std::vector<typename Summary<T>::Type>;
+
+        static Type compute(const std::vector<T>& v) {
+            auto out = Type{};
+            for (const auto& t : v) {
+                out.push_back(Summary<T>::compute(t));
+            }
+            return out;
+        }
+    };
+
+    // For unique_ptr, the summary is a raw pointer
+    template<typename T>
+    struct Summary<std::unique_ptr<T>> {
+        using Type = const T*;
+
+        static Type compute(const std::unique_ptr<T>& p) {
+            return p.get();
+        }
+    };
+
+    template<typename T>
+    using SummaryType = typename Summary<T>::Type;
+
+
+    // Difference<T> is used to represent changes between subsequent contents
+    // in a Value<T>. For trivial types, the difference is merely the new value.
+    // For vectors, the difference is a list of edits (a diff).
     template<typename T>
     struct Difference {
-        using ValueType = T;
-
         // For scalar types, the difference argument type is simply that type with all top-level
         // CV-qualifications removed. This saves users from having to type the arguments of update
         // functions for simple pointers as `const SomeType* const&` when `const SomeType*` suffices
         // For other, more complicated types, the difference argument type is a reference to const T
-        using ArgType = CRefOrValue<T>;
+        using ArgType = CRefOrValue<SummaryType<T>>;
 
-        static std::decay_t<T> compute(const T& /* vOld */, const T& vNew) noexcept {
+        static SummaryType<T> compute(const SummaryType<T>& /* vOld */, const SummaryType<T>& vNew) noexcept {
             return vNew;
         }
 
-        static std::decay_t<T> computeFirst(const T& vNew) noexcept {
+        static SummaryType<T> computeFirst(const SummaryType<T>& vNew) noexcept {
             return vNew;
         }
     };
 
     template<typename T>
     using DiffArgType = typename Difference<T>::ArgType;
-
-    template<typename T>
-    using DiffValueType = typename Difference<T>::ValueType;
-
-    template<typename T>
-    using DiffInnerType = typename Difference<T>::InnerType;
 
     template<typename T>
     class ListOfEdits {
@@ -180,23 +219,24 @@ namespace ofc {
         };
 
     private:
-        const std::vector<T>& m_oldValue;
-        const std::vector<T>& m_newValue;
+        std::vector<T> m_oldValue;
+        std::vector<T> m_newValue;
         std::vector<Edit> m_edits;
     };
 
     template<typename T>
     struct Difference<std::vector<T>> {
-        using ValueType = ListOfEdits<T>&;
-        using ArgType = const ListOfEdits<T>&;
-        using InnerType = T;
+        using ArgType = const ListOfEdits<SummaryType<T>>&;
 
-        static ListOfEdits<T> compute(const std::vector<T>& vOld, const std::vector<T>& vNew) noexcept {
-            return ListOfEdits<T>{vOld, vNew};
+        static ListOfEdits<SummaryType<T>> compute(const std::vector<SummaryType<T>>& vOld, const std::vector<SummaryType<T>>& vNew) noexcept {
+            return ListOfEdits<SummaryType<T>>{vOld, vNew};
         }
 
-        static ListOfEdits<T> computeFirst(const std::vector<T>& vNew) noexcept {
-            return ListOfEdits<T>{std::vector<T>{}, vNew};
+        static ListOfEdits<SummaryType<T>> computeFirst(const std::vector<SummaryType<T>>& vNew) noexcept {
+            return ListOfEdits<SummaryType<T>>{
+                std::vector<SummaryType<T>>{},
+                vNew
+            };
         }
     };
 
@@ -216,7 +256,11 @@ namespace ofc {
     template<typename T>
     class ValueBase {
     public:
-        ValueBase() noexcept = default;
+        ValueBase() noexcept
+            : m_value{}
+            , m_previousValue(std::nullopt) {
+        
+        }
         ValueBase(const T& t)
             : m_value(t)
             , m_previousValue(std::nullopt) {
@@ -268,14 +312,14 @@ namespace ofc {
 
         void set(const T& t) {
             if (!m_previousValue.has_value()) {
-                m_previousValue.emplace(std::move(m_value));
+                m_previousValue.emplace(summarize());
                 registerForUpdate();
             }
             m_value = t;
         }
         void set(T&& t) {
             if (!m_previousValue.has_value()) {
-                m_previousValue.emplace(std::move(m_value));
+                m_previousValue.emplace(summarize());
                 registerForUpdate();
             }
             m_value = std::move(t);
@@ -283,7 +327,7 @@ namespace ofc {
 
         T& getOnceMut() noexcept {
             if (!m_previousValue.has_value()) {
-                m_previousValue.emplace(static_cast<const T&>(m_value));
+                m_previousValue.emplace(summarize());
                 registerForUpdate();
             }
             return m_value;
@@ -291,20 +335,26 @@ namespace ofc {
 
     private:
         T m_value;
-        std::optional<T> m_previousValue;
+        std::optional<SummaryType<T>> m_previousValue;
         mutable std::vector<Observer<T>*> m_observers;
+
+        SummaryType<T> summarize() const {
+            auto result = Summary<T>::compute(static_cast<const T&>(m_value));
+            static_assert(std::is_same_v<SummaryType<T>, decltype(result)>);
+            return result;
+        }
 
         void purgeUpdates() {
             if (!m_previousValue.has_value()) {
                 return;
             }
-            if (*m_previousValue == m_value) {
+            if (*m_previousValue == summarize()) {
                 m_previousValue.reset();
                 return;
             }
             const auto diff = Difference<T>::compute(
-                static_cast<const T&>(*m_previousValue),
-                static_cast<const T&>(m_value)
+                static_cast<const SummaryType<T>&>(*m_previousValue),
+                summarize()
             );
             m_previousValue.reset();
             for (auto& o : m_observers) {
@@ -324,6 +374,10 @@ namespace ofc {
     template<typename T>
     class Value : public ValueBase<T> {
     public:
+        Value() : ValueBase<T>{} {
+        
+        }
+
         explicit Value(const T& t) : ValueBase<T>(t) {
 
         }
@@ -699,14 +753,14 @@ namespace ofc {
             // value so that next update purge will be accurate.
             // Otherwise, if target is clean, bring this observer up to speed with
             // its current value
-            const T& newValue = target.m_previousValue.has_value() ?
-                static_cast<const T&>(*target.m_previousValue) :
-                static_cast<const T&>(target.m_value);
+            SummaryType<T> newValue = target.m_previousValue.has_value() ?
+                *target.m_previousValue :
+                Summary<T>::compute(target.m_value);
 
             const auto diff = [&] {
                 if (m_valuelike.hasSomething()) {
                     return Difference<T>::compute(
-                        m_valuelike.getOnce(),
+                        Summary<T>::compute(m_valuelike.getOnce()),
                         newValue
                     );
                 } else {
@@ -731,11 +785,13 @@ namespace ofc {
             const auto diff = [&] {
                 if (m_valuelike.hasSomething()) {
                     return Difference<T>::compute(
-                        m_valuelike.getOnce(),
-                        static_cast<const T&>(fixedValue)
+                        Summary<T>::compute(m_valuelike.getOnce()),
+                        Summary<T>::compute(static_cast<const T&>(fixedValue))
                     );
                 } else {
-                    return Difference<T>::computeFirst(static_cast<const T&>(fixedValue));
+                    return Difference<T>::computeFirst(
+                        Summary<T>::compute(static_cast<const T&>(fixedValue))
+                    );
                 }
             }();
             reset();
@@ -753,8 +809,8 @@ namespace ofc {
             const auto diff = [&] {
                 if (m_valuelike.hasSomething()) {
                     return Difference<T>::compute(
-                        m_valuelike.getOnce(),
-                        static_cast<const T&>(pv.getOnce())
+                        Summary<T>::compute(m_valuelike.getOnce()),
+                        Summary<T>::compute(static_cast<const T&>(pv.getOnce()))
                     );
                 } else {
                     return Difference<T>::computeFirst(static_cast<const T&>(pv.getOnce()));
@@ -895,8 +951,8 @@ namespace ofc {
 
         DerivedValue(FunctionType fn, Valuelike<U> u, Valuelike<Rest>... rest)
             : ValueBase<T>(fn(
-                Difference<U>::computeFirst(u.getOnce()),
-                Difference<Rest>::computeFirst(rest.getOnce())...
+                Difference<U>::computeFirst(Summary<U>::compute(u.getOnce())),
+                Difference<Rest>::computeFirst(Summary<Rest>::compute(rest.getOnce()))...
             ))
             , Base(this, std::move(u), std::move(rest)...)
             , m_fn(std::move(fn)) {
@@ -930,7 +986,8 @@ namespace ofc {
 
                 using R = std::tuple_element_t<Current, std::tuple<U, Rest...>>;
                 const auto& v = Base::template getOnce<Current>();
-                return Difference<R>::compute(v, v);
+                const auto s = Summary<R>::compute(v);
+                return Difference<R>::compute(s, s);
             }
         }
     };

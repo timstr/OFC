@@ -55,37 +55,6 @@ ofc::String make_string(const T& t) {
 // the component's state, if any exists. A couple virtual methods could achieve this simply.
 
 
-struct CoolState {
-    ofc::Value<ofc::vec2> position;
-};
-
-void serialize(ofc::Serializer& s, const CoolState& cs) {
-    auto p = cs.position.getOnce();
-    s.f32(p.x).f32(p.y);
-}
-
-void deserialize(ofc::Deserializer& d, CoolState& cs) {
-    cs.position.set(ofc::vec2{d.f32(), d.f32()});
-}
-
-class CoolComponent : public ofc::ui::StatefulComponent<CoolState, ofc::ui::Persistent> {
-public:
-    CoolComponent()
-        : StatefulComponent(CoolState{ ofc::Value{ofc::vec2{0.0f, 0.0f}} }) {
-
-    }
-
-private:
-    ofc::ui::AnyComponent render() const override {
-        using namespace ofc;
-        using namespace ofc::ui;
-        return MixedContainerComponent<FreeContainerBase, Boxy, Resizable>{}
-            .backgroundColor(0xFF0000FF)
-            .size(vec2{500.0f, 500.0f})
-            .borderRadius(5.0f)
-            .containing(Text("Hello, world!"));
-    }
-};
 
 // TODO: animations
 // the way to enable animations should be as part of StatefulComponent:
@@ -95,12 +64,123 @@ private:
 
 // TODO: make a large graph-like data structure and create a UI component for it to test how well this whole library actually works
 
+using namespace ofc;
+using namespace ofc::ui;
+
+class Node {
+public:
+    Node() noexcept = default;
+    virtual ~Node() noexcept = default;
+
+    void connect(Node* other) {
+        auto& mine = m_connections.getOnceMut();
+        auto& yours = other->m_connections.getOnceMut();
+        assert(count(begin(mine), end(mine), other) == 0);
+        assert(count(begin(yours), end(yours), this) == 0);
+        mine.push_back(other);
+        yours.push_back(this);
+    }
+
+    void disconnect(Node* other) {
+        auto& mine = m_connections.getOnceMut();
+        auto& yours = other->m_connections.getOnceMut();
+        assert(count(begin(mine), end(mine), other) == 1);
+        assert(count(begin(yours), end(yours), this) == 1);
+        {
+            const auto it = find(begin(mine), end(mine), other);
+            assert(it != end(mine));
+            mine.erase(it);
+        }
+        {
+            const auto it = find(begin(yours), end(yours), this);
+            assert(it != end(yours));
+            yours.erase(it);
+        }
+    }
+
+    const Value<std::vector<Node*>>& connections() const noexcept {
+        return m_connections;
+    }
+
+private:
+    Value<std::vector<Node*>> m_connections;
+};
+
+class IntNode : public Node {
+public:
+    IntNode(int data)
+        : m_data(data) {
+    
+    }
+
+    const Value<int>& data() const noexcept {
+        return m_data;
+    }
+
+private:
+    Value<int> m_data;
+};
+
+class StringNode : public Node {
+public:
+    StringNode(const String& data)
+        : m_data(data) {
+    
+    }
+
+    const Value<String>& data() const noexcept {
+        return m_data;
+    }
+
+private:
+    Value<String> m_data;
+};
+
+
+
+class Graph {
+public:
+    void add(std::unique_ptr<Node> n) {
+        m_nodes.getOnceMut().push_back(std::move(n));
+    }
+
+    void remove(Node* n) {
+        auto sameNode = [&](const std::unique_ptr<Node>& up) {
+            return up.get() == n;
+        };
+        auto& theNodes = m_nodes.getOnceMut();
+        assert(count_if(begin(theNodes), end(theNodes), sameNode) == 1);
+        auto it = find_if(begin(theNodes), end(theNodes), sameNode);
+        assert(it != end(theNodes));
+        theNodes.erase(it);
+    }
+
+    Valuelike<std::vector<const Node*>> nodes() const {
+        return m_nodes.map([](const ListOfEdits<const Node*>& v){
+            return v.newValue();
+        });
+    }
+
+private:
+    Value<std::vector<std::unique_ptr<Node>>> m_nodes;
+};
+
+class GraphUI : public PureComponent {
+public:
+    GraphUI(const Graph* graph)
+        : m_graph(graph) {
+    
+    }
+
+private:
+    AnyComponent render() const override final {
+        
+    }
+
+    const Graph* const m_graph;
+};
+
 int main(){
-
-    using namespace ofc;
-    using namespace ofc::ui;
-
-    // AnyComponent comp = UseFont(&getFont()).with(CoolComponent{});
 
     auto Box = [](const String& s) -> AnyComponent {
         return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, Clickable>{}
@@ -171,250 +251,8 @@ int main(){
             )
     );
 
-    /* auto words = Value{std::vector<String>{"Hello", "world"}};
-
-    AnyComponent comp = UseFont(&getFont()).with(
-        MixedContainerComponent<FreeContainerBase, Boxy, Resizable, Clickable>{
-                Center{HorizontalList{
-                    ForEach(words).Do([](const ui::String& s){ return s; })
-                }}
-            }
-            .backgroundColor(0xFF0000FF)
-            .minSize(vec2{200.0f, 200.0f})
-            .borderRadius(5.0f)
-            .onLeftClick([&](int){
-                std::cout << "AAAaaa you clicked me\n";
-                words.getOnceMut().push_back("eek"); 
-                return true;
-            })
-    ); */
-
-    // TODO: how to access mounted component for serialization?
-
-    /*auto randEng = std::default_random_engine{std::random_device{}()};
-    auto dist = std::uniform_real_distribution<float>{0.0f, 1.0f};
-
-    using MyComponent = MixedComponent<Clickable, Boxy, Resizable, Scrollable>;
-    using Action = MyComponent::Action;
-
-    auto bgColor = Value<Color>{0xFFFF00FF};
-
-    {
-        auto s = Serializer{};
-
-        s.object(bgColor.getOnce());
-
-        auto d = Deserializer{s.dump()};
-
-        bgColor.set(d.object<Color>());
-    }
-
-    auto inFocus = Value<bool>{false};
-
-    auto pos = Value{vec2{0.0f, 0.0f}};
-
-    auto dropFieldColor = Value<Color>{0x808080FF};
-
-    AnyComponent comp = UseFont(&getFont()).with(List(
-        "Before  ",
-        MyComponent{}
-            .width(100.0f)
-            .height(100.0f)
-            .onLeftClick([&](int i, Action action){
-                auto c = bgColor.getOnce();
-                c.setHue(dist(randEng));
-                bgColor.set(c);
-                return true;
-            })
-            .onScroll([&](vec2 delta) {
-                auto c = bgColor.getOnce();
-                c.setSaturation(c.saturation() + delta.x * 0.05f);
-                c.setLightness(c.lightness() + delta.y * 0.05f);
-                bgColor.set(c);
-                return true;
-            })
-            .backgroundColor(bgColor)
-            .borderColor(0xFF)
-            .borderThickness(5.0f)
-            .borderRadius(10.0f),
-        "  After",
-        MixedComponent<Focusable, Boxy, Resizable, KeyPressable>{}
-            .onGainFocus([&](){
-                inFocus.set(true);
-            })
-            .onLoseFocus([&](){
-                inFocus.set(false);
-            })
-            .size(vec2{100.0f, 20.0f})
-            .backgroundColor(inFocus.map([](bool b) -> Color {
-                return b ? 0xFF0000FF : 0x0000FFFF;
-            })), 
-        MixedComponent<Hoverable, Boxy, Resizable, Positionable>{}
-            .position(vec2{100.0f, 200.0f})
-            .size(vec2{100.0f, 100.0f})
-            .backgroundColor(dropFieldColor)
-            .borderThickness(1.0f)
-            .borderColor(0xFF)
-            .onMouseEnter([&]{
-                dropFieldColor.set(0x80B080FF);
-            })
-            .onMouseEnterWith<int>([&](int){
-                dropFieldColor.set(0x80FF80FF);
-            })
-            .onMouseLeave([&] {
-                dropFieldColor.set(0x808080FF);
-            })
-            .onDrop<int>([&](int i) {
-                std::cout << "An int was dropped with value " << i << '\n';
-                dropFieldColor.set(0x40FF40FF);
-                return true;
-            }),
-        FreeContainer(
-            MixedComponent<Clickable, Boxy, Resizable, Positionable, Draggable, KeyPressable, HitTestable>{}
-                .backgroundColor(0xFF0000FF)
-                .borderColor(0x440000FF)
-                .borderThickness(2.0f)
-                .borderRadius(25.0f)
-                .width(50.0f)
-                .height(50.0f)
-                .hitTest([](vec2 p) {
-                    const auto d = p - vec2{25.0f, 25.0f};
-                    return (d.x * d.x + d.y * d.y <= 25.0f * 25.0f);
-                })
-                .position(pos)
-                .onKeyDown([&](Key k){
-                    if (k == Key::Return){
-                        pos.set({
-                            dist(randEng) * 100.0f,
-                            dist(randEng) * 100.0f
-                        });
-                        return true;
-                    }
-                    return false;
-                })
-                .onLeftClick([](int, auto action) {
-                    action.startDrag<int>(42);
-                    return true;
-                })
-                .onLeftRelease([](auto action) {
-                    action.stopDrag();
-                    auto v = 999;
-                    std::cout << "Dropping an int with value " << v << '\n';
-                    action.drop<int>(v);
-                    return true;
-                })
-        )
-    ));*/
-    
-    
-    /*
-    auto num = Value<int>{0};
-
-    AnyComponent comp = UseFont(&getFont()).with(List(
-        PulldownMenu(std::vector<String>{"Zero", "One", "Two", "Three", "Four", "Five"})
-            .onChange([&](const ui::String& s, std::size_t i){
-                std::cout << "You chose " << s.toAnsiString() << "\n";
-                num.set(static_cast<int>(i));
-            }),
-        " ",
-        Switch(num)
-            .Case(0, "Zero")
-            .Case(1, "One")
-            .Case(2, "Two")
-            .Default("Something else, idk"),
-        ". ",
-        If(num.map([](int i){ return i % 2 == 0; }))
-            .then("It is even.")
-            .otherwise("It is odd.")
-    ));*/
-
-    
-    /*auto items = Value{std::vector{
-        "aaa", "bbb", "ccc", "ddd", "eee",
-        "fff", "ggg", "hhh", "iii", "jjj",
-        "kkk", "lll", "mmm", "nnn", "ooo",
-        "ppp", "qqq", "rrr", "sss", "ttt"
-    }};
-
-    
-    AnyComponent comp = UseFont(&getFont()).with(List(
-        MixedContainerComponent<WrapGridBase, Boxy>(TopToBottom, 5, RightToLeft)
-            .backgroundColor(0xffb0b0)
-            .borderColor(0xff)
-            .borderThickness(1.0f)
-            .borderRadius(3.0f)
-            .containing(
-                ForEach(items).Do([](const char* s, const Value<std::size_t>& idx) -> AnyComponent {
-                    return If(idx.map([](std::size_t i){ return i % 2 == 0; }))
-                        .then(s)
-                        .otherwise(Button(s));
-                })
-            ),
-        Button("Remove one").onClick([&] {
-            auto& v = items.getOnceMut();
-            if (v.size() > 0){
-                v.erase(v.begin());
-            }
-        })
-    ));
-    */
-
-    /*
-    auto vec = Value{std::vector<int>{0, 1, 2, 3, 4, 5, 6}};
-    auto num = Value<std::size_t>{1000};
-
-    AnyComponent comp = UseFont(&getFont()).with(
-        List(
-            Button("Clear All").onClick([&vec] {
-                vec.getOnceMutable().clear();
-            }),
-            ForEach(vec).Do([&](int i, const std::size_t& idx) -> AnyComponent {
-                return Button(std::to_string(i)).onClick([&vec,&idx]{
-                    auto& v = vec.getOnceMutable();
-                    v.erase(v.begin() + idx);
-                });
-            }),
-            Button("Add One More").onClick([&vec] {
-                auto& v = vec.getOnceMutable();
-                v.push_back(v.empty() ? 0 : (v.back() + 1));
-            }),
-            Button("What??").onClick([&vec] {
-                const auto& v = vec.getOnce();
-                for (const auto& x : v) {
-                    std::cout << x << ' ';
-                }
-                std::cout << '\n';
-            }),
-            "There are ",
-            Text(vec.map(
-                [](const ListOfEdits<int>& v){ return make_string(v.newValue().size()); }
-            )),
-            " things.",
-            " If you added ",
-            Text(num.map([](std::size_t n){ return make_string(n); })),
-            " then you would have ",
-            Text(combine(vec, num).map([](const ListOfEdits<int>& v, std::size_t n) {
-                return make_string(v.newValue().size() + n);
-            })),
-            " things."
-        )
-    );
-    */
 
     auto root = Root(FreeContainer{}.containing(std::move(comp)));
-
-    /*
-    auto condition = Value<bool>{true};
-
-    AnyComponent comp = UseFont(&getFont()).with(
-        If(condition).then(
-            Button().caption("Click Me!").onClick([&](){ condition.set(false); })
-        ).otherwise(
-            "Dagnabbit darn drat.."
-        )
-    );
-    auto root = ComponentRoot::create<FreeContainer>(std::move(comp));
-    */
 
     Window& win = Window::create(std::move(root), 600, 400, "Test");
 
