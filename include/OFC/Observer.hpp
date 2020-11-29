@@ -55,9 +55,11 @@ namespace ofc {
     };
 
     // For unique_ptr, the summary is a raw pointer
+    // This avoids the problem of copying unique pointers
+    // to keep track of past state.
     template<typename T>
     struct Summary<std::unique_ptr<T>> {
-        using Type = const T*;
+        using Type = T*;
 
         static Type compute(const std::unique_ptr<T>& p) {
             return p.get();

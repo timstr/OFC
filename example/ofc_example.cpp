@@ -1,8 +1,10 @@
 ﻿#include <OFC/UI.hpp>
 
+#include <cassert>
 #include <iostream>
 #include <random>
 #include <sstream>
+
 
 std::random_device randdev;
 std::mt19937 randeng { randdev() };
@@ -66,6 +68,7 @@ ofc::String make_string(const T& t) {
 
 using namespace ofc;
 using namespace ofc::ui;
+using namespace std::string_literals;
 
 class Node {
 public:
@@ -102,19 +105,31 @@ public:
         return m_connections;
     }
 
+    virtual const std::string& getType() const noexcept = 0;
+
 private:
     Value<std::vector<Node*>> m_connections;
 };
 
 class IntNode : public Node {
 public:
+    static inline const std::string Type = "Int"s;
+
     IntNode(int data)
         : m_data(data) {
     
     }
 
+    void setData(int i) {
+        m_data.set(i);
+    }
+
     const Value<int>& data() const noexcept {
         return m_data;
+    }
+
+    const std::string& getType() const noexcept override final {
+        return Type;
     }
 
 private:
@@ -123,13 +138,23 @@ private:
 
 class StringNode : public Node {
 public:
+    static inline const std::string Type = "String"s;
+
     StringNode(const String& data)
         : m_data(data) {
     
     }
 
+    void setData(const String& s) {
+        m_data.set(s);
+    }
+
     const Value<String>& data() const noexcept {
         return m_data;
+    }
+
+    const std::string& getType() const noexcept override final {
+        return Type;
     }
 
 private:
@@ -155,8 +180,8 @@ public:
         theNodes.erase(it);
     }
 
-    Valuelike<std::vector<const Node*>> nodes() const {
-        return m_nodes.map([](const ListOfEdits<const Node*>& v){
+    Valuelike<std::vector<Node*>> nodes() const {
+        return m_nodes.map([](const ListOfEdits<Node*>& v){
             return v.newValue();
         });
     }
@@ -165,23 +190,146 @@ private:
     Value<std::vector<std::unique_ptr<Node>>> m_nodes;
 };
 
+struct NodeUIState {
+    Value<vec2> position;
+};
+
+void serialize(Serializer& s, const NodeUIState& n) {
+    const auto& p = n.position.getOnce();
+    s.f32(p.x).f32(p.y);
+}
+
+void deserialize(Deserializer& d, NodeUIState& n) {
+    auto x = d.f32();
+    auto y = d.f32();
+    n.position.set(vec2{x, y});
+}
+
+AnyComponent IntNodeUI(IntNode* n) {
+    return List{
+        Text(n->data().map([](int i) -> String {
+            return "Int: " + std::to_string(i);
+        })),
+        NumberTextField{n->data()}
+            .onSubmit([n](int i){
+                n->setData(i);
+            })
+    };
+}
+
+AnyComponent StringNodeUI(StringNode* n) {
+    return List{
+        Text(n->data().map([](const String& s) -> String {
+            return "String: \"" + s + "\"";
+        })),
+        TextField{n->data()}
+            .onSubmit([n](const String& s){
+                n->setData(s);
+            })
+    };
+}
+
+using NodeUICreator = std::function<AnyComponent(Node*)>;
+
+template<typename T, typename F>
+NodeUICreator makeNodeUICreator(F&& f) {
+    return [f = std::forward<F>(f)](Node* n){
+        assert(n);
+        static_assert(std::is_base_of_v<Node, T>);
+        auto tn = dynamic_cast<T*>(n);
+        assert(tn);
+        static_assert(std::is_invocable_v<F, T*>);
+        return f(tn);
+    };
+}
+
+AnyComponent MakeNodeUI(Node* n) {
+    static auto mapping = std::map<std::string, NodeUICreator>{
+        {IntNode::Type, makeNodeUICreator<IntNode>(IntNodeUI)},
+        {StringNode::Type, makeNodeUICreator<StringNode>(StringNodeUI)}
+    };
+
+    auto it = mapping.find(n->getType());
+    assert(it != end(mapping));
+    return it->second(n);
+}
+
+class NodeUI : public StatefulComponent<NodeUIState, Persistent> {
+public:
+    NodeUI(Node* node) 
+        : m_node(node) {
+    
+    }
+
+private:
+    AnyComponent render() const override final {
+        return MixedContainerComponent<VerticalListBase, Boxy, Positionable, Resizable, Draggable, Clickable>{}
+            .position(state().position)
+            .minSize(vec2{50.0f, 50.0f})
+            .backgroundColor(0xFFBB99FF)
+            .borderColor(0xFF)
+            .borderRadius(10.0f)
+            .borderThickness(2.0f)
+            .onLeftClick([](int, ModifierKeys, auto action){
+                action.startDrag();
+                return true;
+            })
+            .onLeftRelease([](auto action){
+                action.stopDrag();
+            })
+            .onDrag([this](vec2 v){
+                stateMut().position.set(v);
+                return std::nullopt;
+            })
+            .containing(
+                List{
+                    Text{"Node"},
+                    MakeNodeUI(m_node)
+                }
+            );
+    }
+
+    Node* const m_node;
+};
+
 class GraphUI : public PureComponent {
 public:
-    GraphUI(const Graph* graph)
+    GraphUI(Graph* graph)
         : m_graph(graph) {
     
     }
 
 private:
     AnyComponent render() const override final {
-        
+        return ForEach(m_graph->nodes())
+            .Do([](Node* n) -> AnyComponent {
+                return NodeUI{n};
+            });
     }
 
-    const Graph* const m_graph;
+    Graph* const m_graph;
 };
 
 int main(){
 
+    auto graph = Graph{};
+
+    graph.add(std::make_unique<StringNode>("Blab blab"));
+    graph.add(std::make_unique<IntNode>(99));
+
+    auto comp = AnyComponent{UseFont(&getFont()).with(
+        GraphUI{&graph}
+    )};
+
+    auto root = Root(FreeContainer{}.containing(std::move(comp)));
+
+    Window& win = Window::create(std::move(root), 600, 400, "Test");
+
+    run();
+
+    return 0;
+
+    /*
     auto Box = [](const String& s) -> AnyComponent {
         return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, Clickable>{}
             .sizeForce(vec2{30.0f, 30.0f})
@@ -259,4 +407,6 @@ int main(){
     run();
 
     return 0;
+
+    */
 }
