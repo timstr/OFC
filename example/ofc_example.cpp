@@ -181,29 +181,18 @@ public:
     }
 
     Valuelike<std::vector<Node*>> nodes() const {
-        return m_nodes.map([](const ListOfEdits<Node*>& v){
-            return v.newValue();
+        return m_nodes.map([](const ListOfEdits<std::unique_ptr<Node>>& v){
+            auto out = std::vector<Node*>{};
+            for (const auto& p : v.newValue()) {
+                out.push_back(p.get());
+            }
+            return out;
         });
     }
 
 private:
     Value<std::vector<std::unique_ptr<Node>>> m_nodes;
 };
-
-struct NodeUIState {
-    Value<vec2> position;
-};
-
-void serialize(Serializer& s, const NodeUIState& n) {
-    const auto& p = n.position.getOnce();
-    s.f32(p.x).f32(p.y);
-}
-
-void deserialize(Deserializer& d, NodeUIState& n) {
-    auto x = d.f32();
-    auto y = d.f32();
-    n.position.set(vec2{x, y});
-}
 
 AnyComponent IntNodeUI(IntNode* n) {
     return List{
@@ -254,17 +243,23 @@ AnyComponent MakeNodeUI(Node* n) {
     return it->second(n);
 }
 
-class NodeUI : public StatefulComponent<NodeUIState, Persistent> {
+class NodeUI : public PureComponent {
 public:
-    NodeUI(Node* node) 
-        : m_node(node) {
+    NodeUI(Node* node, Valuelike<vec2> position) 
+        : m_node(node)
+        , m_position(std::move(position)) {
     
+    }
+
+    NodeUI& onChangePosition(std::function<void(vec2)> f) {
+        m_onChangePosition = std::move(f);
+        return *this;
     }
 
 private:
     AnyComponent render() const override final {
         return MixedContainerComponent<VerticalListBase, Boxy, Positionable, Resizable, Draggable, Clickable>{}
-            .position(state().position)
+            .position(m_position.view())
             .minSize(vec2{50.0f, 50.0f})
             .backgroundColor(0xFFBB99FF)
             .borderColor(0xFF)
@@ -278,7 +273,9 @@ private:
                 action.stopDrag();
             })
             .onDrag([this](vec2 v){
-                stateMut().position.set(v);
+                if (m_onChangePosition){
+                    m_onChangePosition(v);
+                }
                 return std::nullopt;
             })
             .containing(
@@ -290,24 +287,72 @@ private:
     }
 
     Node* const m_node;
+    Valuelike<vec2> m_position;
+    std::function<void(vec2)> m_onChangePosition;
 };
 
 class GraphUI : public PureComponent {
 public:
     GraphUI(Graph* graph)
-        : m_graph(graph) {
+        : m_graph(graph)
+        , m_nodesObserver(this, &GraphUI::updateNodes, graph->nodes()) {
     
     }
 
 private:
     AnyComponent render() const override final {
-        return ForEach(m_graph->nodes())
-            .Do([](Node* n) -> AnyComponent {
-                return NodeUI{n};
+        return ForEach(m_nodePositions)
+            .Do([](const NodePosition& np) -> AnyComponent {
+                return NodeUI{np.first, np.second}
+                    .onChangePosition([&np](vec2 v){
+                        np.second.makeMutable().set(v);
+                    });
             });
     }
 
+    void updateNodes(const ListOfEdits<Node*>& loe) {
+        auto& np = m_nodePositions.getOnceMut();
+        auto it = begin(np);
+        for (const auto& e : loe.getEdits()) {
+            if (e.insertion()) {
+                it = np.insert(it, NodePosition{e.value(), vec2{0.0f, 0.0f}});
+                ++it;
+            } else if (e.deletion()) {
+                assert(it != end(np));
+                it = np.erase(it);
+                // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                // TODO: consider making Value<T> have pointer semantics
+                // effectively making Value<T> behave like what would currently be unique_ptr<Value<T>>
+                // PImpl idiom seems relevant
+                // Pros: this will allow moving Value<T> without having to worry about observers
+                // Cons: lots of refactoring
+                //     => maybe?
+                //     => It might suffice to rename ValueBase<T> to ValueImplBase<T>, get rid of a bunch
+                //        of constructors, and re-add classes with old names that are merely thin wrappers
+            } else if (e.nothing()) {
+                assert(it != end(np));
+                ++it;
+            }
+        }
+    }
+
     Graph* const m_graph;
+    
+    /*struct NodePosition {
+        NodePosition(Node* n, vec2 p)
+            : node(n)
+            , position(p) {
+        
+        }
+
+        const Node* node;
+        Value<vec2> position;
+    };*/
+
+    using NodePosition = std::pair<Node*, Value<vec2>>;
+
+    Value<std::vector<NodePosition>> m_nodePositions;
+    Observer<std::vector<Node*>> m_nodesObserver;
 };
 
 int main(){

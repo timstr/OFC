@@ -11,7 +11,7 @@ namespace ofc {
             return theQueue;
         }
 
-        void unqueueValueUpdater(std::function<void()> f) {
+        void enqueueValueUpdater(std::function<void()> f) {
             auto& q = valueUpdateQueue();
             q.push_back(std::move(f));
         }
