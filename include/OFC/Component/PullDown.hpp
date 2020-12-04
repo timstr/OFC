@@ -98,9 +98,6 @@ namespace ofc::ui {
     template<typename T>
     PulldownMenu(const Value<std::vector<std::pair<T, String>>>&, Valuelike<std::size_t>) -> PulldownMenu<T>;
 
-    template<typename T, typename... Args>
-    PulldownMenu(const DerivedValue<std::vector<std::pair<T, String>>, Args...>&, Valuelike<std::size_t>) -> PulldownMenu<T>;
-
     template<typename T>
     PulldownMenu(std::vector<std::pair<T, String>>&&, Valuelike<std::size_t>) -> PulldownMenu<T>;
 

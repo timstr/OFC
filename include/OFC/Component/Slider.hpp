@@ -79,11 +79,16 @@ namespace ofc::ui {
                 const auto val = static_cast<NumberType>(
                     t * static_cast<float>(max - min) + static_cast<float>(min)
                 );
-                m_onChange(val);
+                if (m_onChange) {
+                    m_onChange(val);
+                }
                 return vec2{std::clamp(x, 0.0f, w), 0.0f};
             };
 
             auto handleKeyDown = [this](Key k, ModifierKeys mod){
+                if (!m_onChange) {
+                    return false;
+                }
                 if (k == Key::Home){
                     m_onChange(m_minimum.getOnce());
                     return true;

@@ -103,9 +103,6 @@ namespace ofc::ui {
     template<typename T>
     ForEach(const Value<std::vector<T>>&) -> ForEach<T>;
 
-    template<typename T, typename... Args>
-    ForEach(const DerivedValue<std::vector<T>, Args...>&) -> ForEach<T>;
-
     template<typename T>
     ForEach(std::vector<T>&&) -> ForEach<T>;
 

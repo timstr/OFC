@@ -78,7 +78,4 @@ namespace ofc::ui {
     template<typename T>
     When(const Value<T*>&) -> When<T>;
 
-    template<typename T, typename U, typename... Rest>
-    When(DerivedValue<T*, U, Rest...>) -> When<T>;
-
 } // namespace ofc::ui 

@@ -81,15 +81,14 @@ namespace ofc::ui {
                 .onSubmit([this, convert](const String& s){
                     auto v = convert(s);
                     assert(v.has_value());
-                    m_onSubmit(*v);
+                    if (m_onSubmit){
+                        m_onSubmit(*v);
+                    }
                 });
         }
     };
 
     template<typename NumberType>
     NumberTextField(const Value<NumberType>&) -> NumberTextField<NumberType>;
-
-    template<typename NumberType, typename... Args>
-    NumberTextField(const DerivedValue<NumberType, Args...>&) -> NumberTextField<NumberType>;
 
 } // namespace ofc::ui

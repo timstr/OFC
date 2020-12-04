@@ -74,7 +74,4 @@ namespace ofc::ui {
     template<typename T>
     Switch(const Value<T>&) -> Switch<T>;
 
-    template<typename T, typename U, typename... Rest>
-    Switch(DerivedValue<T, U, Rest...>) -> Switch<T>;
-
 } // namespace ofc::ui

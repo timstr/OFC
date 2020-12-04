@@ -296,7 +296,12 @@ public:
     GraphUI(Graph* graph)
         : m_graph(graph)
         , m_nodesObserver(this, &GraphUI::updateNodes, graph->nodes()) {
-    
+
+        auto& np = m_nodePositions.getOnceMut();
+        const auto& nn = graph->nodes().getOnce();
+        for (const auto& n : nn) {
+             np.push_back(NodePosition{n, vec2{0.0f, 0.0f}});
+        }
     }
 
 private:
@@ -320,15 +325,6 @@ private:
             } else if (e.deletion()) {
                 assert(it != end(np));
                 it = np.erase(it);
-                // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                // TODO: consider making Value<T> have pointer semantics
-                // effectively making Value<T> behave like what would currently be unique_ptr<Value<T>>
-                // PImpl idiom seems relevant
-                // Pros: this will allow moving Value<T> without having to worry about observers
-                // Cons: lots of refactoring
-                //     => maybe?
-                //     => It might suffice to rename ValueBase<T> to ValueImplBase<T>, get rid of a bunch
-                //        of constructors, and re-add classes with old names that are merely thin wrappers
             } else if (e.nothing()) {
                 assert(it != end(np));
                 ++it;
@@ -373,7 +369,8 @@ int main(){
     run();
 
     return 0;
-
+    
+    
     /*
     auto Box = [](const String& s) -> AnyComponent {
         return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, Clickable>{}
@@ -452,6 +449,6 @@ int main(){
     run();
 
     return 0;
-
     */
+    
 }
