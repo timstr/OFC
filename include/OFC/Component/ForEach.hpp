@@ -12,12 +12,18 @@ namespace ofc::ui {
 
         }
 
+        // NOTE: due to vector reallocation, references passed to vector
+        // elements in the callback function may later expire, and it is
+        // strongly recommended that you do not store or capture (e.g. in
+        // lambda functions) references to the vector element. Capturing
+        // the index by reference however is fine and is encouraged
         ForEach& Do(std::function<AnyComponent(CRefOrValue<T>, const Value<std::size_t>&)> f) {
             assert(f);
             m_fn = std::move(f);
             return *this;
         }
 
+        // NOTE: see above
         ForEach& Do(std::function<AnyComponent(CRefOrValue<T>)> f) {
             assert(f);
             m_fn = [f = std::move(f)](CRefOrValue<T> v, const Value<std::size_t>& /* index */){

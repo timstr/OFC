@@ -297,6 +297,7 @@ public:
         : m_graph(graph)
         , m_nodesObserver(this, &GraphUI::updateNodes, graph->nodes()) {
 
+        // TODO: the following lines and the m_nodesObserver are essentially a mapped value
         auto& np = m_nodePositions.getOnceMut();
         const auto& nn = graph->nodes().getOnce();
         for (const auto& n : nn) {
@@ -306,13 +307,22 @@ public:
 
 private:
     AnyComponent render() const override final {
-        return ForEach(m_nodePositions)
-            .Do([](const NodePosition& np) -> AnyComponent {
-                return NodeUI{np.first, np.second}
-                    .onChangePosition([&np](vec2 v){
-                        np.second.makeMutable().set(v);
-                    });
-            });
+        return List(
+            Button("+")
+                .onClick([this](){
+                    m_graph->add(std::make_unique<StringNode>("..."));
+                }),
+            ForEach(m_nodePositions)
+                .Do([this](const NodePosition& np, const Value<std::size_t>& idx) -> AnyComponent {
+                    return NodeUI{np.first, np.second}
+                        .onChangePosition([this, &idx](vec2 v){
+                            auto& nps = this->m_nodePositions.getOnce();
+                            auto i = idx.getOnce();
+                            assert(i < nps.size());
+                            nps[i].second.makeMutable().set(v);
+                        });
+                })
+        );
     }
 
     void updateNodes(const ListOfEdits<Node*>& loe) {
