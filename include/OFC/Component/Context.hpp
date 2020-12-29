@@ -60,7 +60,7 @@ namespace ofc::ui {
     protected:
         Observer<ValueType>& getObserver() {
             if (!m_init) {
-                if (m_observer.getValuelike().hasSomething()) {
+                if (m_observer.getValuelike().hasValue()) {
                     m_init = true;
                     return m_observer;
                 } else if (auto pv = static_cast<Derived*>(this)->findContext<ContextProviderType>()){

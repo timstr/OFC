@@ -222,7 +222,7 @@ namespace ofc::ui {
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
                 const auto& vl = o.getValuelike();
-                if (vl.hasSomething()) {
+                if (vl.hasValue()) {
                     (this->*f)(vl.getOnce());
                 }
             }
@@ -374,11 +374,11 @@ namespace ofc::ui {
                 // NOTE: Element::setWidth and Element::setHeight have hidden default
                 // parameters, preventing maybeCall from working
                 const auto& wvl = component.m_widthObserver.getValuelike();
-                if (wvl.hasSomething()){
+                if (wvl.hasValue()){
                     this->setWidth(wvl.getOnce());
                 }
                 const auto& hvl = component.m_heightObserver.getValuelike();
-                if (hvl.hasSomething()){
+                if (hvl.hasValue()){
                     this->setHeight(hvl.getOnce());
                 }
                 maybeCall(component.m_minWidthObserver, &ElementMixin::setMinWidth);
@@ -391,7 +391,7 @@ namespace ofc::ui {
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
                 const auto& vl = o.getValuelike();
-                if (vl.hasSomething()) {
+                if (vl.hasValue()) {
                     (this->*f)(vl.getOnce());
                 }
             }
@@ -466,7 +466,7 @@ namespace ofc::ui {
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
                 const auto& vl = o.getValuelike();
-                if (vl.hasSomething()) {
+                if (vl.hasValue()) {
                     (this->*f)(vl.getOnce());
                 }
             }

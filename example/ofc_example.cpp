@@ -70,6 +70,7 @@ using namespace ofc;
 using namespace ofc::ui;
 using namespace std::string_literals;
 
+
 class Node {
 public:
     Node() noexcept = default;
@@ -295,14 +296,10 @@ class GraphUI : public PureComponent {
 public:
     GraphUI(Graph* graph)
         : m_graph(graph)
-        , m_nodesObserver(this, &GraphUI::updateNodes, graph->nodes()) {
+        , m_nodePositions(graph->nodes().vectorMap([](Node* n){
+            return NodePosition{n, vec2{0.0f, 0.0f}};
+        })) {
 
-        // TODO: the following lines and the m_nodesObserver are essentially a mapped value
-        auto& np = m_nodePositions.getOnceMut();
-        const auto& nn = graph->nodes().getOnce();
-        for (const auto& n : nn) {
-             np.push_back(NodePosition{n, vec2{0.0f, 0.0f}});
-        }
     }
 
 private:
@@ -312,7 +309,7 @@ private:
                 .onClick([this](){
                     m_graph->add(std::make_unique<StringNode>("..."));
                 }),
-            ForEach(m_nodePositions)
+            ForEach(m_nodePositions.view())
                 .Do([this](const NodePosition& np, const Value<std::size_t>& idx) -> AnyComponent {
                     return NodeUI{np.first, np.second}
                         .onChangePosition([this, &idx](vec2 v){
@@ -325,40 +322,11 @@ private:
         );
     }
 
-    void updateNodes(const ListOfEdits<Node*>& loe) {
-        auto& np = m_nodePositions.getOnceMut();
-        auto it = begin(np);
-        for (const auto& e : loe.getEdits()) {
-            if (e.insertion()) {
-                it = np.insert(it, NodePosition{e.value(), vec2{0.0f, 0.0f}});
-                ++it;
-            } else if (e.deletion()) {
-                assert(it != end(np));
-                it = np.erase(it);
-            } else if (e.nothing()) {
-                assert(it != end(np));
-                ++it;
-            }
-        }
-    }
-
     Graph* const m_graph;
     
-    /*struct NodePosition {
-        NodePosition(Node* n, vec2 p)
-            : node(n)
-            , position(p) {
-        
-        }
-
-        const Node* node;
-        Value<vec2> position;
-    };*/
-
     using NodePosition = std::pair<Node*, Value<vec2>>;
-
-    Value<std::vector<NodePosition>> m_nodePositions;
-    Observer<std::vector<Node*>> m_nodesObserver;
+    
+    Valuelike<std::vector<NodePosition>> m_nodePositions;
 };
 
 int main(){
