@@ -243,7 +243,7 @@ namespace ofc {
             return m_edits;
         }
 
-        const std::vector<Summary<T>>& oldValue() const noexcept {
+        const std::vector<SummaryType<T>>& oldValue() const noexcept {
             return m_oldValue;
         }
 
@@ -354,25 +354,16 @@ namespace ofc {
         }
 
         void set(const T& t) {
-            if (!m_previousValue.has_value()) {
-                m_previousValue.emplace(summarize());
-                registerForUpdate();
-            }
+            makeDirty();
             m_value = t;
         }
         void set(T&& t) {
-            if (!m_previousValue.has_value()) {
-                m_previousValue.emplace(summarize());
-                registerForUpdate();
-            }
+            makeDirty();
             m_value = std::move(t);
         }
 
         T& getOnceMut() noexcept {
-            if (!m_previousValue.has_value()) {
-                m_previousValue.emplace(summarize());
-                registerForUpdate();
-            }
+            makeDirty();
             return m_value;
         }
 
@@ -390,11 +381,11 @@ namespace ofc {
         template<typename F, typename U = T, std::enable_if_t<detail::IsVector<U>>* = nullptr>
         auto vectorMap(F&& f) const {
             using ElementType = typename T::value_type;
-            static_assert(std::is_invocable_v<F, DiffArgType<ElementType>>);
-            using R = std::invoke_result_t<F, DiffArgType<ElementType>>;
+            static_assert(std::is_invocable_v<F, CRefOrValue<ElementType>>);
+            using R = std::invoke_result_t<F, CRefOrValue<ElementType>>;
             static_assert(!std::is_void_v<R>);
             static_assert(!std::is_reference_v<R>);
-            return Value<R>{std::make_unique<VectorMappedValueImpl<R, T>>(
+            return Value<std::vector<R>>{std::make_unique<VectorMappedValueImpl<R, ElementType>>(
                 std::forward<F>(f),
                 Valuelike<T>(this)
             )};
@@ -415,6 +406,13 @@ namespace ofc {
             auto result = Summary<T>::compute(static_cast<const T&>(m_value));
             static_assert(std::is_same_v<SummaryType<T>, decltype(result)>);
             return result;
+        }
+
+        void makeDirty() {
+            if (!m_previousValue.has_value()) {
+                m_previousValue.emplace(summarize());
+                registerForUpdate();
+            }
         }
 
         void purgeUpdates() {
@@ -794,6 +792,10 @@ namespace ofc {
             }
         }
 
+        ValueImpl<T>* getValue() noexcept {
+            return const_cast<ValueImpl<T>*>(const_cast<const Valuelike<T>*>(this)->getValue());
+        }
+
         std::variant<
             const ValueImpl<T>*,
             Value<T>
@@ -860,6 +862,10 @@ namespace ofc {
             : ObserverBase(self)
             , m_valuelike(std::move(vl))
             , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
+
+            if (auto v = m_valuelike.getValue()) {
+                v->purgeUpdates();
+            }
 
             if (auto vv = m_valuelike.getValue()) {
                 auto& v = vv->m_observers;
@@ -1151,22 +1157,17 @@ namespace ofc {
     };
 
 
-
+    // T : target element type
+    // U : source element type
     template<typename T, typename U>
     class VectorMappedValueImpl : public ValueImpl<std::vector<T>>, public ObserverOwner {
     public:
         VectorMappedValueImpl(std::function<T(CRefOrValue<U>)> fn, Valuelike<std::vector<U>> vl)
-            : m_fn(std::move(fn))
+            : ValueImpl<std::vector<T>>(initialValue(fn, vl.getOnce()))
+            , m_fn(std::move(fn))
             , m_observer(this, &VectorMappedValueImpl::updateValues, std::move(vl)) {
-        
-            auto& v = this->getOnceMut();
-            const auto& src = m_observer.getValuelike().getOnce();
 
-            assert(m_fn);
-            v.reserve(src.size());
-            for (const auto& x : src) {
-                v.push_back(m_fn(x));
-            }
+            assert(this->getOnce().size() == m_observer.getValuelike().getOnce().size());
         }
 
     private:
@@ -1174,6 +1175,7 @@ namespace ofc {
         Observer<std::vector<U>> m_observer;
 
         void updateValues(const ListOfEdits<U>& loe) {
+            assert(this->getOnce().size() == loe.oldValue().size());
             assert(m_fn);
             auto& v = this->getOnceMut();
             auto it = begin(v);
@@ -1190,6 +1192,17 @@ namespace ofc {
                     ++it;
                 }
             }
+            assert(this->getOnce().size() == loe.newValue().size());
+        }
+
+        static std::vector<T> initialValue(const std::function<T(CRefOrValue<U>)>& fn, const std::vector<U>& v) {
+            assert(fn);
+            auto out = std::vector<T>{};
+            out.reserve(v.size());
+            for (const auto& x : v) {
+                out.push_back(fn(x));
+            }
+            return out;
         }
     };
 

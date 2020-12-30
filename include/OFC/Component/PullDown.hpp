@@ -21,13 +21,8 @@ namespace ofc::ui {
         }
 
         PulldownMenu(Valuelike<std::vector<String>> items)
-            :  m_items(items.map([](const ListOfEdits<String>& le){
-                std::vector<pair<String, String>> ret;
-                ret.reserve(le.newValue().size());
-                for (const auto& s : le.newValue()){
-                    ret.push_back(std::pair{s, s});
-                }
-                return ret;
+            :  m_items(items.vectorMap([](const String& s){
+                return std::pair{s, s};
             })) {
             static_assert(std::is_same_v<T, String>);
         }

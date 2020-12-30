@@ -62,7 +62,7 @@ namespace ofc::ui::dom {
 
     void FlowContainer::adopt(std::unique_ptr<Element> e, LayoutStyle style, const Element* beforeSibling){
         assert(e);
-        assert(!beforeSibling || beforeSibling->getParentContainer() == this);
+        // assert(!beforeSibling || beforeSibling->getParentContainer() == this);
         const auto sameElem = [&](const LayoutObject& lo){
             if (auto pe = std::get_if<ElementLayout>(&lo)) {
                 return pe->element == beforeSibling;

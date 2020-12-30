@@ -70,11 +70,29 @@ using namespace ofc;
 using namespace ofc::ui;
 using namespace std::string_literals;
 
+struct Pinned {
+    Pinned() noexcept = default;
+    ~Pinned() noexcept = default;
+
+    Pinned(Pinned&&) = delete;
+    Pinned(const Pinned&) = delete;
+
+    Pinned& operator=(Pinned&&) = delete;
+    Pinned& operator=(const Pinned&) = delete;
+};
+
+class Graph;
 
 class Node {
 public:
-    Node() noexcept = default;
-    virtual ~Node() noexcept = default;
+    Node() noexcept
+        : m_parentGraph(nullptr) {
+        
+    }
+
+    virtual ~Node() noexcept {
+        assert(m_parentGraph == nullptr);
+    }
 
     void connect(Node* other) {
         auto& mine = m_connections.getOnceMut();
@@ -108,8 +126,19 @@ public:
 
     virtual const std::string& getType() const noexcept = 0;
 
+    Graph* getGraph() noexcept {
+        return m_parentGraph;
+    }
+
+    const Graph* getGraph() const noexcept {
+        return m_parentGraph;
+    }
+
 private:
     Value<std::vector<Node*>> m_connections;
+    Graph* m_parentGraph;
+
+    friend Graph;
 };
 
 class IntNode : public Node {
@@ -166,11 +195,20 @@ private:
 
 class Graph {
 public:
+    ~Graph() noexcept {
+        for (auto& np : m_nodes.getOnce()) {
+            assert(np->m_parentGraph == this);
+            np->m_parentGraph = nullptr;
+        }
+    }
+
     void add(std::unique_ptr<Node> n) {
+        assert(n->m_parentGraph == nullptr);
+        n->m_parentGraph = this;
         m_nodes.getOnceMut().push_back(std::move(n));
     }
 
-    void remove(Node* n) {
+    std::unique_ptr<Node> release(Node* n) {
         auto sameNode = [&](const std::unique_ptr<Node>& up) {
             return up.get() == n;
         };
@@ -178,16 +216,20 @@ public:
         assert(count_if(begin(theNodes), end(theNodes), sameNode) == 1);
         auto it = find_if(begin(theNodes), end(theNodes), sameNode);
         assert(it != end(theNodes));
+        auto ret = std::move(*it);
         theNodes.erase(it);
+        ret->m_parentGraph = nullptr;
+        return ret;
+    }
+
+    void remove(Node* n) {
+        auto p = release(n);
+        (void)p;
     }
 
     Valuelike<std::vector<Node*>> nodes() const {
-        return m_nodes.map([](const ListOfEdits<std::unique_ptr<Node>>& v){
-            auto out = std::vector<Node*>{};
-            for (const auto& p : v.newValue()) {
-                out.push_back(p.get());
-            }
-            return out;
+        return m_nodes.vectorMap([](const std::unique_ptr<Node>& p){
+            return p.get();
         });
     }
 
@@ -282,7 +324,11 @@ private:
             .containing(
                 List{
                     Text{"Node"},
-                    MakeNodeUI(m_node)
+                    MakeNodeUI(m_node),
+                    Button{"X"}
+                        .onClick([this]{
+                            m_node->getGraph()->remove(m_node);
+                        })
                 }
             );
     }
@@ -305,10 +351,15 @@ public:
 private:
     AnyComponent render() const override final {
         return List(
-            Button("+")
-                .onClick([this](){
-                    m_graph->add(std::make_unique<StringNode>("..."));
-                }),
+            HorizontalList{}.containing(
+                Button("+")
+                    .onClick([this](){
+                        m_graph->add(std::make_unique<StringNode>("..."));
+                    }),
+                Text(m_nodePositions.map([](const ListOfEdits<NodePosition>& loe) -> String {
+                       return "There are " + std::to_string(loe.newValue().size()) + " nodes";
+                    }))
+            ),
             ForEach(m_nodePositions.view())
                 .Do([this](const NodePosition& np, const Value<std::size_t>& idx) -> AnyComponent {
                     return NodeUI{np.first, np.second}
