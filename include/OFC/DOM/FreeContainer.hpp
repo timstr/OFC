@@ -13,7 +13,7 @@ namespace ofc::ui::dom {
     public:
 
         // How a free element is positioned relative to its parent
-        enum class PositionStyle : std::uint8_t {
+        enum class Style : std::uint8_t {
             // the element's position is left untouched
             None,
 
@@ -54,11 +54,11 @@ namespace ofc::ui::dom {
         };
 
         void adopt(std::unique_ptr<Element>);
-        void adopt(PositionStyle xstyle, PositionStyle ystyle, std::unique_ptr<Element>);
+        void adopt(Style xstyle, Style ystyle, std::unique_ptr<Element>);
 
         using Container::release;
         
-        void setElementStyle(const Element*, PositionStyle xstyle, PositionStyle ystyle);
+        void setElementStyle(const Element*, Style xstyle, Style ystyle);
 
     private:
 
@@ -68,8 +68,8 @@ namespace ofc::ui::dom {
 
         // mapping of all elements with fixed position style
         struct ElementStyle {
-            PositionStyle x;
-            PositionStyle y;
+            Style x;
+            Style y;
         };
 
         std::map<const Element*, ElementStyle> m_styles;

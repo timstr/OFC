@@ -7,17 +7,16 @@
 
 namespace ofc::ui::dom {
 
-    // TODO: are all of these still needed?
-    enum class LayoutStyle {
-        Inline,
-        Block,
-        FloatLeft,
-        FloatRight,
-        Free
-    };
-
     class FlowContainer : public Container {
     public:
+        enum class Style : std::uint8_t {
+            Inline,
+            Block,
+            FloatLeft,
+            FloatRight,
+            Free
+        };
+
         FlowContainer();
 
         float padding() const;
@@ -51,7 +50,7 @@ namespace ofc::ui::dom {
         void remove(const Item&);
         void remove(const WhiteSpace*);
 
-        void adopt(std::unique_ptr<Element>, LayoutStyle style = LayoutStyle::Inline, const Element* beforeSibling = nullptr);
+        void adopt(std::unique_ptr<Element>, Style style = Style::Inline, const Element* beforeSibling = nullptr);
 
         using Container::release;
 
@@ -65,7 +64,7 @@ namespace ofc::ui::dom {
 
         struct ElementLayout {
             Element* element;
-            LayoutStyle style;
+            Style style;
         };
 
         using LayoutObject = std::variant<ElementLayout, std::unique_ptr<WhiteSpace>>;

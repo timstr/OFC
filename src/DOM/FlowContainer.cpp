@@ -60,7 +60,7 @@ namespace ofc::ui::dom {
         requireUpdate();
     }
 
-    void FlowContainer::adopt(std::unique_ptr<Element> e, LayoutStyle style, const Element* beforeSibling){
+    void FlowContainer::adopt(std::unique_ptr<Element> e, Style style, const Element* beforeSibling){
         assert(e);
         // assert(!beforeSibling || beforeSibling->getParentContainer() == this);
         const auto sameElem = [&](const LayoutObject& lo){

@@ -9,6 +9,18 @@ namespace ofc::ui {
         SimpleForwardingComponent::onInsertChildElement(std::move(element), s);
     }
 
+    Weight::Weight(float w, AnyComponent c)
+        : SimpleForwardingComponent(std::move(c))
+        , m_weight(w) {
+    
+    }
+
+    void Weight::onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) {
+        auto s = scope;
+        s.add<detail::WeightTag>(detail::WeightTag{m_weight});
+        SimpleForwardingComponent::onInsertChildElement(std::move(element), s);
+    }
+
     Row::Row(AnyComponent c)
         : SimpleForwardingComponent(std::move(c)) {
 

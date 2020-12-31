@@ -115,7 +115,7 @@ namespace ofc::ui {
 
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final {
             using namespace detail;
-            using Style = dom::FreeContainer::PositionStyle;
+            using Style = dom::FreeContainer::Style;
             auto c = this->container();
             assert(c);
             // TODO: insert element before `beforeElement`
@@ -208,17 +208,18 @@ namespace ofc::ui {
             using namespace detail;
             auto c = this->container();
             assert(c);
-            auto style = dom::LayoutStyle::Inline;
+            using Style = dom::FlowContainer::Style;
+            auto s = Style::Inline;
             if (scope.has<flowStyle_Block>()) {
-                style= dom::LayoutStyle::Block;
+                s = Style::Block;
             } else if (scope.has<flowStyle_FloatLeft>()) {
-                style= dom::LayoutStyle::FloatLeft;
+                s = Style::FloatLeft;
             } else if (scope.has<flowStyle_FloatRight>()) {
-                style= dom::LayoutStyle::FloatRight;
+                s = Style::FloatRight;
             } else if (scope.has<flowStyle_Free>()) {
-                style= dom::LayoutStyle::Free;
+                s = Style::Free;
             }
-            c->adopt(std::move(element), style, scope.beforeElement());
+            c->adopt(std::move(element), s, scope.beforeElement());
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -232,13 +233,22 @@ namespace ofc::ui {
         }
     };
 
+    
+    namespace detail {
+    
+        struct WeightTag {
+            float weight = 1.0f;
+        };
+
+    } // namespace detail
 
 
     template<typename Derived>
     class VerticalListBase : public ContainerComponentTemplate<dom::VerticalList, Derived> {
     public:
-        VerticalListBase(VerticalDirection direction = TopToBottom)
-            : m_direction(direction) {
+        VerticalListBase(VerticalDirection direction = TopToBottom, bool expand = false)
+            : m_direction(direction)
+            , m_expand(expand) {
 
         }
 
@@ -258,10 +268,14 @@ namespace ofc::ui {
 
     private:
         const VerticalDirection m_direction;
+        bool m_expand;
         AnyComponent m_childComponent;
 
         void onMountContainer(const dom::Element* beforeElement) override final {
             m_childComponent.tryMount(this, beforeElement);
+            auto c = this->container();
+            assert(c);
+            c->setExpand(m_expand);
         }
 
         void onUnmountContainer() override final {
@@ -275,10 +289,21 @@ namespace ofc::ui {
             if (b && b->getParentContainer() != c) {
                 b = nullptr;
             }
+            auto w = 1.0f;
+            if (auto wt = scope.get<detail::WeightTag>()) {
+                w = wt->weight;
+            }
+            using Style = typename dom::VerticalList::Style;
+            auto s = Style::Center;
+            if (scope.has<detail::align_InsideLeft>()) {
+                s = Style::Left;
+            } else if (scope.has<detail::align_InsideRight>()) {
+                s = Style::Right;
+            }
             if (m_direction == TopToBottom){
-                c->insertBefore(b, std::move(element));
+                c->insertBefore(b, std::move(element), w, s);
             } else {
-                c->insertAfter(b, std::move(element));
+                c->insertAfter(b, std::move(element), w, s);
             }
         }
 
@@ -298,8 +323,9 @@ namespace ofc::ui {
     template<typename Derived>
     class HorizontalListBase : public ContainerComponentTemplate<dom::HorizontalList, Derived> {
     public:
-        HorizontalListBase(HorizontalDirection direction = LeftToRight)
-            : m_direction(direction) {
+        HorizontalListBase(HorizontalDirection direction = LeftToRight, bool expand = false)
+            : m_direction(direction)
+            , m_expand(expand) {
 
         }
 
@@ -319,10 +345,14 @@ namespace ofc::ui {
 
     private:
         const HorizontalDirection m_direction;
+        bool m_expand;
         AnyComponent m_childComponent;
 
         void onMountContainer(const dom::Element* beforeElement) override final {
             m_childComponent.tryMount(this, beforeElement);
+            auto c = this->container();
+            assert(c);
+            c->setExpand(m_expand);
         }
 
         void onUnmountContainer() override final {
@@ -336,10 +366,21 @@ namespace ofc::ui {
             if (b && b->getParentContainer() != c) {
                 b = nullptr;
             }
+            auto w = 1.0f;
+            if (auto wt = scope.get<detail::WeightTag>()) {
+                w = wt->weight;
+            }
+            using Style = typename dom::HorizontalList::Style;
+            auto s = Style::Center;
+            if (scope.has<detail::align_InsideTop>()) {
+                s = Style::Top;
+            } else if (scope.has<detail::align_InsideBottom>()) {
+                s = Style::Bottom;
+            }
             if (m_direction == LeftToRight){
-                c->insertBefore(b, std::move(element));
+                c->insertBefore(b, std::move(element), w, s);
             } else {
-                c->insertAfter(b, std::move(element));
+                c->insertAfter(b, std::move(element), w, s);
             }
         }
 
@@ -784,6 +825,13 @@ namespace ofc::ui {
     public:
         using ScopeTagComponent::ScopeTagComponent;
     };
+    
+
+    using AlignLeft = AlignInsideLeft;
+    using AlignRight = AlignInsideRight;
+    using AlignTop = AlignInsideTop;
+    using AlignBottom = AlignInsideBottom;
+
 
     //--------------------------------
 
@@ -812,8 +860,25 @@ namespace ofc::ui {
     public:
         using ScopeTagComponent::ScopeTagComponent;
     };
+    
+
+    //--------------------------------
+
 
     // TODO: "weight" for row and column (see dom::GridContainer)
+    
+    class Weight : public SimpleForwardingComponent {
+    public:
+        Weight(float w, AnyComponent);
+
+    private:
+        const float m_weight;
+
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
+    };
+
+    //--------------------------------
+
 
     class Row : public SimpleForwardingComponent {
     public:

@@ -323,12 +323,13 @@ private:
             })
             .containing(
                 List{
-                    Text{"Node"},
-                    MakeNodeUI(m_node),
-                    Button{"X"}
-                        .onClick([this]{
+                    HorizontalList{LeftToRight, true}.containing(
+                        Text{"Node"},
+                        Weight{0.0f, Button{"X"}.onClick([this]{
                             m_node->getGraph()->remove(m_node);
-                        })
+                        })}
+                    ),
+                    MakeNodeUI(m_node)
                 }
             );
     }

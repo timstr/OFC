@@ -9,17 +9,17 @@ namespace ofc::ui::dom {
         assert(e);
         const Element* eptr = e.get();
         Container::adopt(std::move(e));
-        m_styles.try_emplace(eptr, ElementStyle{PositionStyle::None, PositionStyle::None});
+        m_styles.try_emplace(eptr, ElementStyle{Style::None, Style::None});
     }
 
-    void FreeContainer::adopt(PositionStyle xstyle, PositionStyle ystyle, std::unique_ptr<Element> e){
+    void FreeContainer::adopt(Style xstyle, Style ystyle, std::unique_ptr<Element> e){
         assert(e);
         const Element* eptr = e.get();
         Container::adopt(std::move(e));
         m_styles.try_emplace(eptr, ElementStyle{xstyle, ystyle});
     }
 
-    void FreeContainer::setElementStyle(const Element* e, PositionStyle xstyle, PositionStyle ystyle){
+    void FreeContainer::setElementStyle(const Element* e, Style xstyle, Style ystyle){
         auto it = m_styles.find(e);
         if (it == m_styles.end()){
             throw std::runtime_error("No such element");
@@ -33,17 +33,17 @@ namespace ofc::ui::dom {
     }
 
     vec2 FreeContainer::update(){
-        const auto compute_position = [](PositionStyle style, float size, float epos, float esize){
+        const auto compute_position = [](Style style, float size, float epos, float esize){
             switch (style){
-            case PositionStyle::OutsideBegin:
+            case Style::OutsideBegin:
                 return -esize;
-            case PositionStyle::InsideBegin:
+            case Style::InsideBegin:
                 return 0.0f;
-            case PositionStyle::Center:
+            case Style::Center:
                 return size * 0.5f - esize * 0.5f;
-            case PositionStyle::InsideEnd:
+            case Style::InsideEnd:
                 return size - esize;
-            case PositionStyle::OutsideEnd:
+            case Style::OutsideEnd:
                 return size;
             default:
                 return epos;
@@ -62,10 +62,10 @@ namespace ofc::ui::dom {
                 elem->setPos({std::floor(x), std::floor(y)});
                 //elem->update({0.0f, 0.0f});
 
-                const auto isContraining = [](PositionStyle ps){
-                    return ps == PositionStyle::InsideBegin
-                        || ps == PositionStyle::InsideEnd
-                        || ps == PositionStyle::Center;
+                const auto isContraining = [](Style ps){
+                    return ps == Style::InsideBegin
+                        || ps == Style::InsideEnd
+                        || ps == Style::Center;
                 };
 
                 const auto req = getRequiredSize(elem);
