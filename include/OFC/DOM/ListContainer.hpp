@@ -18,12 +18,14 @@ namespace ofc::ui::dom {
         template<typename Tag>
         class ListContainer : public Container {
         public:
-            enum class Style : std::uint8_t {
+            enum class Style {
                 Begin,
                 Center,
                 End,
+
                 Left = Begin,
                 Right = End,
+
                 Top = Begin,
                 Bottom = End
             };
@@ -55,14 +57,25 @@ namespace ofc::ui::dom {
                 m_cells[i].weight = w;
             }
             
-            Style style(std::size_t i) const {
+            Style verticalStyle(std::size_t i) const {
                 assert(i < m_cells.size());
-                return m_cells[i].style;
+                return m_cells[i].verticalStyle;
             }
 
-            void setStyle(std::size_t i, Style s) const {
+            Style horizontalStyle(std::size_t i) const {
                 assert(i < m_cells.size());
-                m_cells[i].style = s;
+                return m_cells[i].horizontalStyle;
+            }
+
+            void setVerticalStyle(std::size_t i, Style s) const {
+                assert(i < m_cells.size());
+                m_cells[i].verticalStyle = s;
+                requireUpdate();
+            }
+
+            void setHorizontalStyle(std::size_t i, Style s) const {
+                assert(i < m_cells.size());
+                m_cells[i].horizontalStyle = s;
                 requireUpdate();
             }
 
@@ -77,10 +90,10 @@ namespace ofc::ui::dom {
                 }
             }
 
-            void insert(std::size_t index, std::unique_ptr<Element> e, float weight = 1.0f, Style style = Style::Center) {
+            void insert(std::size_t index, std::unique_ptr<Element> e, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
                 assert(e);
                 assert(index <= m_cells.size());
-                m_cells.insert(m_cells.begin() + index, WeightedElement{e.get(), weight, style});
+                m_cells.insert(m_cells.begin() + index, WeightedElement{e.get(), weight, horizontalStyle, verticalStyle});
                 adopt(std::move(e));
             }
 
@@ -91,21 +104,21 @@ namespace ofc::ui::dom {
                 // NOTE: m_cells is modified in onRemoveChild
             }
         
-            void insertBefore(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style style = Style::Center) {
+            void insertBefore(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
                 if (sibling) {
                     auto sameElement = [sibling](const WeightedElement& we) {
                         return we.element == sibling;
                     };
                     auto it = std::find_if(m_cells.begin(), m_cells.end(), sameElement);
                     assert(it != m_cells.end());
-                    m_cells.insert(it, WeightedElement{theElement.get(), weight, style});
+                    m_cells.insert(it, WeightedElement{theElement.get(), weight, horizontalStyle, verticalStyle});
                     adopt(std::move(theElement));
                 } else {
-                    push_back(std::move(theElement), weight, style);
+                    push_back(std::move(theElement), weight, horizontalStyle, verticalStyle);
                 }
             }
 
-            void insertAfter(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style style = Style::Center) {
+            void insertAfter(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
                 if (sibling) {
                     auto sameElement = [sibling](const WeightedElement& we) {
                         return we.element == sibling;
@@ -113,16 +126,16 @@ namespace ofc::ui::dom {
                     auto it = std::find_if(m_cells.begin(), m_cells.end(), sameElement);
                     assert(it != m_cells.end());
                     ++it;
-                    m_cells.insert(it, WeightedElement{theElement.get(), weight, style});
+                    m_cells.insert(it, WeightedElement{theElement.get(), weight, horizontalStyle, verticalStyle});
                     adopt(std::move(theElement));
                 } else {
-                    push_front(std::move(theElement), weight, style);
+                    push_front(std::move(theElement), weight, horizontalStyle, verticalStyle);
                 }
             }
 
-            void push_front(std::unique_ptr<Element> e, float weight = 1.0f, Style style = Style::Center) {
+            void push_front(std::unique_ptr<Element> e, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
                 assert(e);
-                m_cells.insert(m_cells.begin(), WeightedElement{e.get(), weight, style});
+                m_cells.insert(m_cells.begin(), WeightedElement{e.get(), weight, horizontalStyle, verticalStyle});
                 adopt(std::move(e));
             }
 
@@ -135,9 +148,9 @@ namespace ofc::ui::dom {
                 // NOTE: m_cells is modified in onRemoveChild
             }
 
-            void push_back(std::unique_ptr<Element> e, float weight = 1.0f, Style style = Style::Center) {
+            void push_back(std::unique_ptr<Element> e, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
                 assert(e);
-                m_cells.push_back(WeightedElement{e.get(), weight, style});
+                m_cells.push_back(WeightedElement{e.get(), weight, horizontalStyle, verticalStyle});
                 adopt(std::move(e));
             }
 
@@ -218,9 +231,9 @@ namespace ofc::ui::dom {
 
                 totalSize = placeItems(std::is_same_v<Tag, VerticalTag> ? totalSize.x : totalSize.y);
 
-                // Expand elements to take up available space (if any)
+                // Expand elements to take up available space along list direction (if any)
                 if (m_expand) {
-                    auto dim = std::is_same_v<Tag, VerticalTag> ? &vec2::y : &vec2::x;
+                    const auto dim = std::is_same_v<Tag, VerticalTag> ? &vec2::y : &vec2::x;
                     const auto totalSpace = totalSize.*dim;
                     const auto availSpace = availSize.*dim;
                     if (totalSpace < availSpace) {
@@ -231,16 +244,35 @@ namespace ofc::ui::dom {
 
                         const auto deltaSpace = availSpace - totalSpace;
                         auto spaceAcc = 0.0f;
-                        for (const auto& we : m_cells) {
-                            const auto space = deltaSpace * we.weight / totalWeight;
-                            const auto e = we.element;
+                        for (const auto& c : m_cells) {
+                            const auto space = deltaSpace * c.weight / totalWeight;
+                            const auto e = c.element;
                             assert(e);
                             auto p = e->pos();
-                            const auto k = (we.style == Style::Begin) ? 0.0f : (we.style == Style::Center) ? 0.5f : 1.0f;
+                            const auto style = std::is_same_v<Tag, VerticalTag> ? c.verticalStyle : c.horizontalStyle;
+                            const auto k = (style == Style::Begin) ? 0.0f : (style == Style::Center) ? 0.5f : 1.0f;
                             p.*dim += spaceAcc + k * space;
                             e->setPos(p);
                             spaceAcc += space;
                         }
+                    }
+                }
+
+                // Align elements against list direction
+                {
+                    const auto dim = std::is_same_v<Tag, VerticalTag> ? &vec2::x : &vec2::y;
+                    const auto availSpace = totalSize.*dim;
+                    for (const auto& c : m_cells) {
+                        const auto e = c.element;
+                        assert(e);
+                        const auto space = e->size().*dim;
+                        const auto d = availSpace - space;
+                        assert(d >= 0.0f);
+                        const auto style = std::is_same_v<Tag, VerticalTag> ? c.horizontalStyle : c.verticalStyle;
+                        const auto k = (style == Style::Begin) ? 0.0f : (style == Style::Center) ? 0.5f : 1.0f;
+                        auto p = e->pos();
+                        p.*dim = k * d;
+                        e->setPos(p);
                     }
                 }
 
@@ -259,7 +291,8 @@ namespace ofc::ui::dom {
             struct WeightedElement {
                 Element* element = nullptr;
                 float weight = 1.0f;
-                Style style = Style::Middle;
+                Style verticalStyle = Style::Center;
+                Style horizontalStyle = Style::Center;
             };
 
             std::vector<WeightedElement> m_cells;

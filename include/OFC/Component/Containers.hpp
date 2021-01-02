@@ -239,6 +239,28 @@ namespace ofc::ui {
         struct WeightTag {
             float weight = 1.0f;
         };
+    
+        template<typename ListContainerType>
+        std::pair<typename ListContainerType::Style, typename ListContainerType::Style> getListStyleFromScope(const Scope& scope) {
+            using Style = typename ListContainerType::Style;
+            auto xs = Style::Center;
+            auto ys = Style::Center;
+            if (scope.has<detail::align_InsideLeft>()) {
+                xs = Style::Left;
+            } else if (scope.has<detail::align_CenterVertically>()) {
+                xs = Style::Center;
+            } else if (scope.has<detail::align_InsideRight>()) {
+                xs = Style::Right;
+            }
+            if (scope.has<detail::align_InsideTop>()) {
+                ys = Style::Top;
+            } else if (scope.has<detail::align_CenterVertically>()) {
+                ys = Style::Center;
+            } else if (scope.has<detail::align_InsideBottom>()) {
+                ys = Style::Bottom;
+            }
+            return {xs, ys};
+        }
 
     } // namespace detail
 
@@ -293,19 +315,11 @@ namespace ofc::ui {
             if (auto wt = scope.get<detail::WeightTag>()) {
                 w = wt->weight;
             }
-            using Style = typename dom::VerticalList::Style;
-            auto s = Style::Center;
-            if (scope.has<detail::align_InsideTop>()) {
-                s = Style::Top;
-            } else if (scope.has<detail::align_CenterVertically>()) {
-                s = Style::Center;
-            } else if (scope.has<detail::align_InsideBottom>()) {
-                s = Style::Bottom;
-            }
+            const auto& [xs, ys] = detail::getListStyleFromScope<dom::VerticalList>(scope);
             if (m_direction == TopToBottom){
-                c->insertBefore(b, std::move(element), w, s);
+                c->insertBefore(b, std::move(element), w, xs, ys);
             } else {
-                c->insertAfter(b, std::move(element), w, s);
+                c->insertAfter(b, std::move(element), w, xs, ys);
             }
         }
 
@@ -319,8 +333,6 @@ namespace ofc::ui {
             return { m_childComponent.get() };
         }
     };
-
-
 
     template<typename Derived>
     class HorizontalListBase : public ContainerComponentTemplate<dom::HorizontalList, Derived> {
@@ -372,19 +384,11 @@ namespace ofc::ui {
             if (auto wt = scope.get<detail::WeightTag>()) {
                 w = wt->weight;
             }
-            using Style = typename dom::HorizontalList::Style;
-            auto s = Style::Center;
-            if (scope.has<detail::align_InsideLeft>()) {
-                s = Style::Left;
-            } else if (scope.has<detail::align_CenterHorizontally>()) {
-                s = Style::Center;
-            } else if (scope.has<detail::align_InsideRight>()) {
-                s = Style::Right;
-            }
+            const auto& [xs, ys] = detail::getListStyleFromScope<dom::HorizontalList>(scope);
             if (m_direction == LeftToRight){
-                c->insertBefore(b, std::move(element), w, s);
+                c->insertBefore(b, std::move(element), w, xs, ys);
             } else {
-                c->insertAfter(b, std::move(element), w, s);
+                c->insertAfter(b, std::move(element), w, xs, ys);
             }
         }
 

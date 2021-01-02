@@ -141,11 +141,11 @@ private:
     friend Graph;
 };
 
-class IntNode : public Node {
+class IntegerNode : public Node {
 public:
-    static inline const std::string Type = "Int"s;
+    static inline const std::string Type = "Integer"s;
 
-    IntNode(int data)
+    IntegerNode(int data)
         : m_data(data) {
     
     }
@@ -189,6 +189,31 @@ public:
 
 private:
     Value<String> m_data;
+};
+
+class BooleanNode : public Node {
+public:
+    static inline const std::string Type = "Boolean"s;
+
+    BooleanNode(bool data)
+        : m_data(data) {
+    
+    }
+
+    void setData(bool b) {
+        m_data.set(b);
+    }
+
+    const Value<bool>& data() const noexcept {
+        return m_data;
+    }
+
+    const std::string& getType() const noexcept override final {
+        return Type;
+    }
+
+private:
+    Value<bool> m_data;
 };
 
 
@@ -237,10 +262,10 @@ private:
     Value<std::vector<std::unique_ptr<Node>>> m_nodes;
 };
 
-AnyComponent IntNodeUI(IntNode* n) {
+AnyComponent IntNodeUI(IntegerNode* n) {
     return List{
         Text(n->data().map([](int i) -> String {
-            return "Int: " + std::to_string(i);
+            return "Integer: " + std::to_string(i);
         })),
         NumberTextField{n->data()}
             .onSubmit([n](int i){
@@ -261,6 +286,19 @@ AnyComponent StringNodeUI(StringNode* n) {
     };
 }
 
+AnyComponent BooleanNodeUI(BooleanNode* n) {
+    using namespace std::literals;
+    return List{
+        Text(n->data().map([](bool b) -> String {
+            return "Boolean: \""s + (b ? "True" : "False") + "\""s;
+        })),
+        Toggle("False", "True", n->data())
+            .onChange([n](bool b){
+                n->setData(b);
+            })
+    };
+}
+
 using NodeUICreator = std::function<AnyComponent(Node*)>;
 
 template<typename T, typename F>
@@ -277,8 +315,9 @@ NodeUICreator makeNodeUICreator(F&& f) {
 
 AnyComponent MakeNodeUI(Node* n) {
     static auto mapping = std::map<std::string, NodeUICreator>{
-        {IntNode::Type, makeNodeUICreator<IntNode>(IntNodeUI)},
-        {StringNode::Type, makeNodeUICreator<StringNode>(StringNodeUI)}
+        {IntegerNode::Type, makeNodeUICreator<IntegerNode>(IntNodeUI)},
+        {StringNode::Type, makeNodeUICreator<StringNode>(StringNodeUI)},
+        {BooleanNode::Type, makeNodeUICreator<BooleanNode>(BooleanNodeUI)}
     };
 
     auto it = mapping.find(n->getType());
@@ -300,14 +339,37 @@ public:
     }
 
 private:
-    AnyComponent render() const override final {
-        return MixedContainerComponent<VerticalListBase, Boxy, Positionable, Resizable, Draggable, Clickable>{}
+    AnyComponent inputPeg() const {
+        return Text("In");
+    }
+
+    AnyComponent outputPeg() const {
+        return Text("Out");
+    }
+
+    AnyComponent body() const {
+        return MixedContainerComponent<VerticalListBase, Boxy, Positionable, Resizable>{}
             .position(m_position.view())
             .minSize(vec2{50.0f, 50.0f})
             .backgroundColor(0xFFBB99FF)
             .borderColor(0xFF)
             .borderRadius(10.0f)
             .borderThickness(2.0f)
+            .containing(
+                List{
+                    HorizontalList{LeftToRight, true}.containing(
+                        AlignLeft{Text{"Node"}},
+                        Weight{0.0f, Button{"X"}.onClick([this]{
+                            m_node->getGraph()->remove(m_node);
+                        })}
+                    ),
+                    MakeNodeUI(m_node)
+                }
+            );
+    }
+
+    AnyComponent render() const override final {
+        return MixedContainerComponent<HorizontalListBase, Clickable, Draggable>{}
             .onLeftClick([](int, ModifierKeys, auto action){
                 action.startDrag();
                 return true;
@@ -321,16 +383,9 @@ private:
                 }
                 return std::nullopt;
             })
-            .containing(
-                List{
-                    HorizontalList{LeftToRight, true}.containing(
-                        AlignLeft{Text{"Node"}},
-                        Weight{0.0f, Button{"X"}.onClick([this]{
-                            m_node->getGraph()->remove(m_node);
-                        })}
-                    ),
-                    MakeNodeUI(m_node)
-                }
+            .containing(inputPeg(),
+                body(),
+                outputPeg()
             );
     }
 
@@ -386,7 +441,8 @@ int main(){
     auto graph = Graph{};
 
     graph.add(std::make_unique<StringNode>("Blab blab"));
-    graph.add(std::make_unique<IntNode>(99));
+    graph.add(std::make_unique<IntegerNode>(99));
+    graph.add(std::make_unique<BooleanNode>(false));
 
     auto comp = AnyComponent{UseFont(&getFont()).with(
         GraphUI{&graph}
