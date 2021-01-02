@@ -324,7 +324,7 @@ private:
             .containing(
                 List{
                     HorizontalList{LeftToRight, true}.containing(
-                        Text{"Node"},
+                        AlignLeft{Text{"Node"}},
                         Weight{0.0f, Button{"X"}.onClick([this]{
                             m_node->getGraph()->remove(m_node);
                         })}

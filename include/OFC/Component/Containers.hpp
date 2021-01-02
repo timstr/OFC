@@ -295,10 +295,12 @@ namespace ofc::ui {
             }
             using Style = typename dom::VerticalList::Style;
             auto s = Style::Center;
-            if (scope.has<detail::align_InsideLeft>()) {
-                s = Style::Left;
-            } else if (scope.has<detail::align_InsideRight>()) {
-                s = Style::Right;
+            if (scope.has<detail::align_InsideTop>()) {
+                s = Style::Top;
+            } else if (scope.has<detail::align_CenterVertically>()) {
+                s = Style::Center;
+            } else if (scope.has<detail::align_InsideBottom>()) {
+                s = Style::Bottom;
             }
             if (m_direction == TopToBottom){
                 c->insertBefore(b, std::move(element), w, s);
@@ -372,10 +374,12 @@ namespace ofc::ui {
             }
             using Style = typename dom::HorizontalList::Style;
             auto s = Style::Center;
-            if (scope.has<detail::align_InsideTop>()) {
-                s = Style::Top;
-            } else if (scope.has<detail::align_InsideBottom>()) {
-                s = Style::Bottom;
+            if (scope.has<detail::align_InsideLeft>()) {
+                s = Style::Left;
+            } else if (scope.has<detail::align_CenterHorizontally>()) {
+                s = Style::Center;
+            } else if (scope.has<detail::align_InsideRight>()) {
+                s = Style::Right;
             }
             if (m_direction == LeftToRight){
                 c->insertBefore(b, std::move(element), w, s);
