@@ -34,131 +34,18 @@ namespace ofc::ui::dom {
         
             using Container::children;
 
-            std::size_t length() const noexcept {
-                return m_cells.size();
-            }
-
-            Element* getCell(std::size_t i) {
-                return const_cast<Element*>(const_cast<const ListContainer*>(this)->getCell(i));
-            }
-            const Element* getCell(std::size_t i) const {
-                assert(i < m_cells.size());
-                return m_cells[i].element;
-            }
-
-            float getWeight(std::size_t i) const {
-                assert(i < m_cells.size());
-                return m_cells[i].weight;
-            }
-
-            void setWeight(std::size_t i, float w) {
-                assert(w >= 0.0f);
-                assert(i < m_cells.size());
-                m_cells[i].weight = w;
-            }
-            
-            Style verticalStyle(std::size_t i) const {
-                assert(i < m_cells.size());
-                return m_cells[i].verticalStyle;
-            }
-
-            Style horizontalStyle(std::size_t i) const {
-                assert(i < m_cells.size());
-                return m_cells[i].horizontalStyle;
-            }
-
-            void setVerticalStyle(std::size_t i, Style s) const {
-                assert(i < m_cells.size());
-                m_cells[i].verticalStyle = s;
-                requireUpdate();
-            }
-
-            void setHorizontalStyle(std::size_t i, Style s) const {
-                assert(i < m_cells.size());
-                m_cells[i].horizontalStyle = s;
-                requireUpdate();
-            }
-
-            bool expand() const noexcept {
-                return m_expand;
-            }
-
-            void setExpand(bool e) noexcept {
-                if (e != m_expand) {
-                    m_expand = e;
-                    requireUpdate();
-                }
-            }
-
-            void insert(std::size_t index, std::unique_ptr<Element> e, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
-                assert(e);
-                assert(index <= m_cells.size());
-                m_cells.insert(m_cells.begin() + index, WeightedElement{e.get(), weight, horizontalStyle, verticalStyle});
-                adopt(std::move(e));
-            }
-
-            void erase(std::size_t index) {
-                assert(index < m_cells.size());
-                auto e = m_cells[index].element;
-                release(e);
-                // NOTE: m_cells is modified in onRemoveChild
-            }
-        
-            void insertBefore(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
-                if (sibling) {
-                    auto sameElement = [sibling](const WeightedElement& we) {
-                        return we.element == sibling;
-                    };
-                    auto it = std::find_if(m_cells.begin(), m_cells.end(), sameElement);
-                    assert(it != m_cells.end());
-                    m_cells.insert(it, WeightedElement{theElement.get(), weight, horizontalStyle, verticalStyle});
-                    adopt(std::move(theElement));
+            void insertAfter(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center, bool expand = false) {
+                auto sameElement = [sibling](const WeightedElement& we) {
+                    return we.element == sibling;
+                };
+                auto it = std::find_if(m_cells.begin(), m_cells.end(), sameElement);
+                if (it == end(m_cells)){
+                    it = begin(m_cells);
                 } else {
-                    push_back(std::move(theElement), weight, horizontalStyle, verticalStyle);
-                }
-            }
-
-            void insertAfter(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
-                if (sibling) {
-                    auto sameElement = [sibling](const WeightedElement& we) {
-                        return we.element == sibling;
-                    };
-                    auto it = std::find_if(m_cells.begin(), m_cells.end(), sameElement);
-                    assert(it != m_cells.end());
                     ++it;
-                    m_cells.insert(it, WeightedElement{theElement.get(), weight, horizontalStyle, verticalStyle});
-                    adopt(std::move(theElement));
-                } else {
-                    push_front(std::move(theElement), weight, horizontalStyle, verticalStyle);
                 }
-            }
-
-            void push_front(std::unique_ptr<Element> e, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
-                assert(e);
-                m_cells.insert(m_cells.begin(), WeightedElement{e.get(), weight, horizontalStyle, verticalStyle});
-                adopt(std::move(e));
-            }
-
-            void pop_front() {
-                assert(m_cells.size() > 0);
-                if (m_cells.size() == 0){
-                    throw std::runtime_error("Attempted to erase from empty list");
-                }
-                release(m_cells.front());
-                // NOTE: m_cells is modified in onRemoveChild
-            }
-
-            void push_back(std::unique_ptr<Element> e, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center) {
-                assert(e);
-                m_cells.push_back(WeightedElement{e.get(), weight, horizontalStyle, verticalStyle});
-                adopt(std::move(e));
-            }
-
-            void pop_back() {
-                assert(m_cells.size() > 0);
-                if (m_cells.size() == 0){
-                    throw std::runtime_error("Attempted to erase from an empty list");
-                }
+                m_cells.insert(it, WeightedElement{theElement.get(), weight, horizontalStyle, verticalStyle, expand});
+                adopt(std::move(theElement));
             }
 
             using Container::clear;
@@ -175,10 +62,10 @@ namespace ofc::ui::dom {
             }
 
         protected:
-            ListContainer(bool direction)
+            ListContainer(bool direction, bool expand)
                 : m_direction(direction)
                 , m_padding(0.0f)
-                , m_expand(false) {
+                , m_expand(expand) {
 
             }
 
@@ -193,28 +80,31 @@ namespace ofc::ui::dom {
                     auto oppositeSize = 0.0f; 
                     for (std::size_t i = 0, iEnd = m_cells.size(); i != iEnd; ++i){
                         const auto ii = m_direction ? i : iEnd - 1 - i;
-                        auto c = m_cells[ii].element;
-                        assert(c);
-                        assert(hasDescendent(c));
+                        const auto& c = m_cells[ii];
+                        const auto e = c.element;
+                        assert(e);
+                        assert(hasDescendent(e));
 
-                        if (maxSizeOrtho.has_value()){
-                            const auto s = std::as_const(*c).size();
+                        if (!c.expand) {
+                            setAvailableSize(e, vec2{0.0f, 0.0f});
+                        } else if (maxSizeOrtho.has_value()){
+                            const auto s = std::as_const(*e).size();
                             if constexpr (std::is_same_v<Tag, VerticalTag>){
-                                setAvailableSize(c, vec2{*maxSizeOrtho, s.y});
+                                setAvailableSize(e, vec2{*maxSizeOrtho, s.y});
                             } else {
-                                setAvailableSize(c, vec2{s.x, *maxSizeOrtho});
+                                setAvailableSize(e, vec2{s.x, *maxSizeOrtho});
                             }
                         } else {
-                            unsetAvailableSize(c);
+                            unsetAvailableSize(e);
                         }
-                        const auto sizeNeeded = getRequiredSize(c);
+                        const auto sizeNeeded = getRequiredSize(e);
                         
                         if constexpr (std::is_same_v<Tag, VerticalTag>){
-                            c->setPos({m_padding, pos + m_padding});
+                            e->setPos({m_padding, pos + m_padding});
                             pos += sizeNeeded.y + 2.0f * m_padding;
                             oppositeSize = std::max(oppositeSize, sizeNeeded.x);
                         } else {
-                            c->setPos({pos + m_padding, m_padding});
+                            e->setPos({pos + m_padding, m_padding});
                             pos += sizeNeeded.x + 2.0f * m_padding;
                             oppositeSize = std::max(oppositeSize, sizeNeeded.y);
                         }
@@ -236,6 +126,7 @@ namespace ofc::ui::dom {
                     const auto dim = std::is_same_v<Tag, VerticalTag> ? &vec2::y : &vec2::x;
                     const auto totalSpace = totalSize.*dim;
                     const auto availSpace = availSize.*dim;
+                    totalSize.*dim = availSize.*dim;
                     if (totalSpace < availSpace) {
                         auto acc = [](float sum, const WeightedElement& we) -> float {
                             return sum + we.weight;
@@ -293,6 +184,7 @@ namespace ofc::ui::dom {
                 float weight = 1.0f;
                 Style verticalStyle = Style::Center;
                 Style horizontalStyle = Style::Center;
+                bool expand = true;
             };
 
             std::vector<WeightedElement> m_cells;
@@ -306,12 +198,12 @@ namespace ofc::ui::dom {
 
     class VerticalList : public detail::ListContainer<detail::VerticalTag> {
     public:
-        VerticalList(VerticalDirection direction = TopToBottom);
+        VerticalList(VerticalDirection direction = TopToBottom, bool expand = false);
     };
 
     class HorizontalList : public detail::ListContainer<detail::HorizontalTag> {
     public:
-        HorizontalList(HorizontalDirection direction = LeftToRight);
+        HorizontalList(HorizontalDirection direction = LeftToRight, bool expand = false);
     };
 
 } // namespace ofc::ui::dom

@@ -7,8 +7,8 @@ namespace ofc::ui {
     template<typename T, typename DerivedContextProvider>
     class ContextProvider : public ForwardingComponent {
     public:
-        ContextProvider(Valuelike<T> pv)
-            : m_propOrVal(std::move(pv)) {
+        ContextProvider(Value<T> pv)
+            : m_value(std::move(pv)) {
 
         }
 
@@ -20,12 +20,13 @@ namespace ofc::ui {
         using ValueType = T;
 
     private:
-        Valuelike<T> m_propOrVal;
+        Value<T> m_value;
         AnyComponent m_component;
 
         void* findContextProvider(const std::type_info& ti) noexcept override final {
             if (ti == typeid(DerivedContextProvider)) {
-                return static_cast<void*>(&m_propOrVal);
+                Value<T>* valuePtr = &m_value;
+                return static_cast<void*>(valuePtr);
             }
             if (auto p = parent()) {
                 return p->findContextProvider(ti);
@@ -60,11 +61,11 @@ namespace ofc::ui {
     protected:
         Observer<ValueType>& getObserver() {
             if (!m_init) {
-                if (m_observer.getValuelike().hasValue()) {
+                if (m_observer.getValue().hasValue()) {
                     m_init = true;
                     return m_observer;
                 } else if (auto pv = static_cast<Derived*>(this)->findContext<ContextProviderType>()){
-                    m_observer.assign(pv->view());
+                    m_observer.assign(*pv);
                     m_init = true;
                     return m_observer;
                 } else {

@@ -40,7 +40,7 @@ namespace ofc::ui {
 
     } // namespace detail
 
-    TextField::TextField(Valuelike<String> s)
+    TextField::TextField(Value<String> s)
         : FontConsumer(&TextField::updateFont)
         , m_stringObserver(this, &TextField::updateString, std::move(s)) {
 
@@ -62,10 +62,10 @@ namespace ofc::ui {
     }
 
     std::unique_ptr<dom::TextEntry> TextField::createElement() {
-        auto font = getFont().getValuelike().getOnce();
+        auto font = getFont().getValue().getOnce();
         assert(font);
         auto cbte = std::make_unique<detail::CallbackTextEntry>(*font, *this);
-        cbte->setText(m_stringObserver.getValuelike().getOnce());
+        cbte->setText(m_stringObserver.getValue().getOnce());
         return cbte;
     }
 

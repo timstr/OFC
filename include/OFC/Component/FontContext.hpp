@@ -6,7 +6,7 @@ namespace ofc::ui {
 
     class UseFont : public ContextProvider<const sf::Font*, UseFont> {
     public:
-        UseFont(Valuelike<const sf::Font*>);
+        UseFont(Value<const sf::Font*>);
     };
 
     template<typename Derived>
@@ -20,7 +20,7 @@ namespace ofc::ui {
 
         }
 
-        Derived& font(Valuelike<const sf::Font*> pv) {
+        Derived& font(Value<const sf::Font*> pv) {
             this->getObserver().assign(std::move(pv));
             return *this;
         }

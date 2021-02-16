@@ -9,7 +9,7 @@ namespace ofc::ui {
 
     class Text : public SimpleComponent<dom::Text>, public FontConsumer<Text> {
     public:
-        Text(Valuelike<String> s);
+        Text(Value<String> s);
 
     private:
         Observer<String> m_stringObserver;
@@ -24,7 +24,7 @@ namespace ofc::ui {
 
     class Span : public Component, public FontConsumer<Span> {
     public:
-        Span(Valuelike<String> s);
+        Span(Value<String> s);
 
     private:
         Observer<std::vector<String>> m_wordsObserver;

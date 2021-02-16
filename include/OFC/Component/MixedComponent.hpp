@@ -162,19 +162,19 @@ namespace ofc::ui {
 
             }
 
-            decltype(auto) backgroundColor(Valuelike<Color> p) {
+            decltype(auto) backgroundColor(Value<Color> p) {
                 m_backgroundColorObserver.assign(std::move(p));
                 return this->self();
             }
-            decltype(auto) borderColor(Valuelike<Color> p) {
+            decltype(auto) borderColor(Value<Color> p) {
                 m_borderColorObserver.assign(std::move(p));
                 return this->self();
             }
-            decltype(auto) borderThickness(Valuelike<float> p) {
+            decltype(auto) borderThickness(Value<float> p) {
                 m_borderThicknessObserver.assign(std::move(p));
                 return this->self();
             }
-            decltype(auto) borderRadius(Valuelike<float> p) {
+            decltype(auto) borderRadius(Value<float> p) {
                 m_borderRadiusObserver.assign(std::move(p));
                 return this->self();
             }
@@ -221,7 +221,7 @@ namespace ofc::ui {
         private:
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
-                const auto& vl = o.getValuelike();
+                const auto& vl = o.getValue();
                 if (vl.hasValue()) {
                     (this->*f)(vl.getOnce());
                 }
@@ -250,80 +250,80 @@ namespace ofc::ui {
 
             }
 
-            decltype(auto) width(Valuelike<float> p) {
+            decltype(auto) width(Value<float> p) {
                 m_widthObserver.assign(std::move(p));
                 return this->self();
             }
 
-            decltype(auto) height(Valuelike<float> p) {
+            decltype(auto) height(Value<float> p) {
                 m_heightObserver.assign(std::move(p));
                 return this->self();
             }
 
-            decltype(auto) size(Valuelike<vec2> p) {
+            decltype(auto) size(Value<vec2> p) {
                 m_widthObserver.assign(p.map([](vec2 v){ return v.x; }));
                 m_heightObserver.assign(p.map([](vec2 v){ return v.y; }));
                 return this->self();
             }
 
-            decltype(auto) minWidth(Valuelike<float> p) {
+            decltype(auto) minWidth(Value<float> p) {
                 m_minWidthObserver.assign(std::move(p));
                 return this->self();
             }
 
-            decltype(auto) minHeight(Valuelike<float> p) {
+            decltype(auto) minHeight(Value<float> p) {
                 m_minHeightObserver.assign(std::move(p));
                 return this->self();
             }
 
-            decltype(auto) minSize(Valuelike<vec2> p) {
+            decltype(auto) minSize(Value<vec2> p) {
                 m_minWidthObserver.assign(p.map([](vec2 v){ return v.x; }));
                 m_minHeightObserver.assign(p.map([](vec2 v){ return v.y; }));
                 return this->self();
             }
 
-            decltype(auto) maxWidth(Valuelike<float> p) {
+            decltype(auto) maxWidth(Value<float> p) {
                 m_maxWidthObserver.assign(std::move(p));
                 return this->self();
             }
 
-            decltype(auto) maxHeight(Valuelike<float> p) {
+            decltype(auto) maxHeight(Value<float> p) {
                 m_maxHeightObserver.assign(std::move(p));
                 return this->self();
             }
 
-            decltype(auto) maxSize(Valuelike<vec2> p) {
+            decltype(auto) maxSize(Value<vec2> p) {
                 m_maxWidthObserver.assign(p.map([](vec2 v){ return v.x; }));
                 m_maxHeightObserver.assign(p.map([](vec2 v){ return v.y; }));
                 return this->self();
             }
 
-            decltype(auto) widthForce(Valuelike<float> p) {
+            decltype(auto) widthForce(Value<float> p) {
                 m_widthObserver.assign(std::move(p));
-                const auto& vl = m_widthObserver.getValuelike();
-                m_minWidthObserver.assign(vl.view());
-                m_maxWidthObserver.assign(vl.view());
+                const auto& vl = m_widthObserver.getValue();
+                m_minWidthObserver.assign(vl);
+                m_maxWidthObserver.assign(vl);
                 return this->self();
             }
 
-            decltype(auto) heightForce(Valuelike<float> p) {
+            decltype(auto) heightForce(Value<float> p) {
                 m_heightObserver.assign(std::move(p));
-                const auto& vl = m_heightObserver.getValuelike();
-                m_minHeightObserver.assign(vl.view());
-                m_maxHeightObserver.assign(vl.view());
+                const auto& vl = m_heightObserver.getValue();
+                m_minHeightObserver.assign(vl);
+                m_maxHeightObserver.assign(vl);
                 return this->self();
             }
 
-            decltype(auto) sizeForce(Valuelike<vec2> p) {
+            decltype(auto) sizeForce(Value<vec2> p) {
                 m_widthObserver.assign(p.map([](vec2 v){ return v.x; }));
-                const auto& wvl = m_widthObserver.getValuelike();
-                m_minWidthObserver.assign(wvl.view());
-                m_maxWidthObserver.assign(wvl.view());
+                const auto& wvl = m_widthObserver.getValue();
+                m_minWidthObserver.assign(wvl);
+                m_maxWidthObserver.assign(wvl);
 
                 m_heightObserver.assign(p.map([](vec2 v){ return v.y; }));
-                const auto& hvl = m_heightObserver.getValuelike();
-                m_minHeightObserver.assign(hvl.view());
-                m_maxHeightObserver.assign(hvl.view());
+                const auto& hvl = m_heightObserver.getValue();
+                m_minHeightObserver.assign(hvl);
+                m_maxHeightObserver.assign(hvl);
                 return this->self();
             }
 
@@ -373,11 +373,11 @@ namespace ofc::ui {
             
                 // NOTE: Element::setWidth and Element::setHeight have hidden default
                 // parameters, preventing maybeCall from working
-                const auto& wvl = component.m_widthObserver.getValuelike();
+                const auto& wvl = component.m_widthObserver.getValue();
                 if (wvl.hasValue()){
                     this->setWidth(wvl.getOnce());
                 }
-                const auto& hvl = component.m_heightObserver.getValuelike();
+                const auto& hvl = component.m_heightObserver.getValue();
                 if (hvl.hasValue()){
                     this->setHeight(hvl.getOnce());
                 }
@@ -390,7 +390,7 @@ namespace ofc::ui {
         private:
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
-                const auto& vl = o.getValuelike();
+                const auto& vl = o.getValue();
                 if (vl.hasValue()) {
                     (this->*f)(vl.getOnce());
                 }
@@ -417,18 +417,18 @@ namespace ofc::ui {
 
             }
 
-            decltype(auto) position(Valuelike<vec2> p) {
+            decltype(auto) position(Value<vec2> p) {
                 m_leftObserver.assign(p.map([](vec2 v){ return v.x; }));
                 m_topObserver.assign(p.map([](vec2 v){ return v.y; }));
                 return this->self();
             }
 
-            decltype(auto) left(Valuelike<float> p) {
+            decltype(auto) left(Value<float> p) {
                 m_leftObserver.assign(std::move(p));
                 return this->self();
             }
 
-            decltype(auto) top(Valuelike<float> p) {
+            decltype(auto) top(Value<float> p) {
                 m_topObserver.assign(std::move(p));
                 return this->self();
             }
@@ -465,7 +465,7 @@ namespace ofc::ui {
         private:
             template<typename T, typename U>
             void maybeCall(Observer<T>& o, void (ElementMixin::* f)(U)) {
-                const auto& vl = o.getValuelike();
+                const auto& vl = o.getValue();
                 if (vl.hasValue()) {
                     (this->*f)(vl.getOnce());
                 }

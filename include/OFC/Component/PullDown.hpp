@@ -14,13 +14,13 @@ namespace ofc::ui {
     template<typename T>
     class PulldownMenu : public StatefulComponent<PulldownMenuState, Ephemeral> {
     public:
-        PulldownMenu(Valuelike<std::vector<std::pair<T, String>>> items, Valuelike<std::size_t> currentIndex)
+        PulldownMenu(Value<std::vector<std::pair<T, String>>> items, Value<std::size_t> currentIndex)
             :  m_items(std::move(items))
             ,  m_currentIndex(std::move(currentIndex)) {
             
         }
 
-        PulldownMenu(Valuelike<std::vector<String>> items)
+        PulldownMenu(Value<std::vector<String>> items)
             :  m_items(items.vectorMap([](const String& s){
                 return std::pair{s, s};
             })) {
@@ -33,8 +33,8 @@ namespace ofc::ui {
         }
 
     private:
-        Valuelike<std::vector<std::pair<T, String>>> m_items;
-        Valuelike<std::size_t> m_currentIndex;
+        Value<std::vector<std::pair<T, String>>> m_items;
+        Value<std::size_t> m_currentIndex;
         std::function<void(CRefOrValue<T>, std::size_t)> m_onChange;
 
         AnyComponent render() const override {
@@ -80,10 +80,10 @@ namespace ofc::ui {
                     .onLoseFocus([this]{
                         stateMut().expanded.set(false);
                     })
-                    .containing(Text(combine(s.expanded, m_currentIndex.view(), m_items.view()).map(getCurrentName))),
+                    .containing(Text(combine(s.expanded, m_currentIndex, m_items).map(getCurrentName))),
                 If(s.expanded).then(
                     FreeContainer{}.containing(VerticalList{}.containing(
-                        ForEach(m_items.view()).Do(makeItem)
+                        ForEach(m_items).Do(makeItem)
                     ))
                 )
             ));
@@ -91,12 +91,12 @@ namespace ofc::ui {
     };
 
     template<typename T>
-    PulldownMenu(const Value<std::vector<std::pair<T, String>>>&, Valuelike<std::size_t>) -> PulldownMenu<T>;
+    PulldownMenu(Value<std::vector<std::pair<T, String>>>, Value<std::size_t>) -> PulldownMenu<T>;
 
     template<typename T>
-    PulldownMenu(std::vector<std::pair<T, String>>&&, Valuelike<std::size_t>) -> PulldownMenu<T>;
+    PulldownMenu(std::vector<std::pair<T, String>>&&, Value<std::size_t>) -> PulldownMenu<T>;
 
     template<typename T>
-    PulldownMenu(const std::vector<std::pair<T, String>>&, Valuelike<std::size_t>) -> PulldownMenu<T>;
+    PulldownMenu(const std::vector<std::pair<T, String>>&, Value<std::size_t>) -> PulldownMenu<T>;
 
 } // namespace ofc::ui

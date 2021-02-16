@@ -889,6 +889,14 @@ namespace ofc::ui {
 
             if (!availSize){
                 elem->m_size = actualRequiredSize;
+            } else {
+                elem->m_size.x = std::max(elem->m_size.x, actualRequiredSize.x);
+                elem->m_size.y = std::max(elem->m_size.y, actualRequiredSize.y);
+                if (actualRequiredSize.x > availSize->x || actualRequiredSize.y > availSize->y) {
+                    if (auto p = elem->getParentContainer()){
+                        p->requireUpdate();
+                    }
+                }
             }
 
             // Limit the element's size according to its minimum and maximum size

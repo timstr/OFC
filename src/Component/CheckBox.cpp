@@ -6,7 +6,7 @@
 
 namespace ofc::ui {
     
-    CheckBox::CheckBox(Valuelike<bool> value)
+    CheckBox::CheckBox(Value<bool> value)
         : m_value(std::move(value)) {
 
     }
@@ -30,7 +30,7 @@ namespace ofc::ui {
                 return true;
             })
             .containing(
-                Center(If(m_value.view()).then(Text("X")))
+                Center(If(m_value).then(Text("X")))
             );
     }
 

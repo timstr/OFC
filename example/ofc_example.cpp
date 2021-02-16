@@ -220,6 +220,11 @@ private:
 
 class Graph {
 public:
+    Graph()
+        : m_nodes(std::vector<std::unique_ptr<Node>>{}) {
+
+    }
+
     ~Graph() noexcept {
         for (auto& np : m_nodes.getOnce()) {
             assert(np->m_parentGraph == this);
@@ -252,7 +257,7 @@ public:
         (void)p;
     }
 
-    Valuelike<std::vector<Node*>> nodes() const {
+    Value<std::vector<Node*>> nodes() const {
         return m_nodes.vectorMap([](const std::unique_ptr<Node>& p){
             return p.get();
         });
@@ -327,7 +332,7 @@ AnyComponent MakeNodeUI(Node* n) {
 
 class NodeUI : public PureComponent {
 public:
-    NodeUI(Node* node, Valuelike<vec2> position) 
+    NodeUI(Node* node, Value<vec2> position) 
         : m_node(node)
         , m_position(std::move(position)) {
     
@@ -340,16 +345,30 @@ public:
 
 private:
     AnyComponent inputPeg() const {
-        return Text("In");
+        return MixedContainerComponent<FreeContainerBase, Boxy>{}
+            .borderRadius(15.0f)
+            .backgroundColor(0xF4FF7FFF)
+            .borderColor(0xFF)
+            .borderThickness(2.0f)
+            .containing(
+                Center(Text("In"))
+            );
     }
 
     AnyComponent outputPeg() const {
-        return Text("Out");
+        return MixedContainerComponent<FreeContainerBase, Boxy>{}
+            .borderRadius(15.0f)
+            .backgroundColor(0xF4FF7FFF)
+            .borderColor(0xFF)
+            .borderThickness(2.0f)
+            .containing(
+                Center(Text("Out"))
+            );
     }
 
     AnyComponent body() const {
         return MixedContainerComponent<VerticalListBase, Boxy, Positionable, Resizable>{}
-            .position(m_position.view())
+            .position(m_position)
             .minSize(vec2{50.0f, 50.0f})
             .backgroundColor(0xFFBB99FF)
             .borderColor(0xFF)
@@ -383,14 +402,15 @@ private:
                 }
                 return std::nullopt;
             })
-            .containing(inputPeg(),
+            .containing(
+                inputPeg(),
                 body(),
                 outputPeg()
             );
     }
 
     Node* const m_node;
-    Valuelike<vec2> m_position;
+    Value<vec2> m_position;
     std::function<void(vec2)> m_onChangePosition;
 };
 
@@ -416,7 +436,7 @@ private:
                        return "There are " + std::to_string(loe.newValue().size()) + " nodes";
                     }))
             ),
-            ForEach(m_nodePositions.view())
+            ForEach(m_nodePositions)
                 .Do([this](const NodePosition& np, const Value<std::size_t>& idx) -> AnyComponent {
                     return NodeUI{np.first, np.second}
                         .onChangePosition([this, &idx](vec2 v){
@@ -433,11 +453,11 @@ private:
     
     using NodePosition = std::pair<Node*, Value<vec2>>;
     
-    Valuelike<std::vector<NodePosition>> m_nodePositions;
+    Value<std::vector<NodePosition>> m_nodePositions;
 };
 
 int main(){
-
+    
     auto graph = Graph{};
 
     graph.add(std::make_unique<StringNode>("Blab blab"));
@@ -479,15 +499,16 @@ int main(){
         }
         return items;
     });
+    using VectorOfItems = std::vector<std::pair<int, String>>;
 
-    auto someNumber = Value{5.0f};
-    auto someBoolean = Value{true};
-    auto someItems = Value{std::vector<std::pair<int, String>>{{1, "One"}, {2, "Two"}, {3, "Three"}}};
-    auto currentItem = Value{static_cast<std::size_t>(-1)};
-    auto toggleState = Value{false};
-    auto theString = Value{String{"Enter text here..."}};
-    auto theDouble = Value{0.001};
-    auto theInt = Value{99};
+    auto someNumber = Value<float>{5.0f};
+    auto someBoolean = Value<bool>{true};
+    auto someItems = Value<VectorOfItems>{VectorOfItems{{1, "One"}, {2, "Two"}, {3, "Three"}}};
+    auto currentItem = Value<std::size_t>{static_cast<std::size_t>(-1)};
+    auto toggleState = Value<bool>{false};
+    auto theString = Value<String>{"Enter text here..."};
+    auto theDouble = Value<double>{0.001};
+    auto theInt = Value<int>{99};
 
     AnyComponent comp = UseFont(&getFont()).with(
         MixedContainerComponent<FlowContainerBase, Boxy, Resizable>{}
@@ -527,7 +548,6 @@ int main(){
             )
     );
 
-
     auto root = Root(FreeContainer{}.containing(std::move(comp)));
 
     Window& win = Window::create(std::move(root), 600, 400, "Test");
@@ -536,5 +556,4 @@ int main(){
 
     return 0;
     */
-    
 }

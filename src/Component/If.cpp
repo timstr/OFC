@@ -2,7 +2,7 @@
 
 namespace ofc::ui {
 
-    If::If(Valuelike<bool> c)
+    If::If(Value<bool> c)
         : m_condition(this, &If::updateCondition, std::move(c)) {
 
     }
@@ -18,7 +18,7 @@ namespace ofc::ui {
     }
 
     void If::onMount(const dom::Element* beforeElement) {
-        if (m_condition.getValuelike().getOnce()) {
+        if (m_condition.getValue().getOnce()) {
             m_thenComponent.tryMount(this, beforeElement);
         } else {
             m_elseComponent.tryMount(this, beforeElement);

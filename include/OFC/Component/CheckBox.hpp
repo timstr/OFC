@@ -7,12 +7,12 @@ namespace ofc::ui {
 
     class CheckBox : public PureComponent {
     public:
-        CheckBox(Valuelike<bool> value);
+        CheckBox(Value<bool> value);
 
         CheckBox& onChange(std::function<void(bool)> f);
 
     private:
-        Valuelike<bool> m_value;
+        Value<bool> m_value;
         std::function<void(bool)> m_onChange;
 
         AnyComponent render() const override final;

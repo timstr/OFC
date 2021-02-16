@@ -7,7 +7,7 @@ namespace ofc::ui {
     template<typename T>
     class ForEach : public ForwardingComponent {
     public:
-        ForEach(Valuelike<std::vector<T>> pv)
+        ForEach(Value<std::vector<T>> pv)
             : m_observer(this, &ForEach::updateContents, std::move(pv)) {
 
         }
@@ -40,7 +40,7 @@ namespace ofc::ui {
         void onMount(const dom::Element* beforeSibling) override final {
             assert(m_fn);
             assert(m_components.empty());
-            const auto& vals = m_observer.getValuelike().getOnce();
+            const auto& vals = m_observer.getValue().getOnce();
             m_components.reserve(vals.size());
             auto i = std::size_t{0};
             for (const auto& v : vals) {

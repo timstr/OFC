@@ -6,7 +6,7 @@ namespace ofc::ui {
 
     class If : public ForwardingComponent {
     public:
-        If(Valuelike<bool> c);
+        If(Value<bool> c);
 
         If& then(AnyComponent c);
 

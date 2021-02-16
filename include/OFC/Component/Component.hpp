@@ -39,13 +39,13 @@ namespace ofc::ui {
         void unmount();
 
         template<typename ContextProviderType>
-        Valuelike<typename ContextProviderType::ValueType>* findContext() noexcept {
+        Value<typename ContextProviderType::ValueType>* findContext() noexcept {
             const auto p = parent();
             if (!p) {
                 return nullptr;
             }
             if (auto pc = parent()->findContextProvider(typeid(ContextProviderType))) {
-                return static_cast<Valuelike<ContextProviderType::ValueType>*>(pc);
+                return static_cast<Value<ContextProviderType::ValueType>*>(pc);
             }
             return nullptr;
         }

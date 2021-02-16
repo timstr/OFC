@@ -16,7 +16,7 @@ namespace ofc::ui {
     template<typename NumberType>
     class Slider : public StatefulComponent<SliderState<NumberType>, Ephemeral> {
     public:
-        Slider(Valuelike<NumberType> minimum, Valuelike<NumberType> maximum, Valuelike<NumberType> value)
+        Slider(Value<NumberType> minimum, Value<NumberType> maximum, Value<NumberType> value)
             : m_minimum(std::move(minimum))
             , m_maximum(std::move(maximum))
             , m_value(std::move(value)) {
@@ -29,28 +29,28 @@ namespace ofc::ui {
             return *this;
         }
 
-        Slider* width(Valuelike<float> w){
+        Slider& width(Value<float> w){
             m_width = std::move(w);
             return *this;
         }
 
-        Slider* height(Valuelike<float> h){
+        Slider& height(Value<float> h){
             m_height = std::move(h);
             return *this;
         }
 
-        Slider* size(Valuelike<vec2> s){
+        Slider& size(Value<vec2> s){
             m_width = s.map([](vec2 v){ return v.x; });
             m_height = s.map([](vec2 v){ return v.y; });
             return *this;
         }
 
     private:
-        Valuelike<NumberType> m_minimum;
-        Valuelike<NumberType> m_maximum;
-        Valuelike<NumberType> m_value;
-        Valuelike<float> m_width {100.0f};
-        Valuelike<float> m_height {20.0f};
+        Value<NumberType> m_minimum;
+        Value<NumberType> m_maximum;
+        Value<NumberType> m_value;
+        Value<float> m_width {100.0f};
+        Value<float> m_height {20.0f};
         std::function<void(NumberType)> m_onChange;
 
         AnyComponent render() const override {
@@ -58,7 +58,7 @@ namespace ofc::ui {
                 return std::to_string(x);
             });
 
-            auto leftPosition = combine(m_minimum.view(), m_maximum.view(), m_value.view(), m_width.view(), m_height.view())
+            auto leftPosition = combine(m_minimum, m_maximum, m_value, m_width, m_height)
                 .map([](NumberType min, NumberType max, NumberType v, float w, float h){
                     assert(max >= min);
                     if (max == min){
@@ -132,11 +132,11 @@ namespace ofc::ui {
             };
 
             return MixedContainerComponent<FreeContainerBase, Boxy, Resizable, KeyPressable>{}
-                .sizeForce(combine(m_width.view(), m_height.view()).map([](float w, float h){ return vec2{w, h}; }))
+                .sizeForce(combine(m_width, m_height).map([](float w, float h){ return vec2{w, h}; }))
                 .backgroundColor(0xddddddff)
                 .borderColor(0x888888ff)
                 .borderThickness(2.0f)
-                .borderRadius(m_height.view())
+                .borderRadius(m_height)
                 .onKeyDown(handleKeyDown)
                 .containing(
                     Text(std::move(valueAsString)),
@@ -145,7 +145,7 @@ namespace ofc::ui {
                         .backgroundColor(0xffffff80)
                         .borderColor(0x888888ff)
                         .borderThickness(2.0f)
-                        .borderRadius(m_height.view())
+                        .borderRadius(m_height)
                         .top(0.0f)
                         .left(std::move(leftPosition))
                         .onLeftClick([this](int, ModifierKeys mod, auto action){

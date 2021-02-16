@@ -17,7 +17,7 @@ namespace ofc::ui {
 
     class TextField : public SimpleComponent<dom::TextEntry>, public FontConsumer<TextField> {
     public:
-        TextField(Valuelike<String> s);
+        TextField(Value<String> s);
 
         TextField& onChange(std::function<void(const String&)> f);
 
@@ -47,7 +47,7 @@ namespace ofc::ui {
     public:
         static_assert(std::is_arithmetic_v<NumberType>);
 
-        NumberTextField(Valuelike<NumberType> v)
+        NumberTextField(Value<NumberType> v)
             : m_value(std::move(v)) {
         
         }
@@ -58,7 +58,7 @@ namespace ofc::ui {
         }
 
     private:
-        Valuelike<NumberType> m_value;
+        Value<NumberType> m_value;
         std::function<void(NumberType)> m_onSubmit;
 
         AnyComponent render() const noexcept override {

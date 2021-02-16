@@ -292,12 +292,16 @@ namespace ofc::ui {
         const VerticalDirection m_direction;
         bool m_expand;
         AnyComponent m_childComponent;
+        
+        virtual std::unique_ptr<dom::VerticalList> createContainer() {
+            return std::make_unique<dom::VerticalList>(
+                m_direction,
+                m_expand
+            );
+        }
 
         void onMountContainer(const dom::Element* beforeElement) override final {
             m_childComponent.tryMount(this, beforeElement);
-            auto c = this->container();
-            assert(c);
-            c->setExpand(m_expand);
         }
 
         void onUnmountContainer() override final {
@@ -316,11 +320,7 @@ namespace ofc::ui {
                 w = wt->weight;
             }
             const auto& [xs, ys] = detail::getListStyleFromScope<dom::VerticalList>(scope);
-            if (m_direction == TopToBottom){
-                c->insertBefore(b, std::move(element), w, xs, ys);
-            } else {
-                c->insertAfter(b, std::move(element), w, xs, ys);
-            }
+            c->insertAfter(b, std::move(element), w, xs, ys);
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -361,12 +361,16 @@ namespace ofc::ui {
         const HorizontalDirection m_direction;
         bool m_expand;
         AnyComponent m_childComponent;
+        
+        virtual std::unique_ptr<dom::HorizontalList> createContainer() {
+            return std::make_unique<dom::HorizontalList>(
+                m_direction,
+                m_expand
+            );
+        }
 
         void onMountContainer(const dom::Element* beforeElement) override final {
             m_childComponent.tryMount(this, beforeElement);
-            auto c = this->container();
-            assert(c);
-            c->setExpand(m_expand);
         }
 
         void onUnmountContainer() override final {
@@ -385,11 +389,7 @@ namespace ofc::ui {
                 w = wt->weight;
             }
             const auto& [xs, ys] = detail::getListStyleFromScope<dom::HorizontalList>(scope);
-            if (m_direction == LeftToRight){
-                c->insertBefore(b, std::move(element), w, xs, ys);
-            } else {
-                c->insertAfter(b, std::move(element), w, xs, ys);
-            }
+            c->insertAfter(b, std::move(element), w, xs, ys);
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {

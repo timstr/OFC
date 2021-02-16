@@ -68,6 +68,8 @@ namespace ofc::ui::dom {
                         || ps == Style::Center;
                 };
 
+                setAvailableSize(elem, vec2{0.0f, 0.0f});
+
                 const auto req = getRequiredSize(elem);
                 if (isContraining(style.x) && isContraining(style.y)){
                     maxSize.x = std::max(maxSize.x, req.x);

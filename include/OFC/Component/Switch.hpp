@@ -9,7 +9,7 @@ namespace ofc::ui {
     template<typename T>
     class Switch : public ForwardingComponent {
     public:
-        Switch(Valuelike<T> p)
+        Switch(Value<T> p)
             : m_observer(this, &Switch<T>::handleUpdate, std::move(p)) {
 
         }

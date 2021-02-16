@@ -20,7 +20,7 @@ namespace ofc::ui {
     template<typename T>
     class When : public ForwardingComponent {
     public:
-        When(Valuelike<T*> pv)
+        When(Value<T*> pv)
             : m_value(this, &When<T>::updateValue, std::move(pv)) {
 
         }

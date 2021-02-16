@@ -32,7 +32,7 @@ namespace ofc::ui {
 
     } // namespace detail
 
-    Text::Text(Valuelike<String> s)
+    Text::Text(Value<String> s)
         : FontConsumer(&Text::updateFont)
         , m_stringObserver(this, &Text::updateString, std::move(s)) {
 
@@ -40,8 +40,8 @@ namespace ofc::ui {
 
     std::unique_ptr<dom::Text> Text::createElement() {
         return std::make_unique<dom::Text>(
-            m_stringObserver.getValuelike().getOnce(),
-            *getFont().getValuelike().getOnce(),
+            m_stringObserver.getValue().getOnce(),
+            *getFont().getValue().getOnce(),
             sf::Color::Black
         );
     }
@@ -57,14 +57,14 @@ namespace ofc::ui {
     
     
 
-    Span::Span(Valuelike<String> s)
+    Span::Span(Value<String> s)
         : FontConsumer(&Span::updateFont)
         , m_wordsObserver(this, &Span::updateWords, std::move(s).map(detail::splitIntoWords)) {
 
     }
 
     void Span::onMount(const dom::Element* beforeSibling) {
-        const auto& newWords = m_wordsObserver.getValuelike().getOnce();
+        const auto& newWords = m_wordsObserver.getValue().getOnce();
         m_words.reserve(newWords.size());
         for (const auto& w : newWords) {
             auto t = makeWord(w);
@@ -119,7 +119,7 @@ namespace ofc::ui {
     std::unique_ptr<dom::Text> Span::makeWord(const String& str){
         return std::make_unique<dom::Text>(
             str,
-            *getFont().getValuelike().getOnce(),
+            *getFont().getValue().getOnce(),
             sf::Color::Black
         );
     }

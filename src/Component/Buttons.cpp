@@ -5,7 +5,7 @@
 
 namespace ofc::ui {
 
-    Button::Button(Valuelike<String> s)
+    Button::Button(Value<String> s)
         : m_caption(std::move(s)) {
 
     }
@@ -28,10 +28,10 @@ namespace ofc::ui {
                 }
                 return true;
             })
-            .containing(Text(m_caption.view()));
+            .containing(Text(m_caption));
     }
     
-    Toggle::Toggle(Valuelike<String> falseLabel, Valuelike<String> trueLabel, Valuelike<bool> value)
+    Toggle::Toggle(Value<String> falseLabel, Value<String> trueLabel, Value<bool> value)
         : m_falseLabel(std::move(falseLabel))
         , m_trueLabel(std::move(trueLabel))
         , m_value(std::move(value)) {
@@ -48,7 +48,7 @@ namespace ofc::ui {
             return v ? tl : fl;
         };
 
-        auto currentLabel = combine(m_falseLabel.view(), m_trueLabel.view(), m_value.view())
+        auto currentLabel = combine(m_falseLabel, m_trueLabel, m_value)
             .map(std::move(getCurrentLabel));
 
         return MixedContainerComponent<FlowContainerBase, Boxy, Clickable, Resizable>{}

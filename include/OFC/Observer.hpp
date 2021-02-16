@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -11,9 +12,6 @@ namespace ofc {
     
     template<typename T>
     class Value;
-
-    template<typename T>
-    class Valuelike;
 
     template<typename T>
     class Observer;
@@ -318,14 +316,29 @@ namespace ofc {
 
 
     template<typename T>
-    class ValueImpl {
+    class ValueImpl : public std::enable_shared_from_this<ValueImpl<T>> {
     public:
-        ValueImpl() noexcept
+        explicit ValueImpl() noexcept
             : m_value{}
             , m_previousValue(std::nullopt) {
         
         }
-        ValueImpl(const T& t)
+
+        template<
+            typename... Args,
+            std::enable_if_t<
+                (sizeof...(Args) > 0)
+                && std::is_constructible_v<T, Args...>
+            >* = nullptr
+        >
+        ValueImpl(Args&&... args)
+            : m_value(std::forward<Args>(args)...)
+            , m_previousValue(std::nullopt) {
+        
+            static_assert(std::is_constructible_v<T, Args...>);
+        }
+
+        /* ValueImpl(const T& t)
             : m_value(t)
             , m_previousValue(std::nullopt) {
 
@@ -334,13 +347,14 @@ namespace ofc {
             : m_value(std::move(t))
             , m_previousValue(std::nullopt) {
 
-        }
+        } */
 
         ValueImpl(const ValueImpl&) = delete;
         ValueImpl(ValueImpl&&) = delete;
 
         virtual ~ValueImpl() noexcept {
-            for (auto& o : m_observers) {
+            for (const auto& o : m_observers) {
+                assert(o);
                 o->reset();
             }
         }
@@ -368,36 +382,41 @@ namespace ofc {
         }
 
         template<typename F>
-        auto map(F&& f) const {
+        auto map(F&& f) {
             using R = std::invoke_result_t<F, DiffArgType<T>>;
             static_assert(!std::is_void_v<R>);
             static_assert(std::is_base_of_v<ValueImpl<R>, DerivedValueImpl<R, T>>);
-            return Value<R>{std::make_unique<DerivedValueImpl<R, T>>(
+            auto shared_this = this->shared_from_this();
+            assert(shared_this);
+            return Value<R>{std::make_shared<DerivedValueImpl<R, T>>(
                 std::forward<F>(f),
-                Valuelike<T>(this)
+                Value<T>(std::move(shared_this))
             )};
         }
 
         template<typename F, typename U = T, std::enable_if_t<detail::IsVector<U>>* = nullptr>
-        auto vectorMap(F&& f) const {
+        auto vectorMap(F&& f) {
             using ElementType = typename T::value_type;
             static_assert(std::is_invocable_v<F, CRefOrValue<ElementType>>);
             using R = std::invoke_result_t<F, CRefOrValue<ElementType>>;
             static_assert(!std::is_void_v<R>);
             static_assert(!std::is_reference_v<R>);
-            return Value<std::vector<R>>{std::make_unique<VectorMappedValueImpl<R, ElementType>>(
+            auto shared_this = this->shared_from_this();
+            assert(shared_this);
+            return Value<std::vector<R>>{std::make_shared<VectorMappedValueImpl<R, ElementType>>(
                 std::forward<F>(f),
-                Valuelike<T>(this)
+                Value<T>{std::move(shared_this)}
             )};
         }
 
         template<typename P, std::enable_if_t<std::is_member_object_pointer_v<P>>* = nullptr>
-        auto project(P memptr) const {
+        auto project(P memptr) {
             static_assert(std::is_same_v<T, std::decay_t<DiffArgType<T>>>);
             return this->map([memptr](CRefOrValue<T> t){ return t.*memptr; });
         }
 
     private:
+        // TODO: consider renaming to "state" and "previousState" to avoid ambiguity
         T m_value;
         std::optional<SummaryType<T>> m_previousValue;
         mutable std::vector<Observer<T>*> m_observers;
@@ -445,31 +464,53 @@ namespace ofc {
     template<typename T>
     class Value {
     public:
-        Value()
-            : m_impl(std::make_unique<ValueImpl<T>>()) {
+        explicit Value()
+            : m_impl(nullptr) {
+            // : m_impl(std::make_shared<ValueImpl<T>>()) {
         
         }
 
-        explicit Value(const T& t)
-            : m_impl(std::make_unique<ValueImpl<T>>(t)) {
+        template<
+            typename... Args,
+            std::enable_if_t<
+                (sizeof...(Args) > 0)
+                && std::is_constructible_v<T, Args...>
+            >* = nullptr
+        > Value(Args&&... args)
+            : m_impl(std::make_shared<ValueImpl<T>>(std::forward<Args>(args)...)) {
+        
+        }
+
+        /* Value(const T& t)
+            : m_impl(std::make_shared<ValueImpl<T>>(t)) {
 
         }
-        explicit Value(T&& t)
-            : m_impl(std::make_unique<ValueImpl<T>>(std::move(t))) {
+        Value(T&& t)
+            : m_impl(std::make_shared<ValueImpl<T>>(std::move(t))) {
 
-        }
+        } */
 
         Value(Value&& v) noexcept
             : m_impl(std::move(v.m_impl)) {
         
         }
-        Value(const Value&) = delete;
+        Value(const Value& v) noexcept
+            : m_impl(v.m_impl) {
+        
+        }
 
         Value& operator=(Value&& v) noexcept {
-            m_impl = std::move(v.m_impl);
+            if (&v != this) {
+                m_impl = std::move(v.m_impl);
+            }
             return *this;
         }
-        Value& operator=(const Value&) = delete;
+        Value& operator=(const Value& v) noexcept {
+            if (&v != this) {
+                m_impl = v.m_impl;
+            }
+            return *this;
+        }
 
         const T& getOnce() const noexcept {
             assert(m_impl);
@@ -489,6 +530,14 @@ namespace ofc {
         void set(T&& t) {
             assert(m_impl);
             m_impl->set(std::move(t));
+        }
+
+        void reset() {
+            m_impl = nullptr;
+        }
+
+        bool hasValue() const noexcept {
+            return static_cast<bool>(m_impl);
         }
 
         // This function serves to enable "interior mutability" as used in Rust,
@@ -517,11 +566,19 @@ namespace ofc {
         }
 
     private:
-        std::unique_ptr<ValueImpl<T>> m_impl;
-
-        Value(std::unique_ptr<ValueImpl<T>> impl) noexcept
+        Value(std::shared_ptr<ValueImpl<T>> impl) noexcept
             : m_impl(std::move(impl)) {
         
+        }
+
+        std::shared_ptr<ValueImpl<T>> m_impl;
+        
+        ValueImpl<T>* impl() noexcept {
+            return m_impl.get();
+        }
+
+        const ValueImpl<T>* impl() const noexcept {
+            return m_impl.get();
         }
 
         const void* summarize() const noexcept {
@@ -531,7 +588,7 @@ namespace ofc {
         template<typename TT>
         friend class ValueImpl;
 
-        friend Valuelike<T>;
+        friend class Observer<T>;
 
         template<typename TT, typename... Rest>
         friend class CombinedValues;
@@ -542,7 +599,7 @@ namespace ofc {
     template<typename T, typename... Rest>
     class CombinedValues final {
     public:
-        CombinedValues(Valuelike<T>&& t, Valuelike<Rest>&&... rest) 
+        CombinedValues(Value<T> t, Value<Rest>... rest) 
             : m_values(std::move(t), std::move(rest)...) {
 
         }
@@ -556,7 +613,7 @@ namespace ofc {
         }
 
     private:
-        std::tuple<Valuelike<T>, Valuelike<Rest>...> m_values;
+        std::tuple<Value<T>, Value<Rest>...> m_values;
 
         template<typename F, typename R, std::size_t... Indices>
         Value<R> mapImpl(F&& f, std::index_sequence<Indices...> /* indices */) {
@@ -580,11 +637,6 @@ namespace ofc {
         };
 
         template<typename T>
-        struct DeduceValue<Valuelike<T>> {
-            using Type = T;
-        };
-
-        template<typename T>
         using DeduceValueType = typename DeduceValue<std::decay_t<T>>::Type;
     } // namespace detail
 
@@ -594,219 +646,10 @@ namespace ofc {
         detail::DeduceValueType<Rest>...
     > combine(T&& t, Rest&&... rest) {
         return {
-            Valuelike<detail::DeduceValueType<T>>{std::forward<T>(t)},
-            Valuelike<detail::DeduceValueType<Rest>>{std::forward<Rest>(rest)}...
+            std::forward<T>(t),
+            std::forward<Rest>(rest)...
         };
     }
-
-    template<typename T>
-    class Valuelike final {
-    public:
-        explicit Valuelike() noexcept
-            : m_data(static_cast<const ValueImpl<T>*>(nullptr)) {
-
-        }
-
-        // Valuelike is implictly constructible from a reference
-        // to a matching value, in which case it will point to that value
-        // and contain no fixed value.
-        Valuelike(const Value<T>& target) noexcept
-            : m_data(target.m_impl.get()) {
-
-        }
-
-        Valuelike(Value<T>&& target) noexcept
-            : m_data(std::move(target)) {
-            
-        }
-
-        // Valuelike is implicitly constructible from anything that can be
-        // used to construct a value of type T, in which case it will not point
-        // to any value and will instead contain a fixed value.
-        template<
-            typename... Args,
-            std::enable_if_t<
-                (sizeof...(Args) > 0) &&
-                !std::is_same_v<const Value<T>&, Args...> &&
-                std::is_constructible_v<T, Args...>
-            >* = nullptr
-        >
-        Valuelike(Args&&... args)
-            : m_data(std::in_place_type<Value<T>>, std::forward<Args>(args)...) {
-
-        }
-
-        Valuelike(Valuelike&& v) noexcept
-            : m_data(std::exchange(v.m_data, static_cast<const ValueImpl<T>*>(nullptr))) {
-            
-        }
-
-        Valuelike(const Valuelike&) = delete;
-
-        ~Valuelike() noexcept = default;
-
-        // Returns a copy of the Valuelike, except that if the original owns
-        // its own derived value, the returned copy will point to that derived
-        // value instead of owning a copy.
-        Valuelike view() const & noexcept {
-            if (auto pptarget = std::get_if<const ValueImpl<T>*>(&m_data); pptarget && *pptarget){
-                return Valuelike{*pptarget};
-            } else if (auto pval = std::get_if<Value<T>>(&m_data)) {
-                assert(pval->m_impl);
-                return Valuelike{pval->m_impl.get()};
-            } else {
-                return Valuelike{};
-            }
-        }
-
-        Valuelike& operator=(Valuelike&& v) noexcept {
-            if (&v == this) {
-                return *this;
-            }
-            m_data = std::exchange(v.m_data, static_cast<const ValueImpl<T>*>(nullptr));
-            return *this;
-        }
-
-        Valuelike& operator=(const Valuelike&) = delete;
-
-        bool hasTargetValue() const noexcept {
-            auto pptarget = std::get_if<const ValueImpl<T>*>(&m_data);
-            return pptarget && *pptarget;
-        }
-
-        bool hasOwnValue() const noexcept {
-            auto pval = std::get_if<Value<T>>(&m_data);
-            assert(!pval || pval->m_impl); // if m_data stores a Value<T>, it must not be empty
-            return pval;
-        }
-
-        bool hasValue() const noexcept {
-            return hasTargetValue() || hasOwnValue();
-        }
-
-        const T& getOnce() const & noexcept {
-            assert(hasValue());
-            if (auto pptarget = std::get_if<const ValueImpl<T>*>(&m_data); pptarget && *pptarget){
-                return (*pptarget)->getOnce();
-            } else {
-                auto pval = std::get_if<Value<T>>(&m_data);
-                assert(pval);
-                assert(pval->m_impl);
-                return pval->getOnce();
-            }
-        }
-
-        // For expiring Valuelike objects, getOnce() is overloaded to
-        // return by value, avoiding a dangling reference
-        T getOnce() const && noexcept {
-            T ret = static_cast<const Valuelike&>(*this).getOnce();
-            return ret;
-        }
-
-        void reset() {
-            m_data = static_cast<const ValueImpl<T>*>(nullptr);
-        }
-
-        template<typename F>
-        auto map(F&& f) const & {
-            using R = std::invoke_result_t<std::decay_t<F>, DiffArgType<T>>;
-            
-            if (hasValue()){
-                auto v = getValue();
-                assert(v);
-                return Valuelike<R>{v->map(std::forward<F>(f))};
-            } else {
-                return Valuelike<R>{};
-            }
-        }
-
-        template<typename F>
-        auto map(F&& f) && {
-            return combine(std::move(*this)).map(std::forward<F>(f));
-        }
-
-        template<typename F, typename U = T, std::enable_if_t<detail::IsVector<U>>* = nullptr>
-        auto vectorMap(F&& f) const & {
-            using ElementType = typename T::value_type;
-            using MappedElementType = std::invoke_result_t<std::decay_t<F>, DiffArgType<ElementType>>;
-            using R = std::vector<MappedElementType>;
-
-            if (hasValue()){
-                auto v = getValue();
-                assert(v);
-                return Valuelike<R>{v->vectorMap(std::forward<F>(f))};
-            } else {
-                return Valuelike<R>{};
-            }
-        }
-
-        template<typename F, typename U = T, std::enable_if_t<detail::IsVector<U>>* = nullptr>
-        auto vectorMap(F&& f) && {
-            using ElementType = typename T::value_type;
-            using MappedElementType = std::invoke_result_t<std::decay_t<F>, DiffArgType<ElementType>>;
-            using R = std::vector<MappedElementType>;
-            std::unique_ptr<ValueImpl<R>> p = std::make_unique<VectorMappedValueImpl<MappedElementType, ElementType>>(
-                std::forward<F>(f),
-                std::move(*this)
-            );
-            return Valuelike<R>{std::move(p)};
-        }
-
-        template<typename P, std::enable_if_t<std::is_member_object_pointer_v<P>>* = nullptr>
-        auto project(P memptr) const & {
-            using R = decltype(std::declval<T>().*memptr);
-
-            if (hasValue()){
-                auto v = getValue();
-                assert(v);
-                return Valuelike<R>{v->project(memptr)};
-            } else {
-                return Valuelike<R>{};
-            }
-        }
-
-        template<typename P, std::enable_if_t<std::is_member_object_pointer_v<P>>* = nullptr>
-        auto project(P memptr) && {
-            static_assert(std::is_same_v<T, std::decay_t<DiffArgType<T>>>);
-            return std::move(*this).map([memptr](CRefOrValue<T> t){ return t.*memptr; });
-        }
-
-    private:
-        Valuelike(const ValueImpl<T>* impl)
-            : m_data(impl) {
-        
-        }
-
-        Valuelike(std::unique_ptr<ValueImpl<T>> vp)
-            : m_data(Value<T>{std::move(vp)}) {
-        
-        }
-
-        const ValueImpl<T>* getValue() const noexcept {
-            if (auto pval = std::get_if<Value<T>>(&m_data)) {
-                return pval->m_impl.get();
-            } else if (auto pptarget = std::get_if<const ValueImpl<T>*>(&m_data)){
-                return *pptarget;
-            } else {
-                return nullptr;
-            }
-        }
-
-        ValueImpl<T>* getValue() noexcept {
-            return const_cast<ValueImpl<T>*>(const_cast<const Valuelike<T>*>(this)->getValue());
-        }
-
-        std::variant<
-            const ValueImpl<T>*,
-            Value<T>
-        > m_data;
-
-        friend ValueImpl<T>;
-        friend Observer<T>;
-
-        template<typename R>
-        friend class Valuelike;
-    };
 
     class ObserverBase;
 
@@ -858,35 +701,40 @@ namespace ofc {
     class Observer : public ObserverBase {
     public:
         template<typename ObserverOwnerType>
-        Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>), Valuelike<T> vl)
+        Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>), Value<T> vl)
             : ObserverBase(self)
-            , m_valuelike(std::move(vl))
+            , m_value(std::move(vl))
             , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
 
-            if (auto v = m_valuelike.getValue()) {
-                v->purgeUpdates();
-            }
-
-            if (auto vv = m_valuelike.getValue()) {
-                auto& v = vv->m_observers;
+            // TODO: refactor to prevent duplicating this and similar code
+            if (auto vi = m_value.impl()) {
+                vi->purgeUpdates();
+                auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), this) == 0);
                 v.push_back(this);
             }
         }
+
         template<typename ObserverOwnerType>
         Observer(ObserverOwnerType* self, void (ObserverOwnerType::* onUpdate)(DiffArgType<T>))
             : ObserverBase(self)
-            , m_valuelike()
+            , m_value()
             , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
 
+            if (auto vi = m_value.impl()) {
+                vi->purgeUpdates();
+                auto& v = vi->m_observers;
+                assert(std::count(v.begin(), v.end(), this) == 0);
+                v.push_back(this);
+            }
         }
 
         Observer(Observer&& o) noexcept 
             : ObserverBase(std::move(o))
-            , m_valuelike(std::move(o.m_valuelike))
+            , m_value(std::move(o.m_value))
             , m_onUpdate(std::exchange(o.m_onUpdate, nullptr)) {
-            if (auto vl = m_valuelike.getValue()) {
-                auto& v = vl->m_observers;
+            if (auto vi = m_value.impl()) {
+                auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), &o) == 1);
                 assert(std::count(v.begin(), v.end(), this) == 0);
                 auto it = std::find(v.begin(), v.end(), &o);
@@ -900,10 +748,10 @@ namespace ofc {
                 return *this;
             }
             reset();
-            m_valuelike = std::move(o.m_valuelike);
+            m_value = std::move(o.m_value);
             m_onUpdate = std::exchange(o.m_onUpdate, nullptr);
-            if (auto vl = m_valuelike.getValue()) {
-                auto& v = vl->m_observers;
+            if (auto vi = m_value.impl()) {
+                auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), &o) == 1);
                 assert(std::count(v.begin(), v.end(), this) == 0);
                 auto it = std::find(v.begin(), v.end(), &o);
@@ -920,13 +768,14 @@ namespace ofc {
         Observer(const Observer&) = delete;
         Observer& operator=(const Observer&) = delete;
 
-        void assign(const Value<T>& target) {
-            assert(!target.m_previousValue.has_value());
+        void assign(Value<T> target) {
+            // impl is either null, or impl has no previous value
+            assert(!target.impl() || !target.impl()->m_previousValue.has_value());
 
             const auto diff = [&] {
-                if (m_valuelike.hasSomething()) {
+                if (m_value.hasValue()) {
                     return Difference<T>::compute(
-                        Summary<T>::compute(m_valuelike.getOnce()),
+                        Summary<T>::compute(m_value.getOnce()),
                         target.getOnce()
                     );
                 } else {
@@ -934,75 +783,29 @@ namespace ofc {
                 }
             }();
             reset();
-            assert(!m_valuelike.hasValue());
-            m_valuelike = target;
-            assert(m_valuelike.hasTargetValue());
-            assert(!m_valuelike.hasOwnValue());
+            assert(!m_value.hasValue());
+            m_value = std::move(target);
             update(diff);
-            auto vl = m_valuelike.getValue();
-            assert(vl);
-            auto& v = vl->m_observers;
-            assert(std::count(v.begin(), v.end(), this) == 0);
-            v.push_back(this);
-        }
-
-        void assign(T fixedValue) {
-            const auto diff = [&] {
-                if (m_valuelike.hasSomething()) {
-                    return Difference<T>::compute(
-                        Summary<T>::compute(m_valuelike.getOnce()),
-                        static_cast<const T&>(fixedValue)
-                    );
-                } else {
-                    return Difference<T>::computeFirst(
-                        static_cast<const T&>(fixedValue)
-                    );
-                }
-            }();
-            reset();
-            assert(!m_valuelike.hasValue());
-
-            m_valuelike = std::move(fixedValue);
-            update(diff);
-            assert(m_valuelike.hasOwnValue());
-            assert(!m_valuelike.hasTargetValue());
-        }
-
-        void assign(Valuelike<T>&& vl) {
-            assert(vl.hasValue());
-            const auto diff = [&] {
-                if (m_valuelike.hasValue()) {
-                    return Difference<T>::compute(
-                        Summary<T>::compute(m_valuelike.getOnce()),
-                        static_cast<const T&>(vl.getOnce())
-                    );
-                } else {
-                    return Difference<T>::computeFirst(vl.getOnce());
-                }
-            }();
-            m_valuelike = std::move(vl);
-            
-            if (auto vv = m_valuelike.getValue()){
-                auto& v = vv->m_observers;
+            if (auto vi = m_value.impl()) {
+                auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), this) == 0);
                 v.push_back(this);
             }
-            update(diff);
         }
 
-        const Valuelike<T>& getValuelike() const noexcept {
-            return m_valuelike;
+        const Value<T>& getValue() const noexcept {
+            return m_value;
         }
 
         void reset() {
-            if (auto vl = m_valuelike.getValue()) {
-                auto& v = vl->m_observers;
+            if (auto vi = m_value.impl()) {
+                auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), this) == 1);
                 auto it = std::find(v.begin(), v.end(), this);
                 assert(it != v.end());
                 v.erase(it);
             }
-            m_valuelike.reset();
+            m_value.reset();
         }
 
         void update(DiffArgType<T> t) {
@@ -1012,7 +815,7 @@ namespace ofc {
         }
 
     private:
-        Valuelike<T> m_valuelike;
+        Value<T> m_value;
 
         std::function<void(ObserverOwner*, DiffArgType<T>)> m_onUpdate;
 
@@ -1047,7 +850,7 @@ namespace ofc {
         public:
             using Base = DerivedValueBaseImpl<Derived, Index + 1, U, Rest...>;
 
-            DerivedValueBaseImpl(Derived* self, Valuelike<T>&& vt, Valuelike<U>&& vu, Valuelike<Rest>&&... vrest)
+            DerivedValueBaseImpl(Derived* self, Value<T> vt, Value<U> vu, Value<Rest>... vrest)
                 : Base(self, std::move(vu), std::move(vrest)...)
                 , m_observer(
                     self,
@@ -1060,7 +863,7 @@ namespace ofc {
             template<std::size_t I>
             decltype(auto) getOnce() noexcept {
                 if constexpr (I == Index) {
-                    return m_observer.getValuelike().getOnce();
+                    return m_observer.getValue().getOnce();
                 } else {
                     return Base::template getOnce<I>();
                 }
@@ -1078,7 +881,7 @@ namespace ofc {
         class DerivedValueBaseImpl<Derived, Index, T> {
         public:
 
-            DerivedValueBaseImpl(Derived* self, Valuelike<T>&& v)
+            DerivedValueBaseImpl(Derived* self, Value<T> v)
                 : m_observer(self, static_cast<void (Derived::*)(DiffArgType<T>)>(&DerivedValueBaseImpl::onUpdate), std::move(v)) {
 
             }
@@ -1086,7 +889,7 @@ namespace ofc {
             template<std::size_t I>
             decltype(auto) getOnce() noexcept {
                 static_assert(I == Index, "Something is wrong here");
-                return m_observer.getValuelike().getOnce();
+                return m_observer.getValue().getOnce();
             }
 
         private:
@@ -1113,7 +916,7 @@ namespace ofc {
 
         using FunctionType = std::function<T(DiffArgType<U>, DiffArgType<Rest>...)>;
 
-        DerivedValueImpl(FunctionType fn, Valuelike<U> u, Valuelike<Rest>... rest)
+        DerivedValueImpl(FunctionType fn, Value<U> u, Value<Rest>... rest)
             : ValueImpl<T>(fn(
                 Difference<U>::computeFirst(u.getOnce()),
                 Difference<Rest>::computeFirst(rest.getOnce())...
@@ -1162,12 +965,12 @@ namespace ofc {
     template<typename T, typename U>
     class VectorMappedValueImpl : public ValueImpl<std::vector<T>>, public ObserverOwner {
     public:
-        VectorMappedValueImpl(std::function<T(CRefOrValue<U>)> fn, Valuelike<std::vector<U>> vl)
+        VectorMappedValueImpl(std::function<T(CRefOrValue<U>)> fn, Value<std::vector<U>> vl)
             : ValueImpl<std::vector<T>>(initialValue(fn, vl.getOnce()))
             , m_fn(std::move(fn))
             , m_observer(this, &VectorMappedValueImpl::updateValues, std::move(vl)) {
 
-            assert(this->getOnce().size() == m_observer.getValuelike().getOnce().size());
+            assert(this->getOnce().size() == m_observer.getValue().getOnce().size());
         }
 
     private:
