@@ -221,7 +221,7 @@ private:
 class Graph {
 public:
     Graph()
-        : m_nodes(std::vector<std::unique_ptr<Node>>{}) {
+        : m_nodes(defaultConstruct) {
 
     }
 

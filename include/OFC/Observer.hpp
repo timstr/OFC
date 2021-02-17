@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace ofc {
-    
+
     template<typename T>
     class Value;
 
@@ -35,6 +35,9 @@ namespace ofc {
 
     } // namespace detail
 
+    struct DefaultConstruct {};
+
+    inline constexpr auto defaultConstruct = DefaultConstruct{};
 
     template<typename T>
     using CRefOrValue = std::conditional_t<
@@ -464,9 +467,13 @@ namespace ofc {
     template<typename T>
     class Value {
     public:
-        explicit Value()
+        explicit Value() noexcept
             : m_impl(nullptr) {
-            // : m_impl(std::make_shared<ValueImpl<T>>()) {
+        
+        }
+
+        Value(DefaultConstruct)
+            : m_impl(std::make_shared<ValueImpl<T>>()) {
         
         }
 

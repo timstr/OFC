@@ -23,7 +23,7 @@ namespace ofc::ui::dom {
         setBorderColor(0x888888FF);
         setBorderThickness(2.0f);
 
-        setMinSize({50.0f, static_cast<float>(height) * 1.5f});
+        updateSize();
     }
 
     void TextEntry::startTyping(){
@@ -47,7 +47,7 @@ namespace ofc::ui::dom {
     }
 
     bool TextEntry::onLeftClick(int, ModifierKeys mod){
-        const auto s = text();
+        const auto& s = text();
 
         if (s.getSize() > 0){
             std::size_t min = static_cast<std::size_t>(-1);
@@ -87,7 +87,7 @@ namespace ofc::ui::dom {
     }
 
     void TextEntry::handleBackspace(ModifierKeys mod){
-        const auto s = text();
+        const auto& s = text();
 
 
         // If there is a selection, just erase that
@@ -96,7 +96,6 @@ namespace ofc::ui::dom {
             const auto cut = s.substring(0, i0) + s.substring(i1);
             m_cursorTail = m_cursorHead;
             setText(cut);
-            handleChange();
             return;
         }
 
@@ -111,7 +110,6 @@ namespace ofc::ui::dom {
             m_cursorHead = i0;
             m_cursorTail = m_cursorHead;
             setText(cut);
-            handleChange();
         }
     }
 
@@ -125,7 +123,6 @@ namespace ofc::ui::dom {
             m_cursorHead = i0;
             m_cursorTail = m_cursorHead;
             setText(cut);
-            handleChange();
             return;
         }
 
@@ -138,7 +135,6 @@ namespace ofc::ui::dom {
             const auto cut = s.substring(0, m_cursorTail) + s.substring(m_cursorHead);
             m_cursorHead = m_cursorTail;
             setText(cut);
-            handleChange();
         }
     }
 
@@ -210,10 +206,9 @@ namespace ofc::ui::dom {
         const auto [i0, i1] = selection();
         const auto sub = s.substring(i0, i1);
         sf::Clipboard::setString(sub);
-        setText(s.substring(0, i0) + s.substring(i1));
         m_cursorHead = i0;
         m_cursorTail = i0;
-        handleChange();
+        setText(s.substring(0, i0) + s.substring(i1));
     }
 
     void TextEntry::handlePaste(){
@@ -235,7 +230,6 @@ namespace ofc::ui::dom {
         m_cursorHead = i0 + pasted.getSize();
         m_cursorTail = m_cursorHead;
         setText(s1);
-        handleChange();
     }
 
     void TextEntry::handleReturn(){
@@ -307,10 +301,11 @@ namespace ofc::ui::dom {
     }
 
     void TextEntry::onChange(){
+        setBackgroundColor(validate() ? 0xFFFFFFFF : 0xFF8888FF);
         const auto l = text().getSize();
         m_cursorHead = std::clamp(m_cursorHead, size_t{0}, l);
         m_cursorTail = std::clamp(m_cursorTail, size_t{0}, l);
-        setMinSize({50.0f, static_cast<float>(characterSize()) * 1.5f});
+        updateSize();
         onType();
     }
 
@@ -333,9 +328,9 @@ namespace ofc::ui::dom {
             const auto mid = String{unicode};
             const auto rest = str.substring(i1);
 
-            setText(first + mid + rest);
             m_cursorHead = i0 + 1;
             m_cursorTail = m_cursorHead;
+            setText(first + mid + rest);
         } else {
             if (m_overtype && m_cursorHead < str.getSize()){
                 str[m_cursorHead] = unicode;
@@ -346,15 +341,6 @@ namespace ofc::ui::dom {
             m_cursorTail = m_cursorHead;
             setText(str);
         }
-
-        handleChange();
-    }
-
-    void TextEntry::handleChange(){
-        // TODO: this ruins styling
-        setBackgroundColor(validate() ? 0xFFFFFFFF : 0xFF8888FF);
-        onChange();
-        setMinSize({50.0f, 1.5f * static_cast<float>(characterSize())});
     }
 
     std::pair<std::size_t, std::size_t> TextEntry::selection() const {
@@ -408,6 +394,12 @@ namespace ofc::ui::dom {
             doSkip(true);
         }
         doSkip(false);
+    }
+
+    void TextEntry::updateSize() {
+        auto ts = textSize();
+        ts.x = std::max(ts.x, 50.0f);
+        setSize(ts, true);
     }
 
 } // namespace ofc::ui::dom

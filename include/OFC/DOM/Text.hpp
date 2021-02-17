@@ -31,6 +31,9 @@ namespace ofc::ui::dom {
         Color outlineColor() const;
         float outlineThickness() const;
 
+        vec2 textSize() const;
+        float margin() const;
+
         void setFont(const Font& font);
         void setCharacterSize(unsigned);
         void setStyle(uint32_t style);

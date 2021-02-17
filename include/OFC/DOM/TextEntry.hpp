@@ -65,13 +65,13 @@ namespace ofc::ui::dom {
 
         void type(uint32_t unicode);
 
-        void handleChange();
-
         std::pair<std::size_t, std::size_t> selection() const;
 
         void skipLeft();
 
         void skipRight();
+
+        void updateSize();
 
         std::size_t m_cursorHead;
         std::size_t m_cursorTail;

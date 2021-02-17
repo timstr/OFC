@@ -18,11 +18,9 @@ namespace ofc::ui::dom {
 
     void Text::setText(const String& str){
         m_text.setString(str);
-        const auto bb = m_text.getLocalBounds();
-        const auto cs = static_cast<float>(m_text.getCharacterSize());
-        const auto margin = std::round(cs * 0.25f);
-        m_text.setPosition({margin, margin});
-        setSize({bb.width + 2.0f * margin, cs + 2.0f * margin}, true);
+        const auto m = margin();
+        m_text.setPosition({m, m});
+        setSize(textSize(), true);
         onChange();
     }
 
@@ -49,6 +47,18 @@ namespace ofc::ui::dom {
 
     float Text::outlineThickness() const {
         return m_text.getOutlineThickness();
+    }
+
+    vec2 Text::textSize() const {
+        const auto bb = m_text.getLocalBounds();
+        const auto cs = static_cast<float>(characterSize());
+        const auto m = margin();
+        return {bb.width + 2.0f * m, cs + 2.0f * m};
+    }
+
+    float Text::margin() const {
+        const auto cs = static_cast<float>(characterSize());
+        return std::round(cs * 0.25f);
     }
 
     void Text::setFont(const Font& font){
