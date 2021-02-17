@@ -39,10 +39,15 @@ namespace ofc::ui::dom {
                     return we.element == sibling;
                 };
                 auto it = std::find_if(m_cells.begin(), m_cells.end(), sameElement);
+
                 if (it == end(m_cells)){
-                    it = begin(m_cells);
+                    if (!m_direction) {
+                        it = begin(m_cells);
+                    }
                 } else {
-                    ++it;
+                    if (m_direction) {
+                        ++it;
+                    }
                 }
                 m_cells.insert(it, WeightedElement{theElement.get(), weight, horizontalStyle, verticalStyle, expand});
                 adopt(std::move(theElement));
