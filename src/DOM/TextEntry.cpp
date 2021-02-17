@@ -114,7 +114,7 @@ namespace ofc::ui::dom {
     }
 
     void TextEntry::handleDelete(ModifierKeys mod){
-        const auto s = text();
+        const auto& s = text();
 
         // If there is a selection, just erase that
         if (m_cursorHead != m_cursorTail){
@@ -153,7 +153,7 @@ namespace ofc::ui::dom {
 
     void TextEntry::handleRight(ModifierKeys mod){
         if (m_cursorHead < text().getSize()){
-            const auto s = text();
+            const auto& s = text();
             if (mod.ctrl()){
                 skipRight();
             } else {
@@ -192,7 +192,7 @@ namespace ofc::ui::dom {
         if (m_cursorHead == m_cursorTail){
             return;
         }
-        const auto s = text();
+        const auto& s = text();
         const auto [i0, i1] = selection();
         const auto sub = s.substring(i0, i1);
         sf::Clipboard::setString(sub);
@@ -202,7 +202,7 @@ namespace ofc::ui::dom {
         if (m_cursorHead == m_cursorTail){
             return;
         }
-        const auto s = text();
+        const auto& s = text();
         const auto [i0, i1] = selection();
         const auto sub = s.substring(i0, i1);
         sf::Clipboard::setString(sub);
@@ -219,7 +219,7 @@ namespace ofc::ui::dom {
             return std::isspace(static_cast<int>(ch)) != 0;
         };
 
-        const auto s = text();
+        const auto& s = text();
         auto pasted = sf::Clipboard::getString();
         auto last = std::remove_if(pasted.begin(), pasted.end(), isSpace);
         if (last != pasted.end()){
@@ -351,7 +351,7 @@ namespace ofc::ui::dom {
     }
 
     void TextEntry::skipLeft(){
-        const auto s = text();
+        const auto& s = text();
         if (s.getSize() == 0){
             return;
         }
@@ -374,7 +374,7 @@ namespace ofc::ui::dom {
     }
 
     void TextEntry::skipRight(){
-        const auto s = text();
+        const auto& s = text();
         if (s.getSize() == 0){
             return;
         }
