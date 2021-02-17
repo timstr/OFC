@@ -153,7 +153,6 @@ namespace ofc::ui::dom {
 
     void TextEntry::handleRight(ModifierKeys mod){
         if (m_cursorHead < text().getSize()){
-            const auto& s = text();
             if (mod.ctrl()){
                 skipRight();
             } else {

@@ -376,12 +376,12 @@ private:
             .borderThickness(2.0f)
             .containing(
                 List{
-                    HorizontalList{LeftToRight, true}.containing(
+                    Expand{HorizontalList{LeftToRight, true}.containing(
                         AlignLeft{Text{"Node"}},
                         Weight{0.0f, Button{"X"}.onClick([this]{
                             m_node->getGraph()->remove(m_node);
                         })}
-                    ),
+                    )},
                     MakeNodeUI(m_node)
                 }
             );
@@ -403,9 +403,9 @@ private:
                 return std::nullopt;
             })
             .containing(
-                inputPeg(),
+                CenterVertically{inputPeg()},
                 body(),
-                outputPeg()
+                CenterVertically{outputPeg()}
             );
     }
 
@@ -467,6 +467,17 @@ int main(){
     auto comp = AnyComponent{UseFont(&getFont()).with(
         GraphUI{&graph}
     )};
+
+    /*auto comp = AnyComponent{UseFont(&getFont()).with(
+        MixedContainerComponent<VerticalListBase, Boxy, Resizable>{TopToBottom, true}
+            .sizeForce(vec2{100.0f, 100.0f})
+            .backgroundColor(0xB0B0B0FF)
+            .containing(
+                Expand(AlignLeft{Text("A")}),
+                CenterHorizontally{Text("B")},
+                AlignRight{Text("C")}
+            )
+    )};*/
 
     auto root = Root(FreeContainer{}.containing(std::move(comp)));
 

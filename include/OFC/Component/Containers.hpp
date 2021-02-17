@@ -41,6 +41,10 @@ namespace ofc::ui {
             return std::make_unique<ContainerType>();
         }
 
+        virtual void initContainer(ContainerType&) {
+        
+        }
+
         Derived& self() noexcept {
             return static_cast<Derived&>(*this);
         }
@@ -55,6 +59,7 @@ namespace ofc::ui {
             assert(m_container == nullptr);
             auto cp = createContainer();
             assert(cp);
+            initContainer(*cp);
             m_container = cp.get();
             insertElement(std::move(cp), beforeElement);
             onMountContainer(beforeElement);
@@ -239,6 +244,10 @@ namespace ofc::ui {
         struct WeightTag {
             float weight = 1.0f;
         };
+
+        struct ExpandTag {
+            bool expand = true;
+        };
     
         template<typename ListContainerType>
         std::pair<typename ListContainerType::Style, typename ListContainerType::Style> getListStyleFromScope(const Scope& scope) {
@@ -247,7 +256,7 @@ namespace ofc::ui {
             auto ys = Style::Center;
             if (scope.has<detail::align_InsideLeft>()) {
                 xs = Style::Left;
-            } else if (scope.has<detail::align_CenterVertically>()) {
+            } else if (scope.has<detail::align_CenterHorizontally>()) {
                 xs = Style::Center;
             } else if (scope.has<detail::align_InsideRight>()) {
                 xs = Style::Right;
@@ -293,11 +302,9 @@ namespace ofc::ui {
         bool m_expand;
         AnyComponent m_childComponent;
         
-        virtual std::unique_ptr<dom::VerticalList> createContainer() {
-            return std::make_unique<dom::VerticalList>(
-                m_direction,
-                m_expand
-            );
+        void initContainer(dom::VerticalList& vl) override {
+            vl.setDirection(m_direction);
+            vl.setExpand(m_expand);
         }
 
         void onMountContainer(const dom::Element* beforeElement) override final {
@@ -320,7 +327,11 @@ namespace ofc::ui {
                 w = wt->weight;
             }
             const auto& [xs, ys] = detail::getListStyleFromScope<dom::VerticalList>(scope);
-            c->insertAfter(b, std::move(element), w, xs, ys);
+            bool e = false;
+            if (auto et = scope.get<detail::ExpandTag>()) {
+                e = et->expand;
+            }
+            c->insertBefore(b, std::move(element), w, xs, ys, e);
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -362,11 +373,9 @@ namespace ofc::ui {
         bool m_expand;
         AnyComponent m_childComponent;
         
-        virtual std::unique_ptr<dom::HorizontalList> createContainer() {
-            return std::make_unique<dom::HorizontalList>(
-                m_direction,
-                m_expand
-            );
+        void initContainer(dom::HorizontalList& hl) override {
+            hl.setDirection(m_direction);
+            hl.setExpand(m_expand);
         }
 
         void onMountContainer(const dom::Element* beforeElement) override final {
@@ -389,7 +398,11 @@ namespace ofc::ui {
                 w = wt->weight;
             }
             const auto& [xs, ys] = detail::getListStyleFromScope<dom::HorizontalList>(scope);
-            c->insertAfter(b, std::move(element), w, xs, ys);
+            bool e = false;
+            if (auto et = scope.get<detail::ExpandTag>()) {
+                e = et->expand;
+            }
+            c->insertBefore(b, std::move(element), w, xs, ys, e);
         }
 
         void onRemoveChildElement(dom::Element* whichElement, const Component* /* whichDescendent */) override final {
@@ -882,6 +895,14 @@ namespace ofc::ui {
     private:
         const float m_weight;
 
+        void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
+    };
+    
+    class Expand : public SimpleForwardingComponent {
+    public:
+        Expand(AnyComponent);
+
+    private:
         void onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) override final;
     };
 

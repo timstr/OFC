@@ -34,21 +34,11 @@ namespace ofc::ui::dom {
         
             using Container::children;
 
-            void insertAfter(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center, bool expand = false) {
+            void insertBefore(const Element* sibling, std::unique_ptr<Element> theElement, float weight = 1.0f, Style horizontalStyle = Style::Center, Style verticalStyle = Style::Center, bool expand = false) {
                 auto sameElement = [sibling](const WeightedElement& we) {
                     return we.element == sibling;
                 };
                 auto it = std::find_if(m_cells.begin(), m_cells.end(), sameElement);
-
-                if (it == end(m_cells)){
-                    if (!m_direction) {
-                        it = begin(m_cells);
-                    }
-                } else {
-                    if (m_direction) {
-                        ++it;
-                    }
-                }
                 m_cells.insert(it, WeightedElement{theElement.get(), weight, horizontalStyle, verticalStyle, expand});
                 adopt(std::move(theElement));
             }
@@ -65,6 +55,20 @@ namespace ofc::ui::dom {
                 m_padding = std::max(0.0f, v);
                 requireUpdate();
             }
+            
+            void setDirection(bool direction) {
+                if (m_direction != direction) {
+                    m_direction = direction;
+                    requireUpdate();
+                }
+            }
+
+            void setExpand(bool expand) {
+                if (m_expand != expand) {
+                    m_expand = expand;
+                    requireUpdate();
+                }
+            }
 
         protected:
             ListContainer(bool direction, bool expand)
@@ -76,16 +80,23 @@ namespace ofc::ui::dom {
 
         private:
             vec2 update() override {
-                const auto availSize = size();
-                // TODO: inspect available size (given simply by size()), then  
-                // layout items normally, then, in a second pass, give additional
-                // space to all elements proportional to their weight
+                const auto forEachCell = [this](auto callback) {
+                    static_assert(std::is_invocable_r_v<void, decltype(callback), const WeightedElement&>);
+                    if (m_direction) {
+                        for (auto it = begin(m_cells), itEnd = end(m_cells); it != itEnd; ++it) {
+                            callback(*it);
+                        }
+                    } else {
+                        for (auto it = rbegin(m_cells), itEnd = rend(m_cells); it != itEnd; ++it) {
+                            callback(*it);
+                        }
+                    }
+                };
+
                 const auto placeItems = [&](std::optional<float> maxSizeOrtho){
                     auto pos = 0.0f;
                     auto oppositeSize = 0.0f; 
-                    for (std::size_t i = 0, iEnd = m_cells.size(); i != iEnd; ++i){
-                        const auto ii = m_direction ? i : iEnd - 1 - i;
-                        const auto& c = m_cells[ii];
+                    forEachCell([&](const WeightedElement& c){
                         const auto e = c.element;
                         assert(e);
                         assert(hasDescendent(e));
@@ -113,7 +124,7 @@ namespace ofc::ui::dom {
                             pos += sizeNeeded.x + 2.0f * m_padding;
                             oppositeSize = std::max(oppositeSize, sizeNeeded.y);
                         }
-                    }
+                    });
                     oppositeSize += 2.0f * m_padding;
                     if constexpr (std::is_same_v<Tag, VerticalTag>){
                         return vec2{oppositeSize, pos};
@@ -121,6 +132,8 @@ namespace ofc::ui::dom {
                         return vec2{pos, oppositeSize};
                     }
                 };
+
+                const auto availSize = size();
                 
                 auto totalSize = placeItems(std::nullopt);
 
@@ -131,16 +144,19 @@ namespace ofc::ui::dom {
                     const auto dim = std::is_same_v<Tag, VerticalTag> ? &vec2::y : &vec2::x;
                     const auto totalSpace = totalSize.*dim;
                     const auto availSpace = availSize.*dim;
-                    totalSize.*dim = availSize.*dim;
                     if (totalSpace < availSpace) {
                         auto acc = [](float sum, const WeightedElement& we) -> float {
+                            assert(we.weight >= 0.0f);
                             return sum + we.weight;
                         };
-                        const auto totalWeight = reduce(begin(m_cells), end(m_cells), 0.0f, acc);
+                        const auto totalWeight = std::max(
+                            reduce(begin(m_cells), end(m_cells), 0.0f, acc),
+                            1e-3f
+                        );
 
                         const auto deltaSpace = availSpace - totalSpace;
                         auto spaceAcc = 0.0f;
-                        for (const auto& c : m_cells) {
+                        forEachCell([&](const WeightedElement& c){
                             const auto space = deltaSpace * c.weight / totalWeight;
                             const auto e = c.element;
                             assert(e);
@@ -150,26 +166,25 @@ namespace ofc::ui::dom {
                             p.*dim += spaceAcc + k * space;
                             e->setPos(p);
                             spaceAcc += space;
-                        }
+                        });
                     }
                 }
 
                 // Align elements against list direction
                 {
                     const auto dim = std::is_same_v<Tag, VerticalTag> ? &vec2::x : &vec2::y;
-                    const auto availSpace = totalSize.*dim;
-                    for (const auto& c : m_cells) {
+                    const auto availSpace = m_expand ? availSize.*dim : totalSize.*dim;
+                    forEachCell([&](const WeightedElement& c) {
                         const auto e = c.element;
                         assert(e);
-                        const auto space = e->size().*dim;
-                        const auto d = availSpace - space;
-                        assert(d >= 0.0f);
+                        const auto space = std::as_const(*e).size().*dim;
+                        const auto d = std::max(0.0f, availSpace - space);
                         const auto style = std::is_same_v<Tag, VerticalTag> ? c.horizontalStyle : c.verticalStyle;
                         const auto k = (style == Style::Begin) ? 0.0f : (style == Style::Center) ? 0.5f : 1.0f;
                         auto p = e->pos();
                         p.*dim = k * d;
                         e->setPos(p);
-                    }
+                    });
                 }
 
                 return totalSize;
@@ -187,13 +202,13 @@ namespace ofc::ui::dom {
             struct WeightedElement {
                 Element* element = nullptr;
                 float weight = 1.0f;
-                Style verticalStyle = Style::Center;
                 Style horizontalStyle = Style::Center;
+                Style verticalStyle = Style::Center;
                 bool expand = true;
             };
 
             std::vector<WeightedElement> m_cells;
-            const bool m_direction;
+            bool m_direction;
             float m_padding;
             bool m_expand;
         };
@@ -204,11 +219,15 @@ namespace ofc::ui::dom {
     class VerticalList : public detail::ListContainer<detail::VerticalTag> {
     public:
         VerticalList(VerticalDirection direction = TopToBottom, bool expand = false);
+
+        void setDirection(VerticalDirection);
     };
 
     class HorizontalList : public detail::ListContainer<detail::HorizontalTag> {
     public:
         HorizontalList(HorizontalDirection direction = LeftToRight, bool expand = false);
+
+        void setDirection(HorizontalDirection);
     };
 
 } // namespace ofc::ui::dom

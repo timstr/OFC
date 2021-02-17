@@ -7,9 +7,17 @@ namespace ofc::ui::dom {
 
     }
 
+    void VerticalList::setDirection(VerticalDirection dir) {
+        ListContainer::setDirection(dir == TopToBottom);
+    }
+
     HorizontalList::HorizontalList(HorizontalDirection direction, bool expand)
         : ListContainer(direction == LeftToRight, expand) {
 
+    }
+
+    void HorizontalList::setDirection(HorizontalDirection dir) {
+        ListContainer::setDirection(dir == LeftToRight);
     }
 
 } // namespace ofc::ui::dom

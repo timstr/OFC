@@ -21,6 +21,17 @@ namespace ofc::ui {
         SimpleForwardingComponent::onInsertChildElement(std::move(element), s);
     }
 
+    Expand::Expand(AnyComponent c)
+        : SimpleForwardingComponent(std::move(c)) {
+    
+    }
+
+    void Expand::onInsertChildElement(std::unique_ptr<dom::Element> element, const Scope& scope) {
+        auto s = scope;
+        s.add<detail::ExpandTag>(detail::ExpandTag{true});
+        SimpleForwardingComponent::onInsertChildElement(std::move(element), s);
+    }
+
     Row::Row(AnyComponent c)
         : SimpleForwardingComponent(std::move(c)) {
 
