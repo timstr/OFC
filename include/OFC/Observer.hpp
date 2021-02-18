@@ -24,6 +24,8 @@ namespace ofc {
 
         void updateAllValues();
 
+
+
         template<typename T>
         struct IsVectorImpl : std::false_type {};
 
@@ -32,6 +34,17 @@ namespace ofc {
 
         template<typename T>
         constexpr bool IsVector = IsVectorImpl<T>::value;
+
+
+
+        template<typename T>
+        struct IsValueImpl : std::false_type {};
+
+        template<typename T>
+        struct IsValueImpl<Value<T>> : std::true_type {};
+
+        template<typename T>
+        constexpr bool IsValue = IsValueImpl<T>::value;
 
     } // namespace detail
 
@@ -412,6 +425,37 @@ namespace ofc {
             )};
         }
 
+        // Suppose:
+        //   struct X {
+        //       Value<String> name;
+        //       Value<int> count;
+        //   };
+        //   Value<std::vector<X>> vectorVal;
+        //   
+        //   auto sum = vectorVal.reduce(
+        //       0,
+        //       [](const X& x){ return x.count; } // -> Value<int>, without explicitly specifying return type as otherwise
+        //       [](int acc, int c){ return acc + c; } // Unhh so simple
+        //   );
+        template<typename R, typename F, typename G, typename U = T, std::enable_if_t<detail::IsVector<U>>* = nullptr>
+        auto reduce(R&& init, F&& elementToValue, G&& combine) {
+            using ElementType = typename T::value_type;
+            static_assert(std::is_invocable_v<F, CRefOrValue<ElementType>>);
+            using V = std::invoke_result_t<F, CRefOrValue<ElementType>>;
+            using I = typename V::Type;
+            static_assert(std::is_invocable_v<G, R, CRefOrValue<I>>);
+            using RR = std::invoke_result_t<G, R, CRefOrValue<I>>;
+            static_assert(std::is_same_v<RR, R>); // TODO: too restrictive? use is_convertible_v instead?
+            auto shared_this = this->shared_from_this();
+            assert(shared_this);
+            return Value<R>{std::make_shared<ReducedValueImpl<R, ElementType, I>>(
+                std::forward<R>(init),
+                std::forward<F>(elementToValue),
+                std::forward<G>(combine),
+                Value<std::vector<ElementType>>{std::move(shared_this)}
+            )};
+        }
+
         template<typename P, std::enable_if_t<std::is_member_object_pointer_v<P>>* = nullptr>
         auto project(P memptr) {
             static_assert(std::is_same_v<T, std::decay_t<DiffArgType<T>>>);
@@ -467,6 +511,8 @@ namespace ofc {
     template<typename T>
     class Value {
     public:
+        using Type = T;
+
         explicit Value() noexcept
             : m_impl(nullptr) {
         
@@ -559,11 +605,21 @@ namespace ofc {
             assert(m_impl);
             return m_impl->map(std::forward<F>(f));
         }
-
+        
         template<typename F, typename U = T, std::enable_if_t<detail::IsVector<U>>* = nullptr>
         auto vectorMap(F&& f) const {
             assert(m_impl);
             return m_impl->vectorMap(std::forward<F>(f));
+        }
+
+        template<typename R, typename F, typename G, typename U = T, std::enable_if_t<detail::IsVector<U>>* = nullptr>
+        auto reduce(R&& init, F&& elementToValue, G&& combine) {
+            assert(m_impl);
+            return m_impl->reduce<R>(
+                std::forward<R>(init),
+                std::forward<F>(elementToValue),
+                std::forward<G>(combine)
+            );
         }
 
         template<typename P, std::enable_if_t<std::is_member_object_pointer_v<P>>* = nullptr>
@@ -1014,6 +1070,86 @@ namespace ofc {
             }
             return out;
         }
+    };
+
+    // T: target (singular)
+    // U: source vector element type
+    // V: intermediate type to which vector elements are mapped via Value<V>
+    template<typename T, typename U, typename V>
+    class ReducedValueImpl : public ValueImpl<T>, public ObserverOwner {
+    public:
+        using ElementToValueFn = std::function<Value<V>(CRefOrValue<U>)>;
+        using CombineFn = std::function<T(T, CRefOrValue<V>)>;
+
+        ReducedValueImpl(T init, ElementToValueFn elementToValue, CombineFn combine, Value<std::vector<U>> vl)
+            : ValueImpl<T>(recompute(init, vl.getOnce(), elementToValue, combine))
+            , m_init(std::move(init))
+            , m_elementToValue(std::move(elementToValue))
+            , m_combine(std::move(combine))
+            , m_vectorObserver(this, &ReducedValueImpl::onUpdateVector, std::move(vl)) {
+        
+            assert(m_elementToValue);
+            assert(m_combine);
+
+            const auto& vals = m_vectorObserver.getValue().getOnce();
+            m_elementObservers.reserve(vals.size());
+            for (const U& u : vals) {
+                Value<V> vv = m_elementToValue(u);
+                auto o = Observer<V>(this, &ReducedValueImpl::onUpdateElement, std::move(vv));
+                m_elementObservers.push_back(std::move(o));
+            }
+        }
+
+    private:
+        T m_init;
+        ElementToValueFn m_elementToValue;
+        CombineFn m_combine;
+
+        void onUpdateVector(const ListOfEdits<U>& loe) {
+            assert(m_elementObservers.size() == loe.oldValue().size());
+            assert(m_elementToValue);
+            auto it = begin(m_elementObservers);
+            for (const auto& e : loe.getEdits()) {
+                if (e.insertion()) {
+                    const U& u = e.value();
+                    Value<V> vv = m_elementToValue(u);
+                    auto o = Observer<V>(this, &ReducedValueImpl::onUpdateElement, std::move(vv));
+                    it = m_elementObservers.insert(it, std::move(o));
+                    ++it;
+                } else if (e.deletion()) {
+                    assert(it != end(m_elementObservers));
+                    it = m_elementObservers.erase(it);
+                } else {
+                    assert(e.nothing());
+                    assert(it != end(m_elementObservers));
+                    ++it;
+                }
+            }
+            assert(m_elementObservers.size() == loe.newValue().size());
+            fullUpdate();
+        }
+
+        void onUpdateElement(DiffArgType<V> /* unused */) {
+            fullUpdate();
+        }
+
+        static T recompute(const T& init, const std::vector<U>& v, const ElementToValueFn& etv, const CombineFn& c) {
+            assert(etv);
+            assert(c);
+            T acc = init;
+            for (const U& e : v) {
+                const Value<V>& val = etv(e);
+                acc = c(std::move(acc), val.getOnce());
+            }
+            return acc;
+        }
+
+        void fullUpdate() {
+            this->set(recompute(m_init, m_vectorObserver.getValue().getOnce(), m_elementToValue, m_combine));
+        }
+
+        Observer<std::vector<U>> m_vectorObserver;
+        std::vector<Observer<V>> m_elementObservers;
     };
 
 } // namespace ofc

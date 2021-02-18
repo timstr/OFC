@@ -86,12 +86,16 @@ class Graph;
 class Node {
 public:
     Node() noexcept
-        : m_parentGraph(nullptr) {
+        : m_connections(defaultConstruct)
+        , m_parentGraph(nullptr) {
         
     }
 
     virtual ~Node() noexcept {
         assert(m_parentGraph == nullptr);
+        while (m_connections.getOnce().size() > 0) {
+            disconnect(m_connections.getOnce()[0]);
+        }
     }
 
     void connect(Node* other) {
@@ -232,10 +236,18 @@ public:
         }
     }
 
-    void add(std::unique_ptr<Node> n) {
+    void adopt(std::unique_ptr<Node> n) {
         assert(n->m_parentGraph == nullptr);
         n->m_parentGraph = this;
         m_nodes.getOnceMut().push_back(std::move(n));
+    }
+
+    template<typename T, typename... Args>
+    T& add(Args&&... args) {
+        auto up = std::make_unique<T>(std::forward<Args>(args)...);
+        auto& r = *up;
+        adopt(std::move(up));
+        return r;
     }
 
     std::unique_ptr<Node> release(Node* n) {
@@ -371,7 +383,7 @@ private:
             .position(m_position)
             .minSize(vec2{50.0f, 50.0f})
             .backgroundColor(0xFFBB99FF)
-            .borderColor(0xFF)
+            .borderColor(0xFF) 
             .borderRadius(10.0f)
             .borderThickness(2.0f)
             .containing(
@@ -425,16 +437,30 @@ public:
     }
 
 private:
+    AnyComponent description() const {
+        return Text(combine(m_nodePositions, numConnections()).map([](const ListOfEdits<NodePosition>& loe, int n) -> String {
+            return "There are " + std::to_string(loe.newValue().size()) + " nodes and " + std::to_string(n) + " connections";
+        }));
+    }
+
+    Value<int> numConnections() const {
+        return m_graph->nodes().reduce<int>(
+            0,
+            [](Node* n){ return n->connections(); },
+            [](int acc, const std::vector<Node*>& v) {
+                return acc + static_cast<int>(v.size());
+            }
+        );
+    }
+
     AnyComponent render() const override final {
         return List(
             HorizontalList{}.containing(
                 Button("+")
                     .onClick([this](){
-                        m_graph->add(std::make_unique<StringNode>("..."));
+                        m_graph->add<StringNode>("...");
                     }),
-                Text(m_nodePositions.map([](const ListOfEdits<NodePosition>& loe) -> String {
-                       return "There are " + std::to_string(loe.newValue().size()) + " nodes";
-                    }))
+                description()
             ),
             ForEach(m_nodePositions)
                 .Do([this](const NodePosition& np, const Value<std::size_t>& idx) -> AnyComponent {
@@ -460,9 +486,11 @@ int main(){
     
     auto graph = Graph{};
 
-    graph.add(std::make_unique<StringNode>("Blab blab"));
-    graph.add(std::make_unique<IntegerNode>(99));
-    graph.add(std::make_unique<BooleanNode>(false));
+    auto& sn = graph.add<StringNode>("Blab blab");
+    auto& in = graph.add<IntegerNode>(99);
+    auto& bn = graph.add<BooleanNode>(false);
+
+    sn.connect(&bn);
 
     auto comp = AnyComponent{UseFont(&getFont()).with(
         GraphUI{&graph}
