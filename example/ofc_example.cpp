@@ -438,17 +438,32 @@ public:
 
 private:
     AnyComponent description() const {
-        return Text(combine(m_nodePositions, numConnections()).map([](const ListOfEdits<NodePosition>& loe, int n) -> String {
+        auto numConnections = allConnections().map([](const ListOfEdits<Connection>& loe){
+            return loe.newValue().size();
+        });
+        return Text(combine(m_nodePositions, std::move(numConnections)).map([](const ListOfEdits<NodePosition>& loe, std::size_t n) -> String {
             return "There are " + std::to_string(loe.newValue().size()) + " nodes and " + std::to_string(n) + " connections";
         }));
     }
 
-    Value<int> numConnections() const {
-        return m_graph->nodes().reduce<int>(
-            0,
-            [](Node* n){ return n->connections(); },
-            [](int acc, const std::vector<Node*>& v) {
-                return acc + static_cast<int>(v.size());
+    using Connection = std::pair<Node*, Node*>;
+
+    Value<std::vector<Connection>> allConnections() const {
+        return m_graph->nodes().reduce<std::vector<Connection>>(
+            std::vector<Connection>{},
+            [](Node* n){
+                return n->connections().vectorMap([&](Node* nn){
+                    assert(n != nn);
+                    return n < nn ? std::make_pair(n, nn) : std::make_pair(nn, n);
+                });
+            },
+            [](std::vector<Connection> acc, const std::vector<Connection>& v) {
+                for (const auto& c : v) {
+                    if (find(begin(acc), end(acc), c) == end(acc)) {
+                        acc.push_back(c);
+                    }
+                }
+                return acc;
             }
         );
     }

@@ -6,26 +6,58 @@ namespace ofc {
 
     namespace detail {
 
-        std::vector<std::function<void()>>& valueUpdateQueue() noexcept {
-            static std::vector<std::function<void()>> theQueue;
-            return theQueue;
+        using UpdateQueue = std::vector<std::pair<const void*, std::function<void()>>>;
+
+        struct UpdateQueuePair {
+            UpdateQueue inboundQueue;
+            UpdateQueue outboundQueue;
+        };
+
+        UpdateQueuePair& getUpdateQueues() noexcept {
+            static UpdateQueuePair theQueues;
+            return theQueues;
         }
 
-        void enqueueValueUpdater(std::function<void()> f) {
-            auto& q = valueUpdateQueue();
-            q.push_back(std::move(f));
+        void enqueueValueUpdater(const void* owner, std::function<void()> f) {
+            assert(owner);
+            auto& q = getUpdateQueues();
+            q.inboundQueue.emplace_back(owner, std::move(f));
         }
 
         void updateAllValues() {
+            auto& qs = getUpdateQueues();
             while (true) {
-                const auto q = std::move(valueUpdateQueue());
-                if (q.empty()) {
+                assert(qs.outboundQueue.size() == 0);
+                std::swap(qs.inboundQueue, qs.outboundQueue);
+                qs.inboundQueue.clear();
+                bool anything = false;
+                for (auto& f : qs.outboundQueue) {
+                    assert(f.first);
+                    if (f.second) {
+                        f.second();
+                        anything = true;
+                    }
+                }
+                qs.outboundQueue.clear();
+                if (!anything) {
                     return;
                 }
-                for (auto& f : q) {
-                    f();
-                }
             }
+        }
+
+        void cancelUpdates(const void* owner) {
+            const auto clearTheQueue = [&](UpdateQueue& q) {
+                // NOTE: because the queue might currently be being iterated elsewhere,
+                // the function is set to null rather than modifying the underlying container
+                for (auto& [o, f] : q) {
+                    if (o == owner) {
+                        f = nullptr;
+                    }
+                }
+            };
+            auto& qs = getUpdateQueues();
+            clearTheQueue(qs.inboundQueue);
+            clearTheQueue(qs.outboundQueue);
         }
     }
 

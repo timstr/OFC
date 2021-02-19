@@ -20,10 +20,11 @@ namespace ofc {
 
     namespace detail {
         
-        void enqueueValueUpdater(std::function<void()>);
+        void enqueueValueUpdater(const void* valueImpl, std::function<void()>);
 
         void updateAllValues();
 
+        void cancelUpdates(const void* valueImpl);
 
 
         template<typename T>
@@ -354,27 +355,16 @@ namespace ofc {
             static_assert(std::is_constructible_v<T, Args...>);
         }
 
-        /* ValueImpl(const T& t)
-            : m_value(t)
-            , m_previousValue(std::nullopt) {
-
-        }
-        ValueImpl(T&& t) noexcept
-            : m_value(std::move(t))
-            , m_previousValue(std::nullopt) {
-
-        } */
-
-        ValueImpl(const ValueImpl&) = delete;
-        ValueImpl(ValueImpl&&) = delete;
-
         virtual ~ValueImpl() noexcept {
+            detail::cancelUpdates(static_cast<const void*>(this));
             for (const auto& o : m_observers) {
                 assert(o);
                 o->reset();
             }
         }
 
+        ValueImpl(const ValueImpl&) = delete;
+        ValueImpl(ValueImpl&&) = delete;
 
         ValueImpl& operator=(const ValueImpl&) = delete;
         ValueImpl& operator=(ValueImpl&&) = delete;
@@ -500,9 +490,12 @@ namespace ofc {
         }
 
         void registerForUpdate() {
-            detail::enqueueValueUpdater([this]() {
-                purgeUpdates();
-            });
+            detail::enqueueValueUpdater(
+                static_cast<const void*>(this),
+                [this]() {
+                    purgeUpdates();
+                }
+            );
         }
 
         friend Observer<T>;
@@ -796,7 +789,9 @@ namespace ofc {
             : ObserverBase(std::move(o))
             , m_value(std::move(o.m_value))
             , m_onUpdate(std::exchange(o.m_onUpdate, nullptr)) {
+
             if (auto vi = m_value.impl()) {
+                vi->purgeUpdates();
                 auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), &o) == 1);
                 assert(std::count(v.begin(), v.end(), this) == 0);
@@ -814,6 +809,7 @@ namespace ofc {
             m_value = std::move(o.m_value);
             m_onUpdate = std::exchange(o.m_onUpdate, nullptr);
             if (auto vi = m_value.impl()) {
+                vi->purgeUpdates();
                 auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), &o) == 1);
                 assert(std::count(v.begin(), v.end(), this) == 0);
@@ -850,6 +846,7 @@ namespace ofc {
             m_value = std::move(target);
             update(diff);
             if (auto vi = m_value.impl()) {
+                vi->purgeUpdates();
                 auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), this) == 0);
                 v.push_back(this);
@@ -862,6 +859,7 @@ namespace ofc {
 
         void reset() {
             if (auto vi = m_value.impl()) {
+                vi->purgeUpdates();
                 auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), this) == 1);
                 auto it = std::find(v.begin(), v.end(), this);
