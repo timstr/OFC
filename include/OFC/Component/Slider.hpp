@@ -24,25 +24,25 @@ namespace ofc::ui {
             static_assert(std::is_arithmetic_v<NumberType>);
         }
 
-        Slider& onChange(std::function<void(NumberType)> f) {
+        Slider&& onChange(std::function<void(NumberType)> f) {
             m_onChange = std::move(f);
-            return *this;
+            return std::move(*this);
         }
 
-        Slider& width(Value<float> w){
+        Slider&& width(Value<float> w){
             m_width = std::move(w);
-            return *this;
+            return std::move(*this);
         }
 
-        Slider& height(Value<float> h){
+        Slider&& height(Value<float> h){
             m_height = std::move(h);
-            return *this;
+            return std::move(*this);
         }
 
-        Slider& size(Value<vec2> s){
+        Slider&& size(Value<vec2> s){
             m_width = s.map([](vec2 v){ return v.x; });
             m_height = s.map([](vec2 v){ return v.y; });
-            return *this;
+            return std::move(*this);
         }
 
     private:

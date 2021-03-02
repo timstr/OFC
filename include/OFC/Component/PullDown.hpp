@@ -27,9 +27,9 @@ namespace ofc::ui {
             static_assert(std::is_same_v<T, String>);
         }
 
-        PulldownMenu& onChange(std::function<void(CRefOrValue<T>, std::size_t)> f) {
+        PulldownMenu&& onChange(std::function<void(CRefOrValue<T>, std::size_t)> f) {
             m_onChange = std::move(f);
-            return *this;
+            return std::move(*this);
         }
 
     private:

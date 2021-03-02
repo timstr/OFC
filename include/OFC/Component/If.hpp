@@ -8,9 +8,9 @@ namespace ofc::ui {
     public:
         If(Value<bool> c);
 
-        If& then(AnyComponent c);
+        If&& then(AnyComponent c);
 
-        If& otherwise(AnyComponent c);
+        If&& otherwise(AnyComponent c);
 
     private:
         Observer<bool> m_condition;

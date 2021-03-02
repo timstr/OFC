@@ -10,9 +10,9 @@ namespace ofc::ui {
 
     }
 
-    Button& Button::onClick(std::function<void()> f) {
+    Button&& Button::onClick(std::function<void()> f) {
         m_onClick = std::move(f);
-        return *this;
+        return std::move(*this);
     }
 
     AnyComponent Button::render() const {
@@ -38,9 +38,9 @@ namespace ofc::ui {
 
     }
 
-    Toggle& Toggle::onChange(std::function<void(bool)> f) {
+    Toggle&& Toggle::onChange(std::function<void(bool)> f) {
         m_onChange = std::move(f);
-        return *this;
+        return std::move(*this);
     }
 
     AnyComponent Toggle::render() const {

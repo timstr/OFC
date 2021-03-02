@@ -86,30 +86,34 @@ class Graph;
 class Node {
 public:
     Node() noexcept
-        : m_connections(defaultConstruct)
+        : m_inputs(defaultConstruct)
+        , m_outputs(defaultConstruct)
         , m_parentGraph(nullptr) {
         
     }
 
     virtual ~Node() noexcept {
         assert(m_parentGraph == nullptr);
-        while (m_connections.getOnce().size() > 0) {
-            disconnect(m_connections.getOnce()[0]);
-        }
+        assert(m_inputs.getOnce().size() == 0);
+        assert(m_outputs.getOnce().size() == 0);
     }
 
-    void connect(Node* other) {
-        auto& mine = m_connections.getOnceMut();
-        auto& yours = other->m_connections.getOnceMut();
+    void addInput(Node* other) {
+        assert(m_parentGraph);
+        assert(other->m_parentGraph == m_parentGraph);
+        auto& mine = m_inputs.getOnceMut();
+        auto& yours = other->m_outputs.getOnceMut();
         assert(count(begin(mine), end(mine), other) == 0);
         assert(count(begin(yours), end(yours), this) == 0);
         mine.push_back(other);
         yours.push_back(this);
     }
 
-    void disconnect(Node* other) {
-        auto& mine = m_connections.getOnceMut();
-        auto& yours = other->m_connections.getOnceMut();
+    void removeInput(Node* other) {
+        assert(m_parentGraph);
+        assert(other->m_parentGraph == m_parentGraph);
+        auto& mine = m_inputs.getOnceMut();
+        auto& yours = other->m_outputs.getOnceMut();
         assert(count(begin(mine), end(mine), other) == 1);
         assert(count(begin(yours), end(yours), this) == 1);
         {
@@ -124,8 +128,27 @@ public:
         }
     }
 
-    const Value<std::vector<Node*>>& connections() const noexcept {
-        return m_connections;
+    void removeAllConnections() {
+        assert(m_parentGraph);
+        while (m_inputs.getOnce().size() > 0) {
+            const auto i = m_inputs.getOnce().front();
+            assert(i->m_parentGraph == m_parentGraph);
+            removeInput(i);
+        }
+        while (m_outputs.getOnce().size() > 0) {
+            auto o = m_outputs.getOnce().front();
+            assert(o);
+            assert(o->m_parentGraph == m_parentGraph);
+            o->removeInput(this);
+        }
+    }
+
+    const Value<std::vector<Node*>>& inputs() const noexcept {
+        return m_inputs;
+    }
+
+    const Value<std::vector<Node*>>& outputs() const noexcept {
+        return m_outputs;
     }
 
     virtual const std::string& getType() const noexcept = 0;
@@ -139,7 +162,8 @@ public:
     }
 
 private:
-    Value<std::vector<Node*>> m_connections;
+    Value<std::vector<Node*>> m_inputs;
+    Value<std::vector<Node*>> m_outputs;
     Graph* m_parentGraph;
 
     friend Graph;
@@ -232,6 +256,10 @@ public:
     ~Graph() noexcept {
         for (auto& np : m_nodes.getOnce()) {
             assert(np->m_parentGraph == this);
+            np->removeAllConnections();
+        }
+        for (auto& np : m_nodes.getOnce()) {
+            assert(np->m_parentGraph == this);
             np->m_parentGraph = nullptr;
         }
     }
@@ -245,12 +273,16 @@ public:
     template<typename T, typename... Args>
     T& add(Args&&... args) {
         auto up = std::make_unique<T>(std::forward<Args>(args)...);
+        assert(up->m_parentGraph == nullptr);
         auto& r = *up;
         adopt(std::move(up));
+        assert(r.m_parentGraph == this);
         return r;
     }
 
     std::unique_ptr<Node> release(Node* n) {
+        assert(n);
+        assert(n->m_parentGraph == this);
         auto sameNode = [&](const std::unique_ptr<Node>& up) {
             return up.get() == n;
         };
@@ -258,8 +290,13 @@ public:
         assert(count_if(begin(theNodes), end(theNodes), sameNode) == 1);
         auto it = find_if(begin(theNodes), end(theNodes), sameNode);
         assert(it != end(theNodes));
+
+        n->removeAllConnections();
+
         auto ret = std::move(*it);
         theNodes.erase(it);
+
+        assert(ret->m_parentGraph == this);
         ret->m_parentGraph = nullptr;
         return ret;
     }
@@ -273,6 +310,33 @@ public:
         return m_nodes.vectorMap([](const std::unique_ptr<Node>& p){
             return p.get();
         });
+    }
+
+    using Connection = std::pair<Node*, Node*>;
+
+    Value<std::vector<Connection>> connections() const {
+
+        const auto perNodeConnections = [](Node* n){
+            return n->outputs().vectorMap([&](Node* nn){
+                assert(n != nn);
+                return std::make_pair(n, nn);
+            });
+        };
+
+        const auto combineConnections = [](std::vector<Connection> acc, const std::vector<Connection>& v) {
+            for (const auto& c : v) {
+                if (find(begin(acc), end(acc), c) == end(acc)) {
+                    acc.push_back(c);
+                }
+            }
+            return acc;
+        };
+
+        return nodes().reduce<std::vector<Connection>>(
+            std::vector<Connection>{},
+            perNodeConnections,
+            combineConnections
+        );
     }
 
 private:
@@ -350,29 +414,49 @@ public:
     
     }
 
-    NodeUI& onChangePosition(std::function<void(vec2)> f) {
-        m_onChangePosition = std::move(f);
-        return *this;
+    NodeUI&& onMove(std::function<void(vec2)> f) {
+        m_onMove = std::move(f);
+        return std::move(*this);
+    }
+
+    NodeUI&& onMoveInput(std::function<void(vec2)> f) {
+        m_onMoveInput = std::move(f);
+        return std::move(*this);
+    }
+
+    NodeUI&& onMoveOutput(std::function<void(vec2)> f) {
+        m_onMoveOutput = std::move(f);
+        return std::move(*this);
     }
 
 private:
     AnyComponent inputPeg() const {
-        return MixedContainerComponent<FreeContainerBase, Boxy>{}
+        return MixedContainerComponent<FreeContainerBase, Boxy, Positionable>{}
             .borderRadius(15.0f)
             .backgroundColor(0xF4FF7FFF)
             .borderColor(0xFF)
             .borderThickness(2.0f)
+            .onChangeGlobalPosition([&](vec2 v){
+                if (m_onMoveInput) {
+                    m_onMoveInput(v);
+                }
+            })
             .containing(
                 Center(Text("In"))
             );
     }
 
     AnyComponent outputPeg() const {
-        return MixedContainerComponent<FreeContainerBase, Boxy>{}
+        return MixedContainerComponent<FreeContainerBase, Boxy, Positionable>{}
             .borderRadius(15.0f)
             .backgroundColor(0xF4FF7FFF)
             .borderColor(0xFF)
             .borderThickness(2.0f)
+            .onChangeGlobalPosition([&](vec2 v){
+                if (m_onMoveOutput) {
+                    m_onMoveOutput(v);
+                }
+            })
             .containing(
                 Center(Text("Out"))
             );
@@ -400,7 +484,7 @@ private:
     }
 
     AnyComponent render() const override final {
-        return MixedContainerComponent<HorizontalListBase, Clickable, Draggable>{}
+        return MixedContainerComponent<HorizontalListBase, Clickable, Draggable, Positionable>{}
             .onLeftClick([](int, ModifierKeys, auto action){
                 action.startDrag();
                 return true;
@@ -408,11 +492,10 @@ private:
             .onLeftRelease([](auto action){
                 action.stopDrag();
             })
-            .onDrag([this](vec2 v){
-                if (m_onChangePosition){
-                    m_onChangePosition(v);
+            .onChangeGlobalPosition([this](vec2 v){
+                if (m_onMove){
+                    m_onMove(v);
                 }
-                return std::nullopt;
             })
             .containing(
                 CenterVertically{inputPeg()},
@@ -423,7 +506,46 @@ private:
 
     Node* const m_node;
     Value<vec2> m_position;
-    std::function<void(vec2)> m_onChangePosition;
+    std::function<void(vec2)> m_onMove;
+    std::function<void(vec2)> m_onMoveInput;
+    std::function<void(vec2)> m_onMoveOutput;
+};
+
+class WireUI : public PureComponent {
+public:
+    WireUI(const Node* source, const Node* target)
+        : m_source(source)
+        , m_target(target) {
+    
+    }
+
+    WireUI&& sourcePosition(Value<vec2> v) {
+        m_sourcePosition = std::move(v);
+        return std::move(*this);
+    }
+
+    WireUI&& targetPosition(Value<vec2> v) {
+        m_targetPosition = std::move(v);
+        return std::move(*this);
+    }
+
+private:
+    const Node* m_source;
+    const Node* m_target;
+
+    Value<vec2> m_sourcePosition;
+    Value<vec2> m_targetPosition;
+
+    AnyComponent render() const override final {
+        return List(
+            MixedComponent<Positionable, Resizable, Boxy>{}
+                .position(m_sourcePosition)
+                .size(vec2{20.0f, 20.0f})
+                .borderColor(0xFF)
+                .borderRadius(10.0f)
+                .backgroundColor(0xBBBB44)
+        );
+    }
 };
 
 class GraphUI : public PureComponent {
@@ -432,13 +554,19 @@ public:
         : m_graph(graph)
         , m_nodePositions(graph->nodes().vectorMap([](Node* n){
             return NodePosition{n, vec2{0.0f, 0.0f}};
+        }))
+        , m_inputPegPositions(graph->nodes().vectorMap([](Node* n){
+            return PegPosition{n, vec2{0.0f, 0.0f}};
+        }))
+        , m_outputPegPositions(graph->nodes().vectorMap([](Node* n){
+            return PegPosition{n, vec2{0.0f, 0.0f}};
         })) {
 
     }
 
 private:
     AnyComponent description() const {
-        auto numConnections = allConnections().map([](const ListOfEdits<Connection>& loe){
+        auto numConnections = m_graph->connections().map([](const ListOfEdits<Graph::Connection>& loe){
             return loe.newValue().size();
         });
         return Text(combine(m_nodePositions, std::move(numConnections)).map([](const ListOfEdits<NodePosition>& loe, std::size_t n) -> String {
@@ -446,29 +574,70 @@ private:
         }));
     }
 
-    using Connection = std::pair<Node*, Node*>;
+    // Source node & position, target node & position
+    using PositionedConnection = std::tuple<Node*, Value<vec2>, Node*, Value<vec2>>;
 
-    Value<std::vector<Connection>> allConnections() const {
-        return m_graph->nodes().reduce<std::vector<Connection>>(
-            std::vector<Connection>{},
-            [](Node* n){
-                return n->connections().vectorMap([&](Node* nn){
-                    assert(n != nn);
-                    return n < nn ? std::make_pair(n, nn) : std::make_pair(nn, n);
-                });
-            },
-            [](std::vector<Connection> acc, const std::vector<Connection>& v) {
-                for (const auto& c : v) {
-                    if (find(begin(acc), end(acc), c) == end(acc)) {
-                        acc.push_back(c);
-                    }
+    Value<std::vector<PositionedConnection>> positionedConnections() const {
+        return combine(m_inputPegPositions, m_outputPegPositions, m_graph->connections())
+            .map([](
+                const ListOfEdits<NodePosition>& ipp,
+                const ListOfEdits<NodePosition>& opp,
+                const ListOfEdits<Graph::Connection>& conns
+            ){
+                const auto& is = ipp.newValue();
+                const auto& os = opp.newValue();
+                const auto& cs = conns.newValue();
+                std::vector<PositionedConnection> ret;
+                ret.reserve(cs.size());
+                for (const auto& c : cs) {
+                    auto ii = find_if(
+                        begin(is),
+                        end(is),
+                        [&](const NodePosition& np){ 
+                            return np.first == c.second;
+                        }
+                    );
+                    assert(ii != end(is));
+
+                    auto oi = find_if(
+                        begin(os),
+                        end(os),
+                        [&](const NodePosition& np){ 
+                            return np.first == c.first;
+                        }
+                    );
+                    assert(oi != end(os));
+
+                    ret.push_back(PositionedConnection{
+                        c.first,
+                        oi->second,
+                        c.second,
+                        ii->second
+                    });
                 }
-                return acc;
-            }
-        );
+                return ret;
+            });
     }
 
     AnyComponent render() const override final {
+        auto pc = positionedConnections();
+
+
+        auto va = pc.reduce(
+            std::vector<sf::Vertex>{},
+            [](const PositionedConnection& p) -> Value<std::pair<vec2, vec2>> {
+                return combine(std::get<1>(p), std::get<3>(p))
+                    .map([](const vec2& p1, const vec2& p2){
+                        return std::make_pair(p1, p2);
+                    });
+            },
+            [](std::vector<sf::Vertex> acc, const std::pair<vec2, vec2>& p1p2){
+                acc.push_back(sf::Vertex{p1p2.first, sf::Color{0xFF}});
+                acc.push_back(sf::Vertex{p1p2.second, sf::Color{0xFF}});
+                return acc;
+            }
+        );
+
         return List(
             HorizontalList{}.containing(
                 Button("+")
@@ -477,24 +646,91 @@ private:
                     }),
                 description()
             ),
-            ForEach(m_nodePositions)
-                .Do([this](const NodePosition& np, const Value<std::size_t>& idx) -> AnyComponent {
-                    return NodeUI{np.first, np.second}
-                        .onChangePosition([this, &idx](vec2 v){
-                            auto& nps = this->m_nodePositions.getOnce();
-                            auto i = idx.getOnce();
-                            assert(i < nps.size());
-                            nps[i].second.makeMutable().set(v);
-                        });
-                })
+            ForEach(m_nodePositions).Do([this](const NodePosition& np, const Value<std::size_t>& idx) -> AnyComponent {
+                return NodeUI{np.first, np.second}
+                    .onMove([this, &idx](vec2 v){
+                        auto& nps = this->m_nodePositions.getOnce();
+                        auto i = idx.getOnce();
+                        assert(i < nps.size());
+                        nps[i].second.makeMutable().set(v);
+                    })
+                    .onMoveInput([this, &idx](vec2 v){
+                        auto& ips = this->m_inputPegPositions.getOnce();
+                        auto i = idx.getOnce();
+                        assert(i < ips.size());
+                        ips[i].second.makeMutable().set(v);
+                    })
+                    .onMoveOutput([this, &idx](vec2 v){
+                        auto& ips = this->m_outputPegPositions.getOnce();
+                        auto i = idx.getOnce();
+                        assert(i < ips.size());
+                        ips[i].second.makeMutable().set(v);
+                    });
+            }),
+            VertexArray{}
+                .vertices(va)
+                .primitiveType(sf::Lines),
+            ForEach(pc).Do([this](const PositionedConnection& pp, const Value<std::size_t>& idx) -> AnyComponent {
+                const auto& [sn, op, tn, ip] = pp;
+                const auto makePeg = []{
+                    return MixedContainerComponent<FreeContainerBase, Positionable, Resizable, Boxy>{}
+                        .size(vec2{20.0f, 20.0f})
+                        .borderRadius(10.0f)
+                        .borderThickness(2.0f)
+                        .borderColor(0xff)
+                        .backgroundColor(0x4444bbff);
+                };
+
+                return List(
+                    makePeg()
+                        .position(op)
+                        .containing(Center{Text("src")}),
+                    makePeg()
+                        .position(ip)
+                        .containing(Center{Text("dst")})
+                );
+            })
         );
+        // TODO: render connections
+        // have: all pairs of connected nodes
+        // need: the spatial locations of the input and output pegs of those nodes' UIs
+        //       -> how can do???
+        //       -> at every point in time, connection endpoints should line up exactly
+        //          with the input and output pegs
+        //       -> depends on:
+        //           - node UI position
+        //           - peg position within node UI (which potentially depends on
+        //             everything else in the node UI)
+        //       -> one option: cache everything and update using callbacks (much like
+        //          node positions currently)
+        //           - could use dom::Element::onMove to detect when pegs move within
+        //             their container, but not when the parent container moves :(
+        //       -> another option: recompute all the time
+        //           - during render()? Meh, will lag
+        //           - when else?
+        //       -> another option: add something like React's ref
+        //           - can get relative position of pegs, but when to update? same problem as above
+        //       -> another option: introduce a new system for observer dom::Element things
+        //           - things that could be desired:
+        //             - element position (relative to another)
+        //             - element size
+        //             - ?
+        //             - position and size are more controlled by layout than anything else,
+        //               so probably no other things need watching. Ergo, a small additional
+        //               interface for tracking size and relative position is probably fine
+        // 
+
     }
 
     Graph* const m_graph;
     
     using NodePosition = std::pair<Node*, Value<vec2>>;
+    using PegPosition = std::pair<Node*, Value<vec2>>;
     
     Value<std::vector<NodePosition>> m_nodePositions;
+    Value<vec2> m_rootPosition;
+    Value<std::vector<PegPosition>> m_inputPegPositions;
+    Value<std::vector<PegPosition>> m_outputPegPositions;
 };
 
 int main(){
@@ -504,8 +740,13 @@ int main(){
     auto& sn = graph.add<StringNode>("Blab blab");
     auto& in = graph.add<IntegerNode>(99);
     auto& bn = graph.add<BooleanNode>(false);
+    sn.addInput(&bn);
+    bn.addInput(&in);
+    in.addInput(&sn);
 
-    sn.connect(&bn);
+    bn.addInput(&sn);
+    in.addInput(&bn);
+    sn.addInput(&in);
 
     auto comp = AnyComponent{UseFont(&getFont()).with(
         GraphUI{&graph}

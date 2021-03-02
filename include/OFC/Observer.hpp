@@ -20,7 +20,9 @@ namespace ofc {
 
     namespace detail {
         
-        void enqueueValueUpdater(const void* valueImpl, std::function<void()>);
+        void enqueueUpdater(const void* valueImpl, std::function<void()>);
+
+        void addPersistentUpdater(const void* valueImpl, std::function<void()>);
 
         void updateAllValues();
 
@@ -490,7 +492,7 @@ namespace ofc {
         }
 
         void registerForUpdate() {
-            detail::enqueueValueUpdater(
+            detail::enqueueUpdater(
                 static_cast<const void*>(this),
                 [this]() {
                     purgeUpdates();
@@ -650,6 +652,9 @@ namespace ofc {
         friend class CombinedValues;
 
         friend Summary<Value<T>>;
+
+        template<typename T>
+        friend Value<T> pollingValue(std::function<std::optional<T>()> fn);
     };
 
     template<typename T, typename... Rest>
@@ -778,7 +783,6 @@ namespace ofc {
             , m_onUpdate(makeUpdateFunction(self, onUpdate)) {
 
             if (auto vi = m_value.impl()) {
-                vi->purgeUpdates();
                 auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), this) == 0);
                 v.push_back(this);
@@ -791,7 +795,6 @@ namespace ofc {
             , m_onUpdate(std::exchange(o.m_onUpdate, nullptr)) {
 
             if (auto vi = m_value.impl()) {
-                vi->purgeUpdates();
                 auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), &o) == 1);
                 assert(std::count(v.begin(), v.end(), this) == 0);
@@ -809,7 +812,6 @@ namespace ofc {
             m_value = std::move(o.m_value);
             m_onUpdate = std::exchange(o.m_onUpdate, nullptr);
             if (auto vi = m_value.impl()) {
-                vi->purgeUpdates();
                 auto& v = vi->m_observers;
                 assert(std::count(v.begin(), v.end(), &o) == 1);
                 assert(std::count(v.begin(), v.end(), this) == 0);
@@ -1149,5 +1151,29 @@ namespace ofc {
         Observer<std::vector<U>> m_vectorObserver;
         std::vector<Observer<V>> m_elementObservers;
     };
+
+    /**
+     * Returns a value that is updated at every time step
+     * using the provided function
+     */
+    template<typename T>
+    Value<T> pollingValue(std::function<std::optional<T>()> fn) {
+        auto v = Value<T>{};
+        if (auto x = fn(); x.has_value()) {
+            v = Value<T>{std::move(*x)};
+        } else {
+            v = Value<T>{defaultConstruct};
+        }
+        ValueImpl<T>* impl = v.impl();
+        detail::addPersistentUpdater(
+            static_cast<void*>(impl),
+            [impl,f=std::move(fn)]() {
+                if (auto x = f(); x.has_value()) {
+                    impl->set(std::move(*x));
+                }
+            }
+        );
+        return v;
+    }
 
 } // namespace ofc

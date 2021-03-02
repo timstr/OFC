@@ -10,13 +10,13 @@ namespace ofc::ui {
     public:
         UseCommands() = default;
 
-        UseCommands& add(Key triggerKey, std::function<void()> callback);
+        UseCommands&& add(Key triggerKey, std::function<void()> callback);
 
-        UseCommands& add(Key triggerKey, ModifierKeys::KeyCode requiredKey, std::function<void()> callback);
+        UseCommands&& add(Key triggerKey, ModifierKeys::KeyCode requiredKey, std::function<void()> callback);
 
-        UseCommands& add(Key triggerKey, std::vector<ModifierKeys::KeyCode> requiredKeys, std::function<void()> callback);
+        UseCommands&& add(Key triggerKey, std::vector<ModifierKeys::KeyCode> requiredKeys, std::function<void()> callback);
 
-        UseCommands& with(AnyComponent);
+        UseCommands&& with(AnyComponent);
 
     private:
         struct CommandData {

@@ -368,9 +368,9 @@ namespace ofc::ui {
         }
     }
 
-    Restorable& Restorable::with(AnyComponent c) {
+    Restorable&& Restorable::with(AnyComponent c) {
         m_component = std::move(c);
-        return *this;
+        return std::move(*this);
     }
 
     void Restorable::onMount(const dom::Element* beforeSibling) {

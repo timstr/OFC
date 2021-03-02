@@ -8,7 +8,7 @@ namespace ofc::ui {
     public:
         Button(Value<String> s);
 
-        Button& onClick(std::function<void()> f);
+        Button&& onClick(std::function<void()> f);
 
     private:
         Value<String> m_caption;
@@ -21,7 +21,7 @@ namespace ofc::ui {
     public:
         Toggle(Value<String> falseLabel, Value<String> trueLabel, Value<bool> value);
 
-        Toggle& onChange(std::function<void(bool)>);
+        Toggle&& onChange(std::function<void(bool)>);
 
     private:
         Value<String> m_falseLabel;

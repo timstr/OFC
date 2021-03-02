@@ -230,36 +230,47 @@ namespace ofc::ui {
     template<typename ElementType>
     class SimpleComponent : public Component {
     public:
-        SimpleComponent() : m_element(nullptr) {
+        SimpleComponent()
+            : m_elementPtr(std::make_unique<ElementType*>(nullptr)) {
             static_assert(std::is_base_of_v<dom::Element, ElementType>, "ElementType must derive from dom::Element");
         }
 
+        // NOTE: pointer to pointer is used so that the element can be accessed
+        // via pointer even after the component is moved
         ElementType* element() const noexcept {
-            return m_element;
+            assert(m_elementPtr);
+            return *m_elementPtr;
+        }
+
+        ElementType* const* elementPtr() const noexcept {
+            return m_elementPtr.get();
         }
 
         dom::Element* getElement() const noexcept override final {
-            return m_element;
+            assert(m_elementPtr);
+            return *m_elementPtr;
         }
 
     protected:
         virtual std::unique_ptr<ElementType> createElement() = 0;
 
     private:
-        ElementType* m_element;
+        std::unique_ptr<ElementType*> m_elementPtr;
 
         void onMount(const dom::Element* beforeElement) override final {
-            assert(m_element == nullptr);
+            assert(m_elementPtr);
+            assert(*m_elementPtr == nullptr);
             auto ep = createElement();
             assert(ep);
-            m_element = ep.get();
+            *m_elementPtr = ep.get();
             insertElement(std::move(ep), beforeElement);
         }
 
         void onUnmount() override final {
-            assert(m_element);
-            eraseElement(m_element);
-            m_element = nullptr;
+            assert(m_elementPtr);
+            assert(*m_elementPtr);
+            eraseElement(*m_elementPtr);
+            *m_elementPtr = nullptr;
         }
     };
 
@@ -362,7 +373,7 @@ namespace ofc::ui {
         Restorable& operator=(Restorable&&) = delete;
         Restorable& operator=(const Restorable&&) = delete;
 
-        Restorable& with(AnyComponent);
+        Restorable&& with(AnyComponent);
 
     private:
         AnyComponent m_component;

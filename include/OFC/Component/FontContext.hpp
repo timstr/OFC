@@ -20,9 +20,9 @@ namespace ofc::ui {
 
         }
 
-        Derived& font(Value<const sf::Font*> pv) {
+        Derived&& font(Value<const sf::Font*> pv) {
             this->getObserver().assign(std::move(pv));
-            return *this;
+            return std::move(*this);
         }
 
     protected:

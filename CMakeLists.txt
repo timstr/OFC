@@ -43,6 +43,7 @@ set(ofc_headers
     include/OFC/Component/Switch.hpp
     include/OFC/Component/Text.hpp
     include/OFC/Component/TextField.hpp
+    include/OFC/Component/VertexArray.hpp
     include/OFC/Component/When.hpp
 
     include/OFC/DOM/BoxElement.hpp
@@ -57,6 +58,7 @@ set(ofc_headers
     include/OFC/DOM/ListContainer.hpp
     include/OFC/DOM/Text.hpp
     include/OFC/DOM/TextEntry.hpp
+    include/OFC/DOM/VertexArray.hpp
 
     include/OFC/Util/Color.hpp
     include/OFC/Util/Key.hpp
@@ -88,6 +90,7 @@ set(ofc_srcs
     src/Component/Root.cpp
     src/Component/Text.cpp
     src/Component/TextField.cpp
+    src/Component/VertexArray.cpp
 
     src/DOM/BoxElement.cpp
     src/DOM/Container.cpp
@@ -101,6 +104,7 @@ set(ofc_srcs
     src/DOM/ListContainer.cpp
     src/DOM/Text.cpp
     src/DOM/TextEntry.cpp
+    src/DOM/VertexArray.cpp
 
     src/Util/Color.cpp
     src/Util/Key.cpp

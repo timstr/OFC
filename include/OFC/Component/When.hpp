@@ -25,15 +25,15 @@ namespace ofc::ui {
 
         }
 
-        When& Do(std::function<AnyComponent(CRefOrValue<T>)> f) {
+        When&& Do(std::function<AnyComponent(CRefOrValue<T>)> f) {
             assert(!m_fn);
             m_fn = std::move(f);
-            return *this;
+            return std::move(*this);
         }
 
-        When& Otherwise(AnyComponent c) {
+        When&& Otherwise(AnyComponent c) {
             m_otherwiseComponent = std::move(c);
-            return *this;
+            return std::move(*this);
         }
 
     private:

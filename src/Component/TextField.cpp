@@ -46,19 +46,19 @@ namespace ofc::ui {
 
     }
 
-    TextField& TextField::onChange(std::function<void(const String&)> f) {
+    TextField&& TextField::onChange(std::function<void(const String&)> f) {
         m_onChange = std::move(f);
-        return *this;
+        return std::move(*this);
     }
 
-    TextField& TextField::onSubmit(std::function<void(const String&)> f) {
+    TextField&& TextField::onSubmit(std::function<void(const String&)> f) {
         m_onSubmit = std::move(f);
-        return *this;
+        return std::move(*this);
     }
 
-    TextField& TextField::validate(std::function<bool(const String&)> f) {
+    TextField&& TextField::validate(std::function<bool(const String&)> f) {
         m_validate = std::move(f);
-        return *this;
+        return std::move(*this);
     }
 
     std::unique_ptr<dom::TextEntry> TextField::createElement() {

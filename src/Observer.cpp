@@ -6,11 +6,14 @@ namespace ofc {
 
     namespace detail {
 
-        using UpdateQueue = std::vector<std::pair<const void*, std::function<void()>>>;
+        using OwnerCallback = std::pair<const void*, std::function<void()>>;
+
+        using UpdateQueue = std::vector<OwnerCallback>;
 
         struct UpdateQueuePair {
             UpdateQueue inboundQueue;
             UpdateQueue outboundQueue;
+            UpdateQueue persistentQueue;
         };
 
         UpdateQueuePair& getUpdateQueues() noexcept {
@@ -18,14 +21,23 @@ namespace ofc {
             return theQueues;
         }
 
-        void enqueueValueUpdater(const void* owner, std::function<void()> f) {
+        void enqueueUpdater(const void* owner, std::function<void()> f) {
             assert(owner);
             auto& q = getUpdateQueues();
             q.inboundQueue.emplace_back(owner, std::move(f));
         }
 
+        void addPersistentUpdater(const void* valueImpl, std::function<void()> f) {
+            auto& qs = getUpdateQueues();
+            qs.persistentQueue.emplace_back(valueImpl, std::move(f));
+        }
+
         void updateAllValues() {
             auto& qs = getUpdateQueues();
+            for (const auto& f : qs.persistentQueue) {
+                assert(f.second);
+                f.second();
+            }
             while (true) {
                 assert(qs.outboundQueue.size() == 0);
                 std::swap(qs.inboundQueue, qs.outboundQueue);
@@ -58,6 +70,14 @@ namespace ofc {
             auto& qs = getUpdateQueues();
             clearTheQueue(qs.inboundQueue);
             clearTheQueue(qs.outboundQueue);
+
+            qs.persistentQueue.erase(remove_if(
+                begin(qs.persistentQueue),
+                end(qs.persistentQueue),
+                [&](const OwnerCallback& oc) {
+                    return oc.first == owner;
+                }
+            ), end(qs.persistentQueue));
         }
     }
 

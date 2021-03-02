@@ -11,9 +11,9 @@ namespace ofc::ui {
 
     }
 
-    CheckBox& CheckBox::onChange(std::function<void(bool)> f) {
+    CheckBox&& CheckBox::onChange(std::function<void(bool)> f) {
         m_onChange = std::move(f);
-        return *this;
+        return std::move(*this);
     }
 
     AnyComponent CheckBox::render() const {

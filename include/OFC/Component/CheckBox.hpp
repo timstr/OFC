@@ -9,7 +9,7 @@ namespace ofc::ui {
     public:
         CheckBox(Value<bool> value);
 
-        CheckBox& onChange(std::function<void(bool)> f);
+        CheckBox&& onChange(std::function<void(bool)> f);
 
     private:
         Value<bool> m_value;

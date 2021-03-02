@@ -14,14 +14,14 @@ namespace ofc::ui {
 
         }
 
-        Switch& Case(T t, AnyComponent c) {
+        Switch&& Case(T t, AnyComponent c) {
             m_cases.insert_or_assign(std::move(t), std::move(c));
-            return *this;
+            return std::move(*this);
         }
 
-        Switch& Default(AnyComponent c) {
+        Switch&& Default(AnyComponent c) {
             m_defaultComponent = std::move(c);
-            return *this;
+            return std::move(*this);
         }
 
     private:

@@ -19,11 +19,11 @@ namespace ofc::ui {
     public:
         TextField(Value<String> s);
 
-        TextField& onChange(std::function<void(const String&)> f);
+        TextField&& onChange(std::function<void(const String&)> f);
 
-        TextField& onSubmit(std::function<void(const String&)> f);
+        TextField&& onSubmit(std::function<void(const String&)> f);
 
-        TextField& validate(std::function<bool(const String&)> f);
+        TextField&& validate(std::function<bool(const String&)> f);
 
     private:
         Observer<String> m_stringObserver;
@@ -52,9 +52,9 @@ namespace ofc::ui {
         
         }
 
-        NumberTextField& onSubmit(std::function<void(NumberType)> f) {
+        NumberTextField&& onSubmit(std::function<void(NumberType)> f) {
             m_onSubmit = std::move(f);
-            return *this;
+            return std::move(*this);
         }
 
     private:

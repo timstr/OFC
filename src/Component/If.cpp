@@ -7,14 +7,14 @@ namespace ofc::ui {
 
     }
 
-    If& If::then(AnyComponent c) {
+    If&& If::then(AnyComponent c) {
         m_thenComponent = std::move(c);
-        return *this;
+        return std::move(*this);
     }
 
-    If& If::otherwise(AnyComponent c) {
+    If&& If::otherwise(AnyComponent c) {
         m_elseComponent = std::move(c);
-        return *this;
+        return std::move(*this);
     }
 
     void If::onMount(const dom::Element* beforeElement) {

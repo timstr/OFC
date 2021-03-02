@@ -101,6 +101,10 @@ namespace ofc::ui::dom {
     vec2 Element::rootPos(){
         return pos() + (m_parent ? m_parent->rootPos() : vec2{});
     }
+
+    vec2 Element::rootPos() const {
+        return pos() + (m_parent ? std::as_const(*m_parent).rootPos() : vec2{});
+    }
     
     vec2 Element::localMousePos(){
         if (auto win = getParentWindow()){

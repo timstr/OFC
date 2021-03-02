@@ -51,6 +51,7 @@ namespace ofc::ui::dom {
 
         // the element's position relative to the window
         vec2 rootPos();
+        vec2 rootPos() const;
 
         // The position of the mouse relative to the element
         // Throws an exception if the element does not belong to a window

@@ -23,18 +23,31 @@ namespace ofc::ui {
     template<typename ContainerType, typename Derived>
     class ContainerComponentTemplate : public ContainerComponent {
     public:
-        ContainerComponentTemplate() : m_container(nullptr) {
+        ContainerComponentTemplate()
+            : m_containerPtr(std::make_unique<ContainerType*>(nullptr)) {
             static_assert(std::is_base_of_v<dom::Container, ContainerType>, "ContainerType must derive from dom::Container");
         }
 
         using Container = ContainerType;
 
     protected:
+
+        // NOTE: pointer to pointer is used so that the element can be accessed
+        // via pointer even after the component is moved
+        ContainerType* const* containerPtr() noexcept {
+            return m_containerPtr.get();
+        }
+        const ContainerType* const* containerPtr() const noexcept {
+            return m_containerPtr.get();
+        }
+
         ContainerType* container() noexcept {
-            return m_container;
+            assert(m_containerPtr);
+            return *m_containerPtr;
         }
         const ContainerType* container() const noexcept {
-            return m_container;
+            assert(m_containerPtr);
+            return *m_containerPtr;
         }
 
         virtual std::unique_ptr<ContainerType> createContainer() {
@@ -50,26 +63,28 @@ namespace ofc::ui {
         }
 
     private:
-        ContainerType* m_container;
+        std::unique_ptr<ContainerType*> m_containerPtr;
 
         virtual void onMountContainer(const dom::Element* beforeElement) = 0;
         virtual void onUnmountContainer() = 0;
 
         void onMount(const dom::Element* beforeElement) override final {
-            assert(m_container == nullptr);
+            assert(m_containerPtr);
+            assert(*m_containerPtr == nullptr);
             auto cp = createContainer();
             assert(cp);
             initContainer(*cp);
-            m_container = cp.get();
+            *m_containerPtr = cp.get();
             insertElement(std::move(cp), beforeElement);
             onMountContainer(beforeElement);
         }
 
         void onUnmount() override final {
-            assert(m_container);
+            assert(m_containerPtr);
+            assert(*m_containerPtr);
             onUnmountContainer();
-            eraseElement(m_container);
-            m_container = nullptr;
+            eraseElement(*m_containerPtr);
+            *m_containerPtr = nullptr;
         }
     };
 

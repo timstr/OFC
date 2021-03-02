@@ -8,6 +8,7 @@
 #include <OFC/Component/Context.hpp>
 #include <OFC/Component/FontContext.hpp>
 #include <OFC/Component/ForEach.hpp>
+// TODO: Image
 #include <OFC/Component/If.hpp>
 #include <OFC/Component/List.hpp>
 #include <OFC/Component/MixedComponent.hpp>
@@ -19,4 +20,5 @@
 #include <OFC/Component/Switch.hpp>
 #include <OFC/Component/Text.hpp>
 #include <OFC/Component/TextField.hpp>
+#include <OFC/Component/VertexArray.hpp>
 #include <OFC/Component/When.hpp>

@@ -19,10 +19,12 @@ namespace ofc::ui {
     // Properties: backgroundColor, borderColor, borderThickness, borderRadius
 
     class Resizable {};
-    // Properties: width,height,minWidth,minHeight,maxWidth,maxHeight,widthForce,heightForce
+    // Properties: width, height, minWidth, minHeight, maxWidth, maxHeight, widthForce, heightForce
+    // Observers: onChangeSize
 
     class Positionable {};
     // Properties: left, top
+    // Observers: onChangePosition, onChangeGlobalPosition
 
     class HitTestable {};
     // Handlers: hitTest
@@ -123,7 +125,7 @@ namespace ofc::ui {
             using ComponentBaseDerived = ComponentBase<CurrentTag, ContainerComponentType, Tags...>;
         
             decltype(auto) self() noexcept {
-                return static_cast<ComponentType&>(*this);
+                return std::move(static_cast<ComponentType&>(*this));
             }
 
             auto selfPtr() noexcept {
@@ -136,9 +138,24 @@ namespace ofc::ui {
             }
 
             decltype(auto) element() noexcept {
-                auto e = self().getDerivedElement();
-                assert(e);
-                return *e;
+                auto ep = elementPtr();
+                assert(ep);
+                return *ep;
+            }
+
+            auto elementPtr() noexcept {
+                auto ep = self().getDerivedElement();
+                static_assert(std::is_pointer_v<decltype(ep)>);
+                // static_assert(std::is_base_of_v<dom::Element, decltype(*ep)>); ????
+                return ep;
+            }
+
+            auto elementPtrPtr() noexcept {
+                auto epp = self().getElementPtr();
+                static_assert(std::is_pointer_v<decltype(epp)>);
+                // static_assert(std::is_pointer_v<decltype(*epp)>);
+                // static_assert(std::is_base_of_v<dom::Element, decltype(**epp)>);
+                return epp;
             }
         };
 
@@ -246,7 +263,8 @@ namespace ofc::ui {
                 , m_minWidthObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMinWidth))
                 , m_minHeightObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMinHeight))
                 , m_maxWidthObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMaxWidth))
-                , m_maxHeightObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMaxHeight)) {
+                , m_maxHeightObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateMaxHeight))
+                , m_onChangeSizeObserver(this->selfPtr(), this->memFn(&ComponentBase::onElementSizeChanged)) {
 
             }
 
@@ -327,6 +345,22 @@ namespace ofc::ui {
                 return this->self();
             }
 
+            decltype(auto) onChangeSize(std::function<void(vec2)> fn) {
+                assert(!m_onChangeSizeObserver.getValue().hasValue());
+                auto epp = this->elementPtrPtr();
+                m_onChangeSizeObserver.assign(pollingValue<vec2>([epp]() -> std::optional<vec2> {
+                    assert(epp);
+                    if (auto ep = *epp) {
+                        return std::as_const(*ep).size();
+                    }
+                    return std::nullopt;
+                }));
+                assert(!m_onChangeSize);
+                assert(fn);
+                m_onChangeSize = std::move(fn);
+                return this->self();
+            }
+
         private:
             Observer<float> m_widthObserver;
             Observer<float> m_heightObserver;
@@ -334,6 +368,16 @@ namespace ofc::ui {
             Observer<float> m_minHeightObserver;
             Observer<float> m_maxWidthObserver;
             Observer<float> m_maxHeightObserver;
+
+            Observer<vec2> m_onChangeSizeObserver;
+
+            std::function<void(vec2)> m_onChangeSize;
+
+            void onElementSizeChanged(const vec2& s) {
+                if (m_onChangeSize) {
+                    m_onChangeSize(s);
+                }
+            }
 
             void onUpdateWidth(float v) {
                 this->element().setWidth(v);
@@ -413,7 +457,9 @@ namespace ofc::ui {
 
             ComponentBase()
                 : m_leftObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateLeft))
-                , m_topObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateTop)) {
+                , m_topObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateTop))
+                , m_positionObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdatePosition))
+                , m_globalPositionObserver(this->selfPtr(), this->memFn(&ComponentBase::onUpdateGlobalPosition)) {
 
             }
 
@@ -433,10 +479,59 @@ namespace ofc::ui {
                 return this->self();
             }
 
+            decltype(auto) onChangePosition(std::function<void(vec2)> fn) {
+                assert(!m_positionObserver.getValue().hasValue());
+                auto epp = this->elementPtrPtr();
+                m_positionObserver.assign(pollingValue<vec2>([epp]() -> std::optional<vec2> {
+                    assert(epp);
+                    if (auto ep = *epp) {
+                        return std::as_const(*ep).pos();
+                    }
+                    return std::nullopt;
+                }));
+                assert(!m_onChangePosition);
+                assert(fn);
+                m_onChangePosition = std::move(fn);
+                return this->self();
+            }
+
+            decltype(auto) onChangeGlobalPosition(std::function<void(vec2)> fn) {
+                assert(!m_globalPositionObserver.getValue().hasValue());
+                auto epp = this->elementPtrPtr();
+                m_globalPositionObserver.assign(pollingValue<vec2>([epp]() -> std::optional<vec2> {
+                    assert(epp);
+                    if (auto ep = *epp) {
+                        return std::as_const(*ep).rootPos();
+                    }
+                    return std::nullopt;
+                }));
+                assert(!m_onChangeGlobalPosition);
+                assert(fn);
+                m_onChangeGlobalPosition = std::move(fn);
+                return this->self();
+            }
+
 
         private:
             Observer<float> m_leftObserver;
             Observer<float> m_topObserver;
+            Observer<vec2> m_positionObserver;
+            Observer<vec2> m_globalPositionObserver;
+
+            std::function<void(vec2)> m_onChangePosition;
+            std::function<void(vec2)> m_onChangeGlobalPosition;
+            
+            void onUpdatePosition(const vec2& v) {
+                if (m_onChangePosition) {
+                    m_onChangePosition(v);
+                }
+            }
+
+            void onUpdateGlobalPosition(const vec2& v) {
+                if (m_onChangeGlobalPosition) {
+                    m_onChangeGlobalPosition(v);
+                }
+            }
 
             void onUpdateLeft(float v) {
                 this->element().setLeft(v);
@@ -1228,6 +1323,10 @@ namespace ofc::ui {
                 return SimpleComponent<MixedElement<NoContainer, Tags...>>::element();
             }
 
+            ElementType* const* getElementPtr() const noexcept {
+                return SimpleComponent<MixedElement<NoContainer, Tags...>>::elementPtr();
+            }
+
         private:
             std::unique_ptr<ElementType> createElement() override final {
                 static_assert(
@@ -1289,6 +1388,12 @@ namespace ofc::ui {
                 auto c = this->container();
                 assert(!c || dynamic_cast<MixedDOMContainer*>(c));
                 return static_cast<MixedDOMContainer*>(c);
+            }
+
+            typename SelfType::Container* const* getElementPtr() noexcept {
+                auto cp = this->containerPtr();
+                assert(cp);
+                return cp;
             }
 
         private:
