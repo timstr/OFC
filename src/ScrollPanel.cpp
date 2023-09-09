@@ -1,4 +1,8 @@
 #include "GUI/Helpers/ScrollPanel.hpp"
+#include "GUI/GUI.hpp"
+#include "GUI/Transition.hpp"
+
+#include <cmath>
 
 namespace ui {
 
@@ -299,7 +303,7 @@ namespace ui {
 	void ScrollPanel::VerticalScrollBar::movePanel() {
 		setTop(std::min(std::max(top(), spacing), panel.height() - height() - thickness - 2.0f * spacing));
 		float pos_ratio = (top() - spacing) / (panel.height() - height() - thickness - 3.0f * spacing);
-		panel.innercontent->setTop(round(-pos_ratio * (panel.innercontent->height() - panel.height())));
+		panel.innercontent->setTop(std::round(-pos_ratio * (panel.innercontent->height() - panel.height())));
 	}
 	
 
@@ -334,7 +338,7 @@ namespace ui {
 	void ScrollPanel::HorizontalScrollBar::movePanel() {
 		setLeft(std::min(std::max(left(), spacing), panel.width() - width() - thickness - 2.0f * spacing));
 		float pos_ratio = (left() - spacing) / (panel.width() - width() - thickness - 3.0f * spacing);
-		panel.innercontent->setLeft(round(-pos_ratio * (panel.innercontent->width() - panel.width())));
+		panel.innercontent->setLeft(std::round(-pos_ratio * (panel.innercontent->width() - panel.width())));
 	}
 
 

@@ -1,5 +1,7 @@
 #include "GUI/RoundedRectangle.hpp"
 
+#include <cmath>
+
 namespace ui {
 
 
@@ -44,8 +46,8 @@ namespace ui {
 			// top left corner
 			for (float a = 0.0; a < pi * 0.5f; a += inc) {
 				sf::Vector2f pos {
-					rad * (1.0f - cos(a)),
-					rad * (1.0f - sin(a))
+					rad * (1.0f - std::cos(a)),
+					rad * (1.0f - std::sin(a))
 				};
 				points.push_back(pos);
 			}
@@ -54,8 +56,8 @@ namespace ui {
 			// top right corner
 			for (float a = 0.0f; a < pi * 0.5f; a += inc) {
 				sf::Vector2f pos {
-					size.x + rad * (-1.0f + sin(a)),
-					rad * (1.0f - cos(a))
+					size.x + rad * (-1.0f + std::sin(a)),
+					rad * (1.0f - std::cos(a))
 				};
 				points.push_back(pos);
 			}
@@ -64,8 +66,8 @@ namespace ui {
 			// bottom right corner
 			for (float a = 0.0f; a < pi * 0.5f; a += inc) {
 				sf::Vector2f pos {
-					size.x + rad * (-1.0f + cos(a)),
-					size.y + rad * (-1.0f + sin(a))
+					size.x + rad * (-1.0f + std::cos(a)),
+					size.y + rad * (-1.0f + std::sin(a))
 				};
 				points.push_back(pos);
 			}
@@ -74,8 +76,8 @@ namespace ui {
 			// bottom left corner
 			for (float a = 0.0f; a < pi * 0.5f; a += inc) {
 				sf::Vector2f pos {
-					rad * (1.0f - sin(a)),
-					size.y + rad * (-1.0f + cos(a))
+					rad * (1.0f - std::sin(a)),
+					size.y + rad * (-1.0f + std::cos(a))
 				};
 				points.push_back(pos);
 			}

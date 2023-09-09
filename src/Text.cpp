@@ -1,5 +1,7 @@
 #include "GUI/Text.hpp"
 
+#include <cmath>
+
 namespace ui {
 
 	Text::Text(std::string _text, const sf::Font& _font, sf::Color color, unsigned charsize, uint32_t style)
@@ -66,13 +68,13 @@ namespace ui {
 
 	void Text::updateSize() {
 		sf::FloatRect bounds = text.getGlobalBounds();
-		text.setPosition({ ceil((float)getCharacterSize() / 5.0f), ceil((float)getCharacterSize() / 5.0f) });
+		text.setPosition({ std::ceil((float)getCharacterSize() / 5.0f), std::ceil((float)getCharacterSize() / 5.0f) });
 		vec2 newsize;
 		newsize.y = std::max((float)text.getCharacterSize(), bounds.height - bounds.top);
 		newsize.x = std::max((float)text.getCharacterSize(), bounds.width + bounds.left);
 		setSize({
-			ceil(newsize.x) + ceil((float)getCharacterSize() / 2.5f),
-			ceil(newsize.y) + ceil((float)getCharacterSize() / 2.5f)
+			std::ceil(newsize.x) + std::ceil((float)getCharacterSize() / 2.5f),
+			std::ceil(newsize.y) + std::ceil((float)getCharacterSize() / 2.5f)
 		}, true);
 	}
 

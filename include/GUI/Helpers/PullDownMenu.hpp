@@ -5,6 +5,8 @@
 
 #include "GUI/Helpers/CallbackButton.hpp"
 
+#include <sstream>
+
 namespace ui {
 
 	template<typename Type>

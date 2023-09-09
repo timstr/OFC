@@ -4,13 +4,19 @@
 #define TIMSGUI_GUI_H
 
 #include <SFML/Main.hpp>
-#include "Element.hpp"
-#include "Text.hpp"
-#include "TextEntry.hpp"
-#include "Context.hpp"
-#include "Image.hpp"
+// #include "Element.hpp"
+// #include "Text.hpp"
+// #include "TextEntry.hpp"
+// #include "Context.hpp"
+// #include "Image.hpp"
+#include "GUI/Util.hpp"
+#include <functional>
+#include <vector>
+#include <string>
 
 namespace ui {
+
+    struct Element;
 
 	// returns the global element to which other elements must be added to be used
 	Element& root();

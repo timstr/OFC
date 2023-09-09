@@ -2,6 +2,8 @@
 #include "GUI/Context.hpp"
 #include "GUI/GUI.hpp"
 
+#include <cmath>
+
 namespace ui {
 
 	TextEntry::TextEntry(const sf::Font& font, int charsize) : Text("", font, sf::Color(0xFF), charsize) {
@@ -65,7 +67,7 @@ namespace ui {
 				text.getFillColor().r,
 				text.getFillColor().g,
 				text.getFillColor().b,
-				(uint8_t)(128 * (0.5 + 0.5 * sin(getProgramTime() * 3.141592654 * 2.0)))));
+				(uint8_t)(128 * (0.5 + 0.5 * std::sin(getProgramTime() * 3.141592654 * 2.0)))));
 			rect.setPosition({
 				cursor_pos,
 				ceil((float)getCharacterSize() / 5.0f)

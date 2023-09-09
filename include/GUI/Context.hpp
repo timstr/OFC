@@ -3,12 +3,15 @@
 #ifndef TIMSGUI_CONTEXT_H
 #define TIMSGUI_CONTEXT_H
 
-#include "Element.hpp"
-#include "Transition.hpp"
-#include "TextEntry.hpp"
+#include <GUI/Util.hpp>
+#include <GUI/Transition.hpp>
 #include <map>
+#include <string>
 
 namespace ui {
+
+    struct Element;
+    struct TextEntry;
 
 	struct Context {
 		Context();

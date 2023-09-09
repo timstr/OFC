@@ -85,7 +85,7 @@ namespace ui {
 	}
 
 	void CallbackButton::fadeColor(sf::Color from, sf::Color to) {
-		auto self = thisAs<CallbackButton>();
+		auto self = this->thisAs<CallbackButton>();
 		startTransition(0.25f, [=](float t) {
 			self->setBackgroundColor(sf::Color(
 				(uint8_t)(from.r * (1.0f - t) + to.r * t),

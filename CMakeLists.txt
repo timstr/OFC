@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 
 project(tims-gui VERSION 0.1.0 DESCRIPTION "A simple and extensible GUI library using SFML")
 
-set(SFML_STATIC_LIBRARIES TRUE)
-find_package(SFML 2.4 COMPONENTS system window graphics audio main REQUIRED)
+# set(SFML_STATIC_LIBRARIES TRUE)
+find_package(SFML 2.5 COMPONENTS system window graphics audio REQUIRED)
 
 if (NOT SFML_FOUND)
 	message(FATAL_ERROR "Could not find SFML. Please install SFML.")
@@ -19,6 +19,7 @@ set(tims-gui_headers
 	include/GUI/Text.hpp
 	include/GUI/TextEntry.hpp
 	include/GUI/Transition.hpp
+	include/GUI/Util.hpp
 	include/GUI/Helpers/CallbackButton.hpp
 	include/GUI/Helpers/NumberTextEntry.hpp
 	include/GUI/Helpers/pi.hpp
@@ -55,7 +56,7 @@ target_link_libraries(tims-gui
 	PUBLIC sfml-window
 	PUBLIC sfml-graphics
 	PUBLIC sfml-audio
-	PUBLIC sfml-main
+#	PUBLIC sfml-main
 )
 
 target_include_directories(tims-gui PUBLIC "include")

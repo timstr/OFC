@@ -1,4 +1,5 @@
 #include "GUI/Context.hpp"
+#include "GUI/Element.hpp"
 #include "GUI/GUI.hpp"
 #include <iostream>
 

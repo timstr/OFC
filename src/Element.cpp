@@ -1,9 +1,11 @@
 #include "GUI/Element.hpp"
+#include "GUI/Context.hpp"
 #include "GUI/GUI.hpp"
 #include "GUI/Text.hpp"
 #include "GUI/RoundedRectangle.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <set>
 #include <sstream>
 
@@ -524,7 +526,7 @@ namespace ui {
 	}
 
 	void Element::writeTab(float width) noexcept {
-		unsigned charsize = static_cast<unsigned>(floor(width / 50.0f * 15.0f));
+		unsigned charsize = static_cast<unsigned>(std::floor(width / 50.0f * 15.0f));
 		m_whitespaces.push_back(WhiteSpace(WhiteSpace::Tab, getNextLayoutIndex(), charsize));
 		makeDirty();
 	}
@@ -636,13 +638,13 @@ namespace ui {
 		rw.draw(m_displayrect);
 	}
 
-	void* Element::operator new(size_t size) {
-		return ::operator new(size);
-	}
+	// void* Element::operator new(size_t size) {
+	// 	return ::operator new(size);
+	// }
 
-	void Element::operator delete(void* ptr) {
-		::operator delete(ptr);
-	}
+	// void Element::operator delete(void* ptr) {
+	// 	::operator delete(ptr);
+	// }
 
 	bool Element::navigateToPreviousElement(){
 		if (!inFocus()) {
@@ -1448,7 +1450,7 @@ namespace ui {
 
 		float tab(unsigned charsize, float left) {
 			float tab_size = 50.0f * (float)charsize / 15.0f;
-			float nu_xpos = floor(((xpos - left) / tab_size) + 1.0f) * tab_size;
+			float nu_xpos = std::floor(((xpos - left) / tab_size) + 1.0f) * tab_size;
 			float diff = nu_xpos - (xpos - left);
 			xpos = nu_xpos + left;
 			return diff;

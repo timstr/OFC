@@ -1,7 +1,9 @@
-#pragma once
-
 #include "GUI/GUI.hpp"
+#include "GUI/Element.hpp"
+#include "GUI/Context.hpp"
+#include "GUI/TextEntry.hpp"
 #include <SFML/Graphics.hpp>
+#include <cmath>
 #include <map>
 #include <set>
 #include <functional>
@@ -181,7 +183,7 @@ namespace ui {
 				float elapsed = getContext().timeSinceHighlight();
 
 				if (elapsed <= 2.0f) {
-					float value = exp(-elapsed * 3.453877f);
+					float value = std::exp(-elapsed * 3.453877f);
 					sf::Color color { 0xFFFF00FF };
 					color.a = (uint8_t)(std::min(value, 1.0f) * 255.0f);
 

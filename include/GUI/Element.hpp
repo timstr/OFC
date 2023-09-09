@@ -4,18 +4,14 @@
 #define TIMSGUI_ELEMENT_H
 
 #include "GUI/RoundedRectangle.hpp"
+#include "GUI/Util.hpp"
 
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <functional>
 #include <memory>
 
-typedef sf::Vector2f vec2;
-
-
 namespace ui {
-
-	using Key = sf::Keyboard::Key;
 
 	// How an element is laid out and positioned relative to its parent and siblings
 	enum class LayoutStyle {
@@ -100,20 +96,6 @@ namespace ui {
 		StrikeThrough = sf::Text::Text::Style::StrikeThrough,
 	};
 
-	// Strong, i.e. owning reference to an element.
-	// Storing this reference will prevent the referred-to
-	// element from being destroyed. Care should be taken
-	// to avoid cycles which would cause memory leaks.
-	template<typename ElementType>
-	using Ref = std::shared_ptr<ElementType>;
-
-	// Weak, i.e. non-owning reference to an element.
-	// Can be used to create a strong reference using the 'lock()' method.
-	// Storing this reference will allow the referred-to element
-	// to be destroyed
-	template<typename ElementType>
-	using WeakRef = std::weak_ptr<ElementType>;
-
 	// construct a new Element
 	// To be used in place of calling ElementType's constructor directly,
 	// with the exact same arguments
@@ -123,7 +105,7 @@ namespace ui {
 	struct Element : std::enable_shared_from_this<Element> {
 
 		// default constructor
-		// NOTE: shared_from_this and thisAs<T> will work inside derived constructors
+		// NOTE: shared_from_this and this->thisAs<T> will work inside derived constructors
 		// but polymorphic (virtual) function calls should not be made during construction
 		Element(LayoutStyle _display_style) noexcept;
 
@@ -139,6 +121,8 @@ namespace ui {
 		// called when the element is closed
 		// can be used for releasing resources predictably, since destruction
 		// may be delayed by other references to this element
+        // LOL this is so broken, this shouldn't be called in the destructor,
+        // the plain ol' destructor should just do the thing that needs doing
 		virtual void onClose();
 
 		// Returns a strongly-typed Ref to this of the desired type
@@ -518,10 +502,10 @@ namespace ui {
 
 		bool m_closed;
 
-		void* operator new(size_t size);
-		void operator delete(void* ptr);
-		void* operator new[](size_t) = delete;
-		void operator delete[](void*) = delete;
+		// void* operator new(size_t size);
+		// void operator delete(void* ptr);
+		// void* operator new[](size_t) = delete;
+		// void operator delete[](void*) = delete;
 
 		LayoutStyle m_layoutstyle;
 		ContentAlign m_contentalign;
@@ -564,7 +548,7 @@ namespace ui {
 		// TODO: fix block elements that don't shrink
 
 		// position and arrange children. Returns the actual size used
-		vec2 Element::arrangeChildren(float width_avail);
+		vec2 arrangeChildren(float width_avail);
 
 		// render the element's children, translating and clipping as needed
 		void renderChildren(sf::RenderWindow& renderwindow);

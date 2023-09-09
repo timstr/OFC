@@ -4,9 +4,11 @@
 #define TIMSGUI_CALLBACKBUTTON_H
 
 #include "GUI/Element.hpp"
-#include "GUI/Text.hpp"
+// #include "GUI/Text.hpp"
 
 namespace ui {
+
+    struct Text;
 
 	struct CallbackButton : InlineElement {
 	private:

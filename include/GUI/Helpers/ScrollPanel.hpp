@@ -4,7 +4,7 @@
 #define TIMSGUI_SCROLLPANEL_H
 
 #include "GUI/Element.hpp"
-#include "GUI/GUI.hpp"
+// #include "GUI/GUI.hpp"
 
 namespace ui {
 

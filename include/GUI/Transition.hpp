@@ -3,7 +3,7 @@
 #ifndef TIMSGUI_TRANSITION_H
 #define TIMSGUI_TRANSITION_H
 
-#include "Element.hpp"
+#include <functional>
 
 namespace ui {
 
